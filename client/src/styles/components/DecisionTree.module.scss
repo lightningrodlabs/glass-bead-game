@@ -1,0 +1,259 @@
+.wrapper {
+    margin-top: 60px;
+    // padding: 50px;
+    width: 100%;
+    height: calc(100vh - 60px);
+}
+.mainContent {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+.leftPanel {
+    width: 350px;
+    height: 100%;
+    border-right: 1px solid #ddd;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.centerPanel {
+    //width: calc(100% - 200px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    // margin: 0;
+    // padding: 0;
+}
+.rightPanel {
+    width: 400px;
+    // height: 100%;
+    // border-left: 1px solid #ddd;
+    // background-color: white;
+    // display: flex;
+    // flex-direction: column;
+    // justify-content: space-between;
+}
+$width: 1280;
+$height: 720;
+$padding: 10px;
+.videos {
+    position: absolute;
+    right: 0;
+    background-color: rgba(0,0,0,0.5);
+    margin: $padding;
+    padding: $padding;
+    border-radius: 5px;
+    max-height: calc(100% - 280px);
+    overflow-y: scroll;
+    display: flex;
+    flex-direction: column;
+}
+.videoWrapper {
+    display: flex;
+    margin-bottom: $padding;
+    &:last-child {
+        margin-bottom: 0;
+    }
+    > video {
+        // margin-bottom: $padding;
+        // &:last-child {
+        //     margin-bottom: 0;
+        // }
+        object-fit: cover;
+        
+    }
+    &.xl {
+        // 1 - 2
+        > video {
+            width: $width / 3 + px;
+            height: $height / 3 + px;
+        }
+    }
+    &.lg {
+        // 3
+        > video {
+            width: $width / 4 + px;
+            height: $height / 4 + px;
+        }
+    }
+    &.md {
+        // 4 - 6
+        > video {
+            width: $width / 5 + px;
+            height: $height / 5 + px;
+        }
+    }
+    &.sm {
+        // 7 - 8
+        > video {
+            width: $width / 6 + px;
+            height: $height / 6 + px;
+        }
+    }
+    &.xs {
+        // 9 +
+        > video {
+            width: $width / 8 + px;
+            height: $height / 8 + px;
+        }
+    }
+    > .userData {
+        position: absolute;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        margin: 7px;
+        padding: 7px 10px;
+        border-radius: 5px;
+        background-color: rgba(255, 255, 255, 0.5);
+        > p {
+            margin-left: 5px;
+            //color: white;
+        }
+    }
+}
+.giftIcon {
+    width: 100px;
+    margin: 30px 0 20px 0;
+}
+.activeTurn {
+    width: 400px;
+    height: 400px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.soundWaveIcon {
+    width: 200px;
+    height: 200px;
+}
+.soundWaveIconSmall {
+    width: 80px;
+    height: 80px;
+}
+.comments {
+    height: 100%;
+    overflow-y: scroll;
+}
+.commentWrapper {
+    display: flex;
+    flex-direction: row;
+    //align-items: center;
+    margin: 10px;
+}
+.commentText {
+    margin-left: 10px;
+}
+.userName {
+    font-weight: 800;
+}
+.adminText {
+    color: rgb(163, 163, 163);
+}
+.textInputWrapper {
+    padding: 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+.textInput {
+    font-size: 16px;
+    height: 40px;
+    border-radius: 5px;
+    padding: 0px 15px;
+    background-color: #f7f7f9;
+    outline: none;
+    border: none;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-right: 10px;
+}
+.button {
+    background-color: #c0e0ff;
+    // width: 80px;
+    height: 40px;
+    border-radius: 5px;
+    padding: 0px 15px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    &.danger {
+        background-color: #ffc0c0;
+    }
+    &:hover {
+        cursor: pointer;
+    }
+}
+.turns {
+    padding: 0 40px;
+    background-color: white;
+    border-top: 1px solid #ddd;
+    height: 200px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+.turnWrapper {
+    display: flex;
+    flex-direction: row;
+}
+.turn {
+    width: 120px;
+    height: 120px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    background-color: white;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+.turnDivider {
+    width: 100px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+.dividerLine {
+    height: 2px;
+    width: 40px;
+    background-color: #ddd;
+}
+.dividerConnector {
+    height: 40px;
+    width: 40px;
+}
+.gameControls {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    > div {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+}
+.numberInput {
+    border: none;
+    background-color: white;
+    width: 60px;
+    height: 40px;
+    border-radius: 5px;
+    font-size: 16px;
+    margin-right: 20px;
+    padding: 5px 10px;
+}

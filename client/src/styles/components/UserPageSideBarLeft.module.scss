@@ -1,0 +1,100 @@
+@import '../Transitions.scss';
+// TODO: change to importing a variables file including transition speeds etc.
+
+.sideBarLeft {
+    width: 230px;
+    padding: 0 20px;
+    position: relative;
+    @media screen and (max-width: 1200px) {
+        display: none;
+    }
+}
+.flagImageWrapper {
+    margin-top: -110px;
+}
+.userName {
+    font-size: 26px;
+    line-height: 30px;
+    //margin: 70px 0 20px 0;
+    margin: 20px 0 20px 12px;
+}
+.header {
+    font-size: 14px;
+    margin-left: 12px;
+    color: #6d6d6d;
+    margin-bottom: 5px;
+}
+.navButtons {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+.button {
+    position: relative;
+    height: 40px;
+    border-radius: 5px;
+    padding: 0 8px 0 12px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    transition-property: background-color;
+    transition-duration: 0.3s;
+    &:hover {
+        cursor: pointer;
+        background-color: rgba(0,0,0,0.03);// rgba(255, 255, 255, 1);
+        .icon { opacity: 0.4; }
+    }
+    &.selected {
+        background-color: rgba(0,0,0,0.03);// #e5e7eb;//rgba(0,0,0,0.05);
+        .icon { opacity: 0.4; }
+    }
+}
+.icon {
+    width: 25px;
+    height: 25px;
+    margin-right: 8px;
+    opacity: 0.3;
+    transition-property: opacity;
+    transition-duration: 0.3s;
+}
+.text {
+    //font-size: 18px;
+    margin-left: 10px;
+}
+.numberWrapper {
+    margin-left: auto;
+    //margin-right: 10px;
+    height: 30px;
+    padding: 0 12px;
+    width: 40px;
+    border-radius: 15px;
+    background-color: rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+.number {
+    font-size: 12px;
+    font-weight: 800;
+    opacity: 0.6;
+}
+.bio {
+    margin-top: 20px;
+}
+.notification {
+    width: 25px;
+    height: 25px;
+    background-color: #ff4848; // red;
+    color: white;
+    font-size: 12px;
+    font-weight: 800;
+    border: 3px solid #f7f7f9;
+    border-radius: 50%;
+    position: absolute;
+    left: 25px;
+    top: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

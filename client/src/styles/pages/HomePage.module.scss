@@ -1,0 +1,172 @@
+@import '@styles/Colors';
+
+.wrapper {
+    width: 100%;
+    margin-top: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+}
+.top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: $bluegrey1;
+    width: 100%;
+    .logo {
+        width: 350px;
+        margin-top: 60px;
+    }
+    h1 {
+        color: $grey7;
+        font-size: 40px;
+        line-height: 40px;
+        font-weight: 400;
+        margin-bottom: 5px;
+        letter-spacing: 4px;
+        .colored {
+            background:  $aquaGradient;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    }
+    h2 {
+        font-size: 20px;
+        font-weight: 400;
+        color: $grey6;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .features {
+        font-size: 16px;
+        font-weight: 400;
+        color: $grey8;
+        text-align: center;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        > svg, > p {
+            margin-right: 10px;
+            
+        }
+    }
+    .highlights {
+        display: flex;
+        flex-direction: row;
+        margin-bottom: 30px;
+        justify-content: space-between;
+        .highlight {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            &:not(:last-child) { margin-right: 20px }
+            > p { margin-right: 10px }
+        }
+    }
+    .currentState {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 30px;
+        > p {
+            font-size: 20px;
+            color: $grey8;
+        }
+        > div {
+            display: flex;
+            align-items: center;
+            color: $grey7;
+            > svg {
+                color: $grey8;
+                margin-left: 10px;
+                width: 25px;
+                height: 25px;
+            }
+        }
+    }
+    .authButtons {
+        display: flex;
+        margin-bottom: 30px;
+        z-index: 3;
+        button {
+            &:not(:last-child) {
+                margin-right: 10px;
+            }
+        }
+    }
+}
+.backgroundImage {
+    margin-top: -40px;
+    // position: absolute;
+    width: 100%;
+    // z-index: 1;
+    background-color: $bluegrey1;
+    > img {
+        margin-bottom: -10px;
+        width: 100%;
+    }
+}
+.bottom {
+    // margin-top: -40px;
+    position: relative;
+    width: 100%;
+    background-color: #002d50;// #e9eff5; // #ddeffd; // #002d50; //#dfe6f3;//;//#045fa7;//#006fb7;//#0077b7;//#15a1d4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
+    .introText {
+        width: 100%;
+        max-width: 700px;
+        //margin-top: calc(10% + 30px);
+        padding: 20px;
+        z-index: 2;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        //backdrop-filter: blur(10px);
+        > h1 {
+            font-size: 24px;
+            font-weight: 400;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        > p {
+            max-width: 600px;
+            margin-bottom: 30px;
+            > a {
+                color: white;
+                font-weight: 800;
+            }
+        }
+        > img {
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 400px;
+        }
+    }
+    .list {
+        display: flex;
+        flex-direction: column;
+        margin: 60px 0 100px 0;
+        color:white;
+        padding: 0 20px;
+        opacity: 0.9;
+    }
+    .ul {
+        margin: 10px 0 10px 20px;
+        ul {
+            margin-left: 40px;
+        }
+        input {
+            margin-right: 10px;
+        }
+    }
+    .credits {
+        margin: 40px 0 20px 0;
+        color: white;//#aaa;
+        opacity: 0.6;
+    }
+}

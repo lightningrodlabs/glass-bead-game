@@ -1,0 +1,85 @@
+@import './../Colors';
+
+.wrapper {
+    margin-bottom: 10px;
+    padding: 20px 30px;
+    width: 100%;
+    border-radius: 5px;
+    background-color: white;
+    // background-color: #f7fbff; //transparent; #ededf5;
+    //box-shadow: 0 1px 10px 0 rgba(10, 8, 72, 0.02);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    // transition-property: background-color;
+    // transition-duration: 0.5s;
+    position: relative;
+    // &.seen {
+    //     background-color: white;
+    // }
+}
+.typeIcon {
+    width: 50px;
+    height: 50px;
+    margin-right: 20px;
+    border-radius: 50%;
+    background-color: $grey1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    svg {
+        width: 30px;
+        height: 30px;
+        path { fill: $grey5 }
+    }
+}
+
+.content {
+    width: 100%;
+    $contentMargin: 5px;
+    font-size: 14px;
+    color: $grey5;
+    margin-bottom: -$contentMargin;
+    margin-right: 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    > a, > p, > div, > button {
+        flex-shrink: 0;
+        margin: 0 $contentMargin $contentMargin 0;
+    }
+    .inlineIcon {
+        width: 25px;
+        height: 25px;
+        &.green > svg > path { fill: $green2 }
+        &.red > svg > path { fill: $red }
+    }
+    > p {
+        &.green { color: $green2 }
+        &.red { color: $red }
+    }
+}
+.seenButton {
+    width: 30px;
+    height: 30px;
+    border: none;
+    padding: 0;
+    background-color: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    svg {
+        width: 30px;
+        height: 30px;
+        path { fill: $grey3 }
+    }
+}
+.state {
+    display: flex;
+    align-items: center;
+    > p {
+        flex-shrink: 0;
+        margin-right: 5px;
+    }
+}

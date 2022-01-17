@@ -1,0 +1,25 @@
+@import './../Colors.scss';
+.scoreBar {
+    width: 100px;
+    height: 30px;
+    margin-left: 10px;
+    background-color: #eaeaea;
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+    > div {
+        height: 30px;
+        background-color: #9ed5ff;
+    }
+    &.aqua > div { background-color: #b6ef87 }
+    > p {
+        font-size: 14px;
+        position: absolute;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}

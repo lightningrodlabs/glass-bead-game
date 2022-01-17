@@ -1,0 +1,102 @@
+.postMapWrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    // remove up/down arrows from number input fields
+    ::-webkit-outer-spin-button,
+    ::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    -moz-appearance: textfield;
+}
+.controlsWrapper {
+    display: flex;
+    justify-content: space-between;
+    width: 700px;
+    margin-top: 5px;
+    height: 70px;
+}
+.controls {
+    display: flex;
+    flex-direction: column;
+}
+.item {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 10px;
+    z-index: 3;
+}
+.gravityText {
+    margin-right: 10px;
+}
+.gravitySlider {
+    margin-right: 10px;
+}
+.gravityInput {
+    font-size: 16px;
+    border: none;
+    outline: none;
+    background-color: white;
+    box-shadow: 0 1px 10px 0 rgba(10, 8, 72, 0.05);
+    width: 50px;
+    border-radius: 5px;
+    padding: 5px;
+    text-align: center;
+}
+.key {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    z-index: 3;
+    margin-top: 5px;
+    margin-right: 5px;
+}
+.keyButton {
+    width: 20px;
+    height: 20px;
+    filter: invert(70%);
+    &:hover {
+        cursor: pointer;
+    }
+}
+.keyItems {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    //z-index: 10;
+    margin-top: 10px;
+    //margin-right: 5px;
+}
+.postMapKeyItem {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 3px;
+}
+.colorBox {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    margin-left: 5px;
+}
+.textLink {
+    margin-left: 5px;
+    width: 40px;
+    border: 2px solid black;
+    opacity: 0.3;
+}
+.turnLink {
+    margin-left: 5px;
+    width: 40px;
+    border: 2px dashed black;
+    opacity: 0.3;
+}
+.selectedPostWrapper {
+    //height: 400px;
+    width: 700px;
+    margin-bottom: 200px;
+}

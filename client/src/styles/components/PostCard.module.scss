@@ -1,0 +1,174 @@
+@import './../Colors.scss';
+.post {
+    margin-bottom: 10px;
+    width: 100%;
+    border-radius: 10px;
+    background-color: white;
+    box-shadow: 0 1px 10px 0 rgba(10, 8, 72, 0.04);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    opacity: 1;
+    padding: 25px 35px 15px 35px;
+    &.post-page {
+        width: 900px;
+    }
+    .index {
+        width: 10px;
+        margin-right: 20px;
+        font-size: 14px;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        flex-shrink: 0;
+        color: rgba(0, 0, 0, 0.15);
+    }
+    > header {
+        font-size: 15px;
+        // line-height: 14px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        // flex-direction: row;
+        align-items: center;
+        // flex-wrap: wrap;
+        p {
+            //color: $grey5;
+            margin-right: 5px;
+        }
+        .postSpaces {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: center;
+            // > p {
+            //     color: rgb(155, 155, 155);
+            // }
+            > p, > a {
+                margin-right: 5px;
+            }
+        }
+        .link {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: center;
+            margin: 0 8px 0 3px;
+            > svg {
+                width: 13px;
+                opacity: 0.3;
+            }
+        }
+        .postType {
+            height: 24px;
+            font-size: 12px;
+            line-height: 12px;
+            border-radius: 12px;
+            margin: 0 5px;
+            padding: 0 8px;
+            display: flex;
+            align-items: center;
+            &.text {
+                color: $postTypeText;
+                border: 2px solid $postTypeText;
+            }
+            &.url {
+                color: $postTypeUrl;
+                border: 2px solid $postTypeUrl;
+            }
+            &.glass-bead-game {
+                color: $postTypeGlassBeadGame;
+                border: 2px solid $postTypeGlassBeadGame;
+            }
+            &.prism {
+                color: $postTypePrism;
+                border: 2px solid $postTypePrism;
+            }
+        }
+        .delete {
+            font-size: 14px;
+            margin-left: 5px;
+            opacity: 0.5;
+            &:hover {
+                cursor: pointer;
+            }
+        }
+    }
+    .content {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+
+        .topic {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            box-shadow: 0 0 3px rgba(0,0,0,0.2);
+            margin-right: 10px;
+        }
+
+        .playAllButton {
+            all: unset;
+            cursor: pointer;
+            //display: flex;
+        }
+
+        .beadsWrapper {
+            // margin: 10px 0;
+            margin-bottom: 10px;
+            width: 100%;
+
+            > p {
+                color: $grey5;
+                margin-top: 10px;
+            }
+
+            .beads {
+                width: 100%;
+                display: flex;
+                overflow-x: scroll;
+                padding: 10px;
+                margin-left: -10px;
+            }
+        }
+    }
+    .statButtons {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+        > button {
+            font-size: 15px;
+            margin-right: 12px;
+            color: $grey4;
+            &:hover {
+                color: $grey6;
+                cursor: pointer;
+            }
+        }
+    }
+}
+// .pinned {
+//     background-color: #f1f6ff;
+// }
+// .pinFlag {
+//     background-image: url(/icons/pin-01.png);
+//     background-position: center;
+//     background-repeat: no-repeat;
+//     background-size: cover;
+//     background-color: transparent;
+//     border: none;
+//     height: 17px;
+//     width: 17px;
+//     padding: 0;
+//     opacity: 0.4;
+//     margin-right: 5px;
+//     position: absolute;
+//     right: 15px;
+//     &:hover {
+//         cursor: pointer;
+//     }
+// }
