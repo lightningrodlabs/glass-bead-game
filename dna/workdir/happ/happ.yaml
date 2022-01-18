@@ -1,0 +1,16 @@
+---
+manifest_version: "1"
+name: weco
+description: holochain weco application
+roles:
+  - id: weco-role
+    provisioning:
+      strategy: create
+      deferred: false
+    dna:
+      bundled: "../dna/weco.dna"
+      properties: ~
+      uid: ~
+      version: ~
+      clone_limit: 0
+

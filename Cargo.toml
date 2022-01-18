@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2" #needed to not bundle dev-dependencies into wasm builds
+members = [
+  "dna/zomes/weco",
+  ]
+
+[profile.dev]
+opt-level = "z"
+
+[profile.release]
+opt-level = "z"
+
