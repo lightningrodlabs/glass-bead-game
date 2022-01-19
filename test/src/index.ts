@@ -33,19 +33,7 @@ orchestrator.registerScenario(
 
     await s.shareAllNodes([alice, bob])
 
-    let now = new Date();
     let alice_message = await alice_common.cells[0].call(
-        "weco",
-        "create_game",
-        {
-            topic: "test",
-            current_time : now.toUTCString()
-        }
-    );
-    console.log(alice_message);
-    t.ok(alice_message);
-
-    alice_message = await alice_common.cells[0].call(
         "weco",
         "create_room",
         {
@@ -88,8 +76,22 @@ orchestrator.registerScenario(
             }
         }
     );
-    console.log(alice_message);
-    t.ok(alice_message);
+    console.log(bob_message);
+    t.ok(bob_message);
+
+    bob_message = await bob_common.cells[0].call(
+        "weco",
+        "get_users",
+        {
+            room_name : "test",
+            room_user : {
+                name : "testuser1",
+                agent : bob_common.agent
+            }
+        }
+    );
+    console.log(bob_message);
+    t.ok(bob_message);
 
     alice_message = await alice_common.cells[0].call(
         "weco",

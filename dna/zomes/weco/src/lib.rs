@@ -1,10 +1,8 @@
 pub use hdk::prelude::*;
 
-pub mod game;
 pub mod room;
 
 entry_defs![Anchor::entry_def(),
-    game::Game::entry_def(),
     room::Room::entry_def()];
 
 #[hdk_extern]

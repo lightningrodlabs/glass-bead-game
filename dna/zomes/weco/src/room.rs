@@ -151,6 +151,33 @@ fn _return_room(link: Link) -> ExternResult<Room> {
 }
 
 #[hdk_extern]
+pub fn get_users(input: RoomUserInput) -> ExternResult<Vec<String>> {
+    let mut users: Vec<String> = Vec::new();
+
+    let anchor = anchor(ROOM_ANCHOR_TYPE.into(), ROOM_ANCHOR_TEXT.into())?;
+    let links = get_links(anchor.clone().into_hash(), None)?;
+
+    for l in links {
+        let element: Element = get(l.target, GetOptions::default())?
+            .ok_or(WasmError::Guest(String::from("Entry not found")))?;
+        let entry_option: Option<Room> = element.entry().to_app_option()?;
+        let entry: Room =
+            entry_option.ok_or(WasmError::Guest("The targeted entry is not a room".into()))?;
+        
+        if entry.name.eq(&input.room_name) {
+            let room_users: Vec<RoomUser> = entry.users.clone();
+            for u in room_users {
+                if u.agent.eq(&input.room_user.agent) {
+                    continue;
+                }
+                users.push(u.name.clone());
+            }
+        }
+    }
+    Ok(users)
+}
+
+#[hdk_extern]
 pub fn send_notification(input: MessageInput) -> ExternResult<String> {
     let anchor = anchor(ROOM_ANCHOR_TYPE.into(), ROOM_ANCHOR_TEXT.into())?;
     let links = get_links(anchor.clone().into_hash(), None)?;
