@@ -30,12 +30,13 @@ pub struct RoomInput {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MessageInput {
     room_name : String,
-    user_name : String,
+    room_user : RoomUser,
     message : String
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NotificationInput {
+    user: String,
     message : String
 }
 
@@ -164,7 +165,7 @@ pub fn send_notification(input: MessageInput) -> ExternResult<String> {
         if entry.name.eq(&input.room_name) {
             let room_users: Vec<RoomUser> = entry.users.clone();
             for u in room_users {
-                if u.name.eq(&input.user_name) {
+                if u.agent.eq(&input.room_user.agent) {
                     continue;
                 }
                 call_remote(
@@ -173,6 +174,7 @@ pub fn send_notification(input: MessageInput) -> ExternResult<String> {
                     "receive_notification".into(),
                     None,
                     NotificationInput {
+                        user: input.room_user.name.clone(),
                         message : input.message.clone(),
                     },
                 )?;

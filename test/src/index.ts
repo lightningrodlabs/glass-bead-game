@@ -33,97 +33,8 @@ orchestrator.registerScenario(
 
     await s.shareAllNodes([alice, bob])
 
-    let alice_message = await alice_common.cells[0].call(
-        "weco",
-        "register",
-        {
-            handle: "test",
-            name: "test",
-            email: "test@test.com",
-            password: "123",
-        }
-    );
-    console.log(alice_message);
-    t.ok(alice_message);
-
-    let bob_message = await bob_common.cells[0].call(
-        "weco",
-        "register",
-        {
-            handle: "test1",
-            name: "test1",
-            email: "test1@test.com",
-            password: "123",
-        }
-    );
-    console.log(bob_message);
-    t.ok(bob_message);
-
-    bob_message = await bob_common.cells[0].call(
-        "weco",
-        "register",
-        {
-            handle: "test1",
-            name: "test1",
-            email: "test1@test.com",
-            password: "123",
-        }
-    );
-    console.log(bob_message);
-    t.ok(bob_message);
-
-    bob_message = await bob_common.cells[0].call(
-        "weco",
-        "login",
-        {
-            handle: "test1",
-            name: "test1",
-            email: "test1@test.com",
-            password: "123",
-        }
-    );
-    console.log(bob_message);
-    t.ok(bob_message);
-
-    bob_message = await bob_common.cells[0].call(
-        "weco",
-        "get_users",
-        null
-    );
-    console.log(bob_message);
-    t.ok(bob_message);
-
-    bob_message = await bob_common.cells[0].call(
-        "weco",
-        "update_password",
-        {
-            handle: "test1",
-            name: "test1",
-            email: "test1@test.com",
-            password: "123456",
-        }
-    );
-    console.log(bob_message);
-    t.ok(bob_message);
-
-    bob_message = await bob_common.cells[0].call(
-        "weco",
-        "get_users",
-        null
-    );
-    console.log(bob_message);
-    t.ok(bob_message);
-
-    alice_message = await alice_common.cells[0].call(
-        "weco",
-        "get_users",
-        null
-    );
-    console.log(alice_message);
-    t.ok(alice_message);
-
     let now = new Date();
-    alice_message = await alice_common.cells[0].call(
+    let alice_message = await alice_common.cells[0].call(
         "weco",
         "create_game",
         {
@@ -166,7 +77,7 @@ orchestrator.registerScenario(
     console.log(alice_message);
     t.ok(alice_message);
 
-    bob_message = await bob_common.cells[0].call(
+    let bob_message = await bob_common.cells[0].call(
         "weco",
         "join_room",
         {
@@ -223,7 +134,10 @@ orchestrator.registerScenario(
         "send_notification",
         {
             room_name : "test",
-            user_name : "testuser",
+            room_user : {
+                name: "testuser",
+                agent: alice_common.agent,
+            },
             message: "test message"
         }
     );

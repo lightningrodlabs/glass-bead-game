@@ -1,14 +1,10 @@
 pub use hdk::prelude::*;
 
-pub mod user;
 pub mod game;
-pub mod post;
 pub mod room;
 
 entry_defs![Anchor::entry_def(),
-    user::User::entry_def(),
     game::Game::entry_def(),
-    post::Post::entry_def(),
     room::Room::entry_def()];
 
 #[hdk_extern]
