@@ -1,9 +1,13 @@
-pub use hdk::prelude::*;
+use hc_file_storage_types::*;
+use hdk::prelude::*;
 
 pub mod room;
+pub mod file_storage;
 
 entry_defs![Anchor::entry_def(),
-    room::Room::entry_def()];
+    room::Room::entry_def(),
+    FileChunk::entry_def(),
+    FileMetadata::entry_def()];
 
 #[hdk_extern]
 fn init(_: ()) -> ExternResult<InitCallbackResult> {

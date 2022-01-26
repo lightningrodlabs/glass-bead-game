@@ -24,14 +24,15 @@ const orchestrator = new Orchestrator();
 orchestrator.registerScenario(
   "weco test app",
   async (s, t) => {
-    const [alice, bob] = await s.players([conductorConfig, conductorConfig]);
+    const [alice, bob, test] = await s.players([conductorConfig, conductorConfig, conductorConfig]);
 
     // install your happs into the coductors and destructuring the returned happ data using the same
     // array structure as you created in your installation array.
     const [[alice_common]] = await alice.installAgentsHapps(installation);
     const [[bob_common]] = await alice.installAgentsHapps(installation);
+    const [[test_common]] = await alice.installAgentsHapps(installation);
 
-    await s.shareAllNodes([alice, bob])
+    await s.shareAllNodes([alice, bob, test])
 
     let alice_message = await alice_common.cells[0].call(
         "weco",
@@ -78,6 +79,34 @@ orchestrator.registerScenario(
     );
     console.log(bob_message);
     t.ok(bob_message);
+
+    let test_message = await test_common.cells[0].call(
+        "weco",
+        "join_room",
+        {
+            room_name : "test",
+            room_user : {
+                name : "testuser2",
+                agent : test_common.agent
+            }
+        }
+    );
+    console.log(test_message);
+    t.ok(test_message);
+
+    alice_message = await alice_common.cells[0].call(
+        "weco",
+        "get_users",
+        {
+            room_name : "test",
+            room_user : {
+                name : "testuser",
+                agent : alice_common.agent
+            }
+        }
+    );
+    console.log(alice_message);
+    t.ok(alice_message);
 
     bob_message = await bob_common.cells[0].call(
         "weco",
@@ -130,6 +159,14 @@ orchestrator.registerScenario(
     );
     console.log(bob_message);
     t.ok(bob_message);
+
+    test_message = await test_common.cells[0].call(
+        "weco",
+        "get_rooms",
+        null
+    );
+    console.log(test_message);
+    t.ok(test_message);
 
     alice_message = await alice_common.cells[0].call(
         "weco",
