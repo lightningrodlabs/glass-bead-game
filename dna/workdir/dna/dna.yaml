@@ -1,9 +1,9 @@
 ---
 manifest_version: "1"
-name: weco
+name: glassbeadgame
 uid: 00000000-0000-0000-0000-000000000000
 properties: ~
 zomes:
-  - name: weco
-    bundled: ../../../target/wasm32-unknown-unknown/release/weco.wasm
+  - name: glassbeadgame
+    bundled: ../../../target/wasm32-unknown-unknown/release/glassbeadgame.wasm
 

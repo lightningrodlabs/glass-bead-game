@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2" #needed to not bundle dev-dependencies into wasm builds
 members = [
-  "dna/zomes/weco",
+  "dna/zomes/glassbeadgame",
   ]
 
 [profile.dev]

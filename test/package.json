@@ -1,5 +1,5 @@
 {
-    "name": "holo-weco-test",
+    "name": "holo-glassbeadgame-test",
     "version": "0.1.0",
     "private": true,
     "scripts": {
@@ -15,7 +15,7 @@
         "lodash": "^4.17.19",
         "tape": "^5.0.1",
         "ts-node": "^8.10.2",
-        "typescript": "^3.9.6"
-    }
+        "typescript": "^3.9.6",
+        "js-base64": "^3.6.1"    }
 }
 

@@ -1,10 +1,11 @@
 import { Orchestrator, Config, InstallAgentsHapps } from "@holochain/tryorama";
 import path from "path";
+import { Base64 } from "js-base64";
 
 const conductorConfig = Config.gen();
 
 // Construct proper paths for your DNAs
-const wecoTest = path.join(__dirname, "../../dna/workdir/dna/weco.dna");
+const glassbeadgameTest = path.join(__dirname, "../../dna/workdir/dna/glassbeadgame.dna");
 
 // create an InstallAgentsHapps array with your DNAs to tell tryorama what
 // to install into the conductor.
@@ -12,17 +13,20 @@ const installation: InstallAgentsHapps = [
   // agent 0
   [
     // happ 0
-    [wecoTest],
+    [glassbeadgameTest],
   ],
 ];
 
+function serializeHash(hash: Uint8Array): string {
+  return `u${Base64.fromUint8Array(hash, true)}`;
+}
 const sleep = (ms) =>
   new Promise((resolve) => setTimeout(() => resolve(null), ms));
 
 const orchestrator = new Orchestrator();
 
 orchestrator.registerScenario(
-  "weco test app",
+  "glassbeadgame test app",
   async (s, t) => {
     const [alice, bob] = await s.players([conductorConfig, conductorConfig]);
 
@@ -30,121 +34,72 @@ orchestrator.registerScenario(
     // array structure as you created in your installation array.
     const [[alice_common]] = await alice.installAgentsHapps(installation);
     const [[bob_common]] = await alice.installAgentsHapps(installation);
+    const aliceAgentKey = serializeHash(alice_common.cells[0].cellId[1]);
 
     await s.shareAllNodes([alice, bob])
 
-    let alice_message = await alice_common.cells[0].call(
-        "weco",
-        "create_room",
-        {
-            room_name : "test"
-        }
-    );
-    console.log(alice_message);
-    t.ok(alice_message);
+    let game1 = {
+      topic: "testing",
+      locked: false,
+      intro_duration: 30,
+      number_of_turns: 3,
+      move_duration: 60,
+      interval_duration: 0,
+    }
 
-    alice_message = await alice_common.cells[0].call(
-        "weco",
-        "get_rooms",
-        null
+    let game_output = await alice_common.cells[0].call(
+      "glassbeadgame",
+      "create_game",
+      game1,
     );
-    console.log(alice_message);
-    t.ok(alice_message);
+    console.log(game_output);
+    t.ok(game_output);
 
-    alice_message = await alice_common.cells[0].call(
-        "weco",
-        "join_room",
-        {
-            room_name : "test",
-            room_user : {
-                name : "testuser",
-                agent : alice_common.agent
-            }
-        }
+    let games = await alice_common.cells[0].call(
+      "glassbeadgame",
+      "get_games",
     );
-    console.log(alice_message);
-    t.ok(alice_message);
+    t.ok(games);
+    t.deepEquals(games[0].game, game1)
+    t.equals(games[0].entry_hash, game_output.entry_hash)
+    t.equals(games[0].header_hash, game_output.header_hash)
 
-    let bob_message = await bob_common.cells[0].call(
-        "weco",
-        "join_room",
-        {
-            room_name : "test",
-            room_user : {
-                name : "testuser1",
-                agent : bob_common.agent
-            }
-        }
+    let players = await alice_common.cells[0].call(
+      "glassbeadgame",
+      "get_players",
+      game_output.entry_hash
     );
-    console.log(bob_message);
-    t.ok(bob_message);
+    t.deepEquals(players, [])
+    
+    let join_header_hash = await alice_common.cells[0].call(
+      "glassbeadgame",
+      "join_game",
+      {
+        entry_hash: game_output.entry_hash,
+        agent: aliceAgentKey
+      }
+    );
+    t.ok(join_header_hash)
 
-    bob_message = await bob_common.cells[0].call(
-        "weco",
-        "get_users",
-        {
-            room_name : "test",
-            room_user : {
-                name : "testuser1",
-                agent : bob_common.agent
-            }
-        }
+    players = await alice_common.cells[0].call(
+      "glassbeadgame",
+      "get_players",
+      game_output.entry_hash
     );
-    console.log(bob_message);
-    t.ok(bob_message);
+    t.equals(players[0][0], aliceAgentKey)
+    t.equals(players[0][1], join_header_hash)
+    await alice_common.cells[0].call(
+      "glassbeadgame",
+      "leave_game",
+      join_header_hash
+    );
 
-    alice_message = await alice_common.cells[0].call(
-        "weco",
-        "get_rooms",
-        null
+    players = await alice_common.cells[0].call(
+      "glassbeadgame",
+      "get_players",
+      game_output.entry_hash
     );
-    console.log(alice_message);
-    t.ok(alice_message);
-
-    alice_message = await alice_common.cells[0].call(
-        "weco",
-        "leave_room",
-        {
-            room_name : "test",
-            room_user : {
-                name : "testuser",
-                agent : alice_common.agent
-            }
-        }
-    );
-    console.log(alice_message);
-    t.ok(alice_message);
-
-    alice_message = await alice_common.cells[0].call(
-        "weco",
-        "get_rooms",
-        null
-    );
-    console.log(alice_message);
-    t.ok(alice_message);
-
-    bob_message = await bob_common.cells[0].call(
-        "weco",
-        "get_rooms",
-        null
-    );
-    console.log(bob_message);
-    t.ok(bob_message);
-
-    alice_message = await alice_common.cells[0].call(
-        "weco",
-        "send_notification",
-        {
-            room_name : "test",
-            room_user : {
-                name: "testuser",
-                agent: alice_common.agent,
-            },
-            message: "test message"
-        }
-    );
-    console.log(alice_message);
-    t.ok(alice_message);
+    t.deepEquals(players, [])
   }
 );
 orchestrator.run();
