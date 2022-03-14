@@ -3,6 +3,7 @@ use hdk::prelude::{holo_hash::{EntryHashB64, HeaderHashB64, AgentPubKeyB64}};
 
 #[hdk_entry(id = "game")]
 #[derive(Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Game {
     pub topic : String,
     pub locked: bool,
@@ -13,39 +14,29 @@ pub struct Game {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
- pub struct JoinGameInput {
+#[serde(rename_all = "camelCase")]
+pub struct JoinGameInput {
     pub agent: AgentPubKeyB64,
     pub entry_hash: EntryHashB64
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
- pub struct CreateGameOutput {
+#[serde(rename_all = "camelCase")]
+pub struct CreateGameOutput {
     pub header_hash: HeaderHashB64,
     pub entry_hash: EntryHashB64
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
- pub struct GameOutput {
+#[serde(rename_all = "camelCase")]
+pub struct GameOutput {
     pub header_hash: HeaderHashB64,
     pub entry_hash: EntryHashB64,
     pub game: Game,
     pub created_by: AgentPubKeyB64,
 }
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct MessageInput {
-    game : EntryHash,
-    agent : AgentPubKeyB64,
-    message : String
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct NotificationInput {
-    user: String,
-    message : String
-}
 
 fn get_game_path(_game: &Game) -> ExternResult<Path> {
-    //TODO: tree by topic or other segmenting
     let path = Path::from("games".to_string());
     path.ensure()?;
     
@@ -141,9 +132,4 @@ fn get_game(game_entry_hash: EntryHashB64) -> ExternResult<GameOutput> {
         None => None,
     };
     Ok(maybe_output.ok_or(WasmError::Guest("Game not found".into()))?)
-}
-
-#[hdk_extern]
-pub fn receive_notification(input: NotificationInput) -> ExternResult<()> {
-    Ok(emit_signal(input)?)
 }
