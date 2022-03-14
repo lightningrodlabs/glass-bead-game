@@ -41,10 +41,10 @@ orchestrator.registerScenario(
     let game1 = {
       topic: "testing",
       locked: false,
-      intro_duration: 30,
-      number_of_turns: 3,
-      move_duration: 60,
-      interval_duration: 0,
+      introDuration: 30,
+      numberOfTurns: 3,
+      moveDuration: 60,
+      intervalDuration: 0,
     }
 
     let create_game_output = await alice_common.cells[0].call(
@@ -54,16 +54,15 @@ orchestrator.registerScenario(
     );
     console.log(create_game_output);
     t.ok(create_game_output);
-    
     let game_output = await alice_common.cells[0].call(
       "glassbeadgame",
       "get_game",
-      create_game_output.entry_hash
+      create_game_output.entryHash
     );
     t.ok(game_output);
     t.deepEquals(game_output.game, game1)
-    t.equals(game_output.entry_hash, create_game_output.entry_hash)
-    t.equals(game_output.header_hash, create_game_output.header_hash)
+    t.equals(game_output.entryHash, create_game_output.entryHash)
+    t.equals(game_output.headerHash, create_game_output.headerHash)
 
     let games = await alice_common.cells[0].call(
       "glassbeadgame",
@@ -71,45 +70,64 @@ orchestrator.registerScenario(
     );
     t.ok(games);
     t.deepEquals(games[0].game, game1)
-    t.equals(games[0].entry_hash, game_output.entry_hash)
-    t.equals(games[0].header_hash, game_output.header_hash)
+    t.equals(games[0].entryHash, game_output.entryHash)
+    t.equals(games[0].headerHash, game_output.headerHash)
 
     let players = await alice_common.cells[0].call(
       "glassbeadgame",
       "get_players",
-      game_output.entry_hash
+      game_output.entryHash
     );
     t.deepEquals(players, [])
     
-    let join_header_hash = await alice_common.cells[0].call(
+    let join_headerHash = await alice_common.cells[0].call(
       "glassbeadgame",
       "join_game",
       {
-        entry_hash: game_output.entry_hash,
+        entryHash: game_output.entryHash,
         agent: aliceAgentKey
       }
     );
-    t.ok(join_header_hash)
+    t.ok(join_headerHash)
 
     players = await alice_common.cells[0].call(
       "glassbeadgame",
       "get_players",
-      game_output.entry_hash
+      game_output.entryHash
     );
     t.equals(players[0][0], aliceAgentKey)
-    t.equals(players[0][1], join_header_hash)
+    t.equals(players[0][1], join_headerHash)
     await alice_common.cells[0].call(
       "glassbeadgame",
       "leave_game",
-      join_header_hash
+      join_headerHash
     );
 
     players = await alice_common.cells[0].call(
       "glassbeadgame",
       "get_players",
-      game_output.entry_hash
+      game_output.entryHash
     );
     t.deepEquals(players, [])
+
+    let comment1 = await alice_common.cells[0].call(
+      "glassbeadgame",
+      "create_comment",
+      { 
+        entryHash: game_output.entryHash,
+        comment: "comment1"
+      }
+    );
+    let comments = await alice_common.cells[0].call(
+      "glassbeadgame",
+      "get_comments",
+      game_output.entryHash
+    );
+    console.log("comments", comments)
+    t.equals(comments[0].entryHash,comment1.entryHash)
+    t.equals(comments[0].headerHash,comment1.headerHash)
+    t.equals(comments[0].comment,"comment1")
+
   }
 );
 orchestrator.run();

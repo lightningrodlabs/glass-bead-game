@@ -22,7 +22,7 @@ pub struct JoinGameInput {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateGameOutput {
+pub struct CreateOutput {
     pub header_hash: HeaderHashB64,
     pub entry_hash: EntryHashB64
 }
@@ -36,6 +36,30 @@ pub struct GameOutput {
     pub created_by: AgentPubKeyB64,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct CommentInput {
+    pub entry_hash: EntryHashB64,
+    pub comment: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct CommentOutput {
+    pub header_hash: HeaderHashB64,
+    pub entry_hash: EntryHashB64,
+    pub agent: AgentPubKeyB64,
+    pub comment: String,
+    pub timestamp: Timestamp,
+}
+
+#[hdk_entry(id = "comment")]
+#[derive(Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Comment {
+    pub comment : String,
+}
+
 fn get_game_path(_game: &Game) -> ExternResult<Path> {
     let path = Path::from("games".to_string());
     path.ensure()?;
@@ -44,14 +68,14 @@ fn get_game_path(_game: &Game) -> ExternResult<Path> {
 }
 
 #[hdk_extern]
-pub fn create_game(game: Game) -> ExternResult<CreateGameOutput> {
+pub fn create_game(game: Game) -> ExternResult<CreateOutput> {
 
     let header_hash = create_entry(&game)?;
     let hash: EntryHash = hash_entry(&game)?;
     let path = get_game_path(&game)?;
     create_link(path.path_entry_hash()?, hash.clone(), ())?;
 
-    Ok(CreateGameOutput{
+    Ok(CreateOutput{
         header_hash: header_hash.into(),
         entry_hash: hash.into()
     })
@@ -132,4 +156,58 @@ fn get_game(game_entry_hash: EntryHashB64) -> ExternResult<GameOutput> {
         None => None,
     };
     Ok(maybe_output.ok_or(WasmError::Guest("Game not found".into()))?)
+}
+
+#[hdk_extern]
+pub fn create_comment(input: CommentInput) -> ExternResult<CreateOutput> {
+    let comment = Comment{comment: input.comment};
+    let header_hash = create_entry(&comment)?;
+    let hash: EntryHash = hash_entry(&comment)?;
+    create_link(input.entry_hash.into(), hash.clone(), LinkTag::new("comment"))?;
+
+    Ok(CreateOutput{
+        header_hash: header_hash.into(),
+        entry_hash: hash.into()
+    })
+}
+
+fn comment_from_details(details: Details) -> ExternResult<Option<CommentOutput>> {
+    match details {
+        Details::Entry(EntryDetails { entry, headers, .. }) => {
+            let comment: Comment = entry.try_into()?;
+            let hash = hash_entry(&comment)?;
+            let header = headers[0].clone();
+            Ok(Some(CommentOutput {
+                entry_hash: hash.into(),
+                header_hash: header.as_hash().clone().into(),
+                comment: comment.comment, 
+                agent: header.header().author().clone().into(),
+                timestamp: header.header().timestamp(),
+            }))
+        }
+        _ => Ok(None),
+    }
+} 
+fn get_comments_inner(base: EntryHash, maybe_tag: Option<LinkTag>) -> ExternResult<Vec<CommentOutput>> {
+    let links = get_links(base, maybe_tag)?;
+
+    let get_input = links
+        .into_iter()
+        .map(|link| GetInput::new(link.target.into(), GetOptions::default()))
+        .collect();
+
+    let game_elements = HDK.with(|hdk| hdk.borrow().get_details(get_input))?;
+
+    let games: Vec<CommentOutput> = game_elements
+        .into_iter()
+        .filter_map(|me| me)
+        .filter_map(|details| comment_from_details(details).ok()?)
+        .collect();
+    Ok(games)
+}
+
+#[hdk_extern]
+pub fn get_comments(entry_hash: EntryHashB64) -> ExternResult<Vec<CommentOutput>> {
+
+    get_comments_inner(entry_hash.into(), Some(LinkTag::new("comment")))
 }

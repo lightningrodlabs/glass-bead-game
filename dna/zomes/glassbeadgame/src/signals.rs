@@ -5,7 +5,7 @@ use crate::game::*;
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
 #[serde(tag = "type", content = "content")]
 pub enum Message {
-    NewAttestation(Attestation),
+    NewAttestation(),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -18,7 +18,7 @@ pub struct SignalPayload {
 impl SignalPayload {
     pub fn new(game_hash: EntryHashB64, message: Message) -> Self {
         SignalPayload {
-            attestation_hash,
+            game_hash,
             message,
         }
     }
