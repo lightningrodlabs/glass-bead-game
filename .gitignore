@@ -8,3 +8,4 @@ dna/workdir/happ/*.happ
 node_modules/
 package-lock.json
 target/
+node_modules
