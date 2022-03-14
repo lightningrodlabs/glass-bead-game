@@ -6,6 +6,7 @@ entry_defs![
     PathEntry::entry_def(),
     Anchor::entry_def(),
     game::Comment::entry_def(),
+    game::Bead::entry_def(),
     game::Game::entry_def()
     ];
 

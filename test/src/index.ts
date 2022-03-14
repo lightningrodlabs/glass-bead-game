@@ -128,6 +128,25 @@ orchestrator.registerScenario(
     t.equals(comments[0].headerHash,comment1.headerHash)
     t.equals(comments[0].comment,"comment1")
 
+    let bead1 = {content: "bead", index: 1}
+    let create_bead1 = await alice_common.cells[0].call(
+      "glassbeadgame",
+      "create_bead",
+      { 
+        entryHash: game_output.entryHash,
+        bead: bead1
+      }
+    );
+    let beads = await alice_common.cells[0].call(
+      "glassbeadgame",
+      "get_beads",
+      game_output.entryHash
+    );
+    console.log("beads", beads)
+    t.equals(beads[0].entryHash,create_bead1.entryHash)
+    t.equals(beads[0].headerHash,create_bead1.headerHash)
+    t.deepEquals(beads[0].bead, bead1)
+
   }
 );
 orchestrator.run();
