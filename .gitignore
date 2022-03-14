@@ -1,0 +1,10 @@
+.DS_Store
+
+.cargo/
+.hc
+Cargo.lock
+dna/workdir/dna/*.dna
+dna/workdir/happ/*.happ
+node_modules/
+package-lock.json
+target/
