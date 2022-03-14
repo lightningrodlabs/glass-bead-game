@@ -1,5 +1,5 @@
 pub use hdk::prelude::*;
-use hdk::prelude::holo_hash::{EntryHashB64, HeaderHashB64, AgentPubKeyB64};
+use hdk::prelude::{holo_hash::{EntryHashB64, HeaderHashB64, AgentPubKeyB64}};
 
 #[hdk_entry(id = "game")]
 #[derive(Clone)]
@@ -133,15 +133,15 @@ fn get_games_inner(base: EntryHash, maybe_tag: Option<LinkTag>) -> ExternResult<
     Ok(games)
 }
 
-// fn get_game(game_entry_hash: EntryHashB64) -> ExternResult<Room> {
-//     let element: Element = get(link.target, GetOptions::default())?
-//         .ok_or(WasmError::Guest(String::from("Entry not found")))?;
-//     let entry_option: Option<Room> = element.entry().to_app_option()?;
-//     let entry: Room =
-//         entry_option.ok_or(WasmError::Guest("The targeted entry is not a user".into()))?;
-
-//     Ok(entry)
-// }
+#[hdk_extern]
+fn get_game(game_entry_hash: EntryHashB64) -> ExternResult<GameOutput> {
+    let entry_hash: EntryHash = game_entry_hash.into();
+    let maybe_output = match get_details(entry_hash,GetOptions::default())? {
+        Some(details) => game_from_details(details)?,
+        None => None,
+    };
+    Ok(maybe_output.ok_or(WasmError::Guest("Game not found".into()))?)
+}
 
 #[hdk_extern]
 pub fn receive_notification(input: NotificationInput) -> ExternResult<()> {

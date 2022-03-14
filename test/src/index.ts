@@ -47,13 +47,23 @@ orchestrator.registerScenario(
       interval_duration: 0,
     }
 
-    let game_output = await alice_common.cells[0].call(
+    let create_game_output = await alice_common.cells[0].call(
       "glassbeadgame",
       "create_game",
       game1,
     );
-    console.log(game_output);
+    console.log(create_game_output);
+    t.ok(create_game_output);
+    
+    let game_output = await alice_common.cells[0].call(
+      "glassbeadgame",
+      "get_game",
+      create_game_output.entry_hash
+    );
     t.ok(game_output);
+    t.deepEquals(game_output.game, game1)
+    t.equals(game_output.entry_hash, create_game_output.entry_hash)
+    t.equals(game_output.header_hash, create_game_output.header_hash)
 
     let games = await alice_common.cells[0].call(
       "glassbeadgame",
