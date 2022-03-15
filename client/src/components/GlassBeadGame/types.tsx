@@ -10,8 +10,13 @@ export type Signal =
 
 export interface Game {
     topic : string,
+    topicGroup: string,
+    topicImageUrl: string,
+    backgroundVideoUrl: string,
+    backgroundVideoStartTime: number,
     locked: boolean,
     introDuration: number,
+    outroDuration: number,
     numberOfTurns: number,
     moveDuration: number,
     intervalDuration: number,

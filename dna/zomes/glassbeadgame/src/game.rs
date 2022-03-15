@@ -6,8 +6,13 @@ use hdk::prelude::{holo_hash::{EntryHashB64, HeaderHashB64, AgentPubKeyB64}};
 #[serde(rename_all = "camelCase")]
 pub struct Game {
     pub topic : String,
+    pub topic_group: String,
+    pub topic_image_url: String,
+    pub background_video_url: String,
+    pub background_video_start_time: usize,
     pub locked: bool,
     pub intro_duration: usize,
+    pub outro_duration: usize,
     pub number_of_turns: usize,
     pub move_duration: usize,
     pub interval_duration: usize,
