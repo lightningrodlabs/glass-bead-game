@@ -150,7 +150,7 @@ fn game_from_details(details: Details) -> ExternResult<Option<GameOutput>> {
                 entry_hash: hash.into(),
                 header_hash: header.as_hash().clone().into(),
                 game, 
-                created_by: header.header().author().clone().into(),
+                author: header.header().author().clone().into(),
             }))
         }
         _ => Ok(None),
