@@ -33,7 +33,7 @@ pub struct GameOutput {
     pub header_hash: HeaderHashB64,
     pub entry_hash: EntryHashB64,
     pub game: Game,
-    pub created_by: AgentPubKeyB64,
+    pub author: AgentPubKeyB64,
 }
 
 
