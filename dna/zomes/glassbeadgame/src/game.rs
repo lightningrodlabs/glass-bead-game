@@ -105,7 +105,7 @@ pub fn create_game(game: Game) -> ExternResult<CreateOutput> {
     let header_hash = create_entry(&game)?;
     let hash: EntryHash = hash_entry(&game)?;
     let path = get_game_path(&game)?;
-    create_link(path.path_entry_hash()?, hash.clone(), ())?;
+    create_link(path.path_entry_hash()?, hash.clone(), HdkLinkType::Any, ())?;
 
     Ok(CreateOutput{
         header_hash: header_hash.into(),
@@ -115,7 +115,7 @@ pub fn create_game(game: Game) -> ExternResult<CreateOutput> {
 
 #[hdk_extern]
 pub fn join_game(input: JoinGameInput) -> ExternResult<HeaderHashB64> {
-    let header_hash = create_link(input.entry_hash.into(),AgentPubKey::from(input.agent).into(),  ())?;
+    let header_hash = create_link(input.entry_hash.into(),AgentPubKey::from(input.agent).into(), HdkLinkType::Any, ())?;
     Ok(header_hash.into())
 }
 
@@ -195,7 +195,7 @@ pub fn create_comment(input: CommentInput) -> ExternResult<CreateOutput> {
     let comment = Comment{comment: input.comment};
     let header_hash = create_entry(&comment)?;
     let hash: EntryHash = hash_entry(&comment)?;
-    create_link(input.entry_hash.into(), hash.clone(), LinkTag::new("comment"))?;
+    create_link(input.entry_hash.into(), hash.clone(), HdkLinkType::Any, LinkTag::new("comment"))?;
 
     Ok(CreateOutput{
         header_hash: header_hash.into(),
@@ -249,7 +249,7 @@ pub fn get_comments(entry_hash: EntryHashB64) -> ExternResult<Vec<CommentOutput>
 pub fn create_bead(input: BeadInput) -> ExternResult<CreateOutput> {
     let header_hash = create_entry(&input.bead)?;
     let hash: EntryHash = hash_entry(&input.bead)?;
-    create_link(input.entry_hash.into(), hash.clone(), LinkTag::new("bead"))?;
+    create_link(input.entry_hash.into(), hash.clone(), HdkLinkType::Any, LinkTag::new("bead"))?;
 
     Ok(CreateOutput{
         header_hash: header_hash.into(),

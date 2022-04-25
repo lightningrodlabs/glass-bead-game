@@ -39,13 +39,38 @@ import { ReactComponent as LockIconSVG } from '../../svgs/lock-solid.svg'
 import { ReactComponent as PlayIconSVG } from '../../svgs/play-solid.svg'
 import { ReactComponent as PauseIconSVG } from '../../svgs/pause-solid.svg'
 
+const wecBackend = {
+    get: function(postId) => {
+        axion
+    }
+}
+
+const hcBackend = {
+    get: function(postId) => GetResult {
+        zome
+    }
+}
+
 const gameDefaults = {
-    gameId: null,
-    topic: null,
-    locked: true,
-    introDuration: 30,
-    numberOfTurns: 3,
-    moveDuration: 60,
+    gameId: null,{
+        console.log('GET glass-bead-game-data?postId= response plz:', res.data)
+        setGameData({
+            gameId: res.data.id,
+            topic: res.data.topic,
+            locked: res.data.locked,
+            numberOfTurns: res.data.numberOfTurns,
+            moveDuration: res.data.moveDuration,
+            introDuration: res.data.introDuration,
+            intervalDuration: res.data.intervalDuration,
+        })
+        setComments(res.data.GlassBeadGameComments)
+        scrollToLatestComment()
+        setBeads(res.data.GlassBeads)
+        res.data.GlassBeads.forEach((bead) => {
+            d3.select(`#bead-${bead.index}`).select('audio').attr('src', bead.beadUrl)
+        })
+        // todo: callback or embed in main useEffect?
+    }
     intervalDuration: 0,
 }
 
@@ -73,6 +98,8 @@ const GlassBeadGame = (): JSX.Element => {
     } = useContext(AccountContext)
     const { postData } = useContext(PostContext)
 
+    const backend = ....
+
     const [gameData, setGameData] = useState<any>(gameDefaults)
     const [gameInProgress, setGameInProgress] = useState(false)
     const [userIsStreaming, setUserIsStreaming] = useState(false)
@@ -80,10 +107,25 @@ const GlassBeadGame = (): JSX.Element => {
     const [gameSettingsModalOpen, setGameSettingsModalOpen] = useState(false)
     const [beads, setBeads] = useState<any[]>([])
     const [comments, setComments] = useState<any[]>([])
-    const [showComments, setShowComments] = useState(true)
-    const [newComment, setNewComment] = useState('')
-    const [audioTrackEnabled, setAudioTrackEnabled] = useState(false)
-    const [videoTrackEnabled, setVideoTrackEnabled] = useState(false)
+    const [showComments, setShowComments] = useState(true){
+        console.log('GET glass-bead-game-data?postId= response plz:', res.data)
+        setGameData({
+            gameId: res.data.id,
+            topic: res.data.topic,
+            locked: res.data.locked,
+            numberOfTurns: res.data.numberOfTurns,
+            moveDuration: res.data.moveDuration,
+            introDuration: res.data.introDuration,
+            intervalDuration: res.data.intervalDuration,
+        })
+        setComments(res.data.GlassBeadGameComments)
+        scrollToLatestComment()
+        setBeads(res.data.GlassBeads)
+        res.data.GlassBeads.forEach((bead) => {
+            d3.select(`#bead-${bead.index}`).select('audio').attr('src', bead.beadUrl)
+        })
+        // todo: callback or embed in main useEffect?
+    }
     const [audioOnly, setAudioOnly] = useState(false)
     const [turn, setTurn] = useState(0)
     const [move, setMove] = useState(0)
@@ -158,6 +200,10 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function getGameData() {
+        backend.get(postData.id, (res)=>{
+
+        })        
+
         axios.get(`${config.apiURL}/glass-bead-game-data?postId=${postData.id}`).then((res) => {
             console.log('GET glass-bead-game-data?postId= response plz:', res.data)
             setGameData({
