@@ -1,6 +1,23 @@
-# Getting Started with Create React App
+# Glass Bead Game
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Development Mode
+
+### Install
+
+After cloning the repo don't forget to:
+
+```
+npm install
+```
+
+### Running the DNAs Tryorama tests
+
+```
+npm run test
+```
+
+
+# Stuff from the react readme:
 
 ## Available Scripts
 
