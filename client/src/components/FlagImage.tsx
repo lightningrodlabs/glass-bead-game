@@ -1,6 +1,6 @@
 import React, { useContext } from 'react'
 import ImageFade from './ImageFade'
-import { AccountContext } from '../contexts/AccountContext'
+//import { AccountContext } from '../contexts/AccountContext'
 import styles from '../styles/components/FlagImage.module.scss'
 
 import { ReactComponent as UserIconSVG } from '../svgs/user-solid.svg'
@@ -17,7 +17,7 @@ const FlagImage = (props: {
     canEdit?: boolean
 }): JSX.Element => {
     const { size, type, imagePath, outline, shadow, fade, canEdit } = props
-    const { setImageUploadType, setImageUploadModalOpen } = useContext(AccountContext)
+    //const { setImageUploadType, setImageUploadModalOpen } = useContext(AccountContext)
 
     let iconSVG: JSX.Element
     let iconWidth: string
@@ -35,8 +35,8 @@ const FlagImage = (props: {
     }
 
     function handleClick() {
-        setImageUploadType(type === 'space' ? 'holon-flag-image' : 'user-flag-image')
-        setImageUploadModalOpen(true)
+        // setImageUploadType(type === 'space' ? 'holon-flag-image' : 'user-flag-image')
+        // setImageUploadModalOpen(true)
     }
 
     const Placeholder = (): JSX.Element => {

@@ -215,7 +215,7 @@ const GameSettingsModal: FC<GameSettingsModalProps> = (props) => {
                     {!saved && (
                         <Button
                             text='Start game'
-                            colour='blue'
+                            color='blue'
                             disabled={loading || saved}
                             submit
                         />

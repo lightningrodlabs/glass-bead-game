@@ -1,0 +1,50 @@
+@import '../../Variables';
+
+@keyframes fadeInOpacity {
+	0% { opacity: 0 }
+	100% { opacity: 1 }
+}
+
+.bead {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    background-color: white;
+    box-shadow: 0 1px 10px 0 rgba(10, 8, 72, 0.15);
+    border-radius: 10px;
+    padding: 10px;
+    opacity: 1;
+    animation-name: fadeInOpacity;
+    animation-timing-function: ease-in;
+    animation-duration: 1s;
+    flex-shrink: 0;
+    transition: box-shadow 1s;
+
+    &.focused {
+        box-shadow: 0 1px 15px 0 rgba(56, 111, 212, 0.5);
+    }
+
+    .centerPanel {
+        width: 100%;
+        height: calc(100% - 50px);
+        position: relative;
+        > img {
+            width: auto;
+            height: 100%;
+        }
+
+        .playButton {
+            all: unset;
+            cursor: pointer;
+            display: flex;
+            width: 26px;
+            height: 26px;
+            color: $blue5;
+            margin-right: 5px;
+            flex-shrink: 0;
+            position: absolute;
+            top: calc(50% - 13px);
+            left: calc(50% - 13px);
+        }
+    }
+}

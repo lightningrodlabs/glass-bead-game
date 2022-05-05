@@ -15,7 +15,8 @@ const defaultUser: UserWithCredential = {
         id: 1,
         handle: 'jamesbond',
         name: 'James Bond',
-        createdAt: (new Date()).toString()
+        createdAt: (new Date()).toString(),
+        flagImagePath: 'path'
     }
 }
 
@@ -59,7 +60,8 @@ export const signup = async (username: string, name: string, password: string) =
             id: Date.now(),
             handle: username,
             name,
-            createdAt: (new Date()).toString()
+            createdAt: (new Date()).toString(),
+            flagImagePath: "img"
         }
     }
     const allUsers = getStorageItem<UserWithCredential[]>(USERS) || []

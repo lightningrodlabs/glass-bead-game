@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { AccountContext } from '../contexts/AccountContext'
+//import { AccountContext } from '../contexts/AccountContext'
 import styles from '../styles/components/NavBar.module.scss'
 import config from '../Config'
 import FlagImage from './FlagImage'
@@ -9,13 +9,13 @@ import FlagImage from './FlagImage'
 import Button from './Button'
 
 const NavBar = (): JSX.Element => {
-    const {
-        loggedIn,
-        accountData,
-        setLogInModalOpen,
-        navBarDropDownModalOpen,
-        setNavBarDropDownModalOpen,
-    } = useContext(AccountContext)
+    // const {
+    //     loggedIn,
+    //     accountData,
+    //     setLogInModalOpen,
+    //     navBarDropDownModalOpen,
+    //     setNavBarDropDownModalOpen,
+    // } = useContext(AccountContext)
     // const { fullScreen, setFullScreen } = useContext(SpaceContext)
 
     const [selectedNavBarItem, setSelectedNavBarItem] = useState('')
@@ -47,7 +47,7 @@ const NavBar = (): JSX.Element => {
                     <div className={styles.navBarText}>Games</div>
                 </Link>
             </div>
-            {loggedIn ? (
+            {/* {loggedIn ? (
                 <div className={styles.accountButtons}>
                     <button
                         type='button'
@@ -59,7 +59,7 @@ const NavBar = (): JSX.Element => {
                 </div>
             ) : (
                 <Button text='Log in' colour='blue' onClick={() => setLogInModalOpen(true)} />
-            )}
+            )} */}
         </div>
     )
 }

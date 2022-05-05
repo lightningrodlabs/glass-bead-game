@@ -13,8 +13,6 @@ import reportWebVitals from './reportWebVitals';
 import Modals from './components/Modals';
 import NavBar from './components/NavBar';
 
-import AccountContextProvider from './contexts/AccountContext'
-
 import Home from './Home';
 import About from './About';
 
@@ -22,25 +20,26 @@ import config from './Config'
 
 import './index.css';
 
-ReactDOM.render(
-  <React.StrictMode>
-    <>
-      <BrowserRouter>
-        <AccountContextProvider>
-          <GoogleReCaptchaProvider reCaptchaKey={config.recaptchaSiteKey}>
-            <NavBar />
-            <Modals />
-            <Routes>
-              <Route path="/" element={<Home/>} />
-              <Route path="/about" element={<About/>} />
-            </Routes>
-          </GoogleReCaptchaProvider>
-        </AccountContextProvider>
-      </BrowserRouter>
-    </>
-  </React.StrictMode>,
-  document.getElementById('root')
-);
+// TODO: maybe this isn't necessary for GBG as standalone app and we could call into a weco library to do this if we are in that context?
+// ReactDOM.render(
+//   <React.StrictMode>
+//     <>
+//       <BrowserRouter>
+//         <AccountContextProvider>
+//           <GoogleReCaptchaProvider reCaptchaKey={config.recaptchaSiteKey}>
+//             <NavBar />
+//             <Modals />
+//             <Routes>
+//               <Route path="/" element={<Home/>} />
+//               <Route path="/about" element={<About/>} />
+//             </Routes>
+//           </GoogleReCaptchaProvider>
+//         </AccountContextProvider>
+//       </BrowserRouter>
+//     </>
+//   </React.StrictMode>,
+//   document.getElementById('root')
+// );
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
