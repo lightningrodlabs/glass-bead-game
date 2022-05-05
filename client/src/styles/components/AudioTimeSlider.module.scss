@@ -1,0 +1,73 @@
+@import '../Variables';
+
+.wrapper {
+    width: 100%;
+    
+    .slider {
+        position: relative;
+        height: 20px;
+
+        .progressBar, .progressBarBackground, .bufferedAmount {
+            display: flex;
+            position: absolute;
+            top: 8px;
+            height: 4px;
+            border-radius: 2px;
+            pointer-events: none;
+        }
+
+        .progressBar {
+            background-color: #98d1f5;
+        }
+
+        .progressBarBackground {
+            width: 100%;
+            background-color: $grey2;
+        }
+
+        .bufferedAmount {
+            background-color: $grey3;
+        }
+
+        .thumb {
+            position: absolute;
+            top: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: $blue5;
+            pointer-events: none;
+        }
+
+        > input {
+            width: 100%;
+            height: 16px;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        > input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            opacity: 0;
+        }
+
+        > input::-moz-range-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            opacity: 0;
+        }
+    }
+
+    .times {
+        height: 10px;
+        flex-shrink: 0;
+        > p {
+            font-size: 8px;
+        }
+    }
+}

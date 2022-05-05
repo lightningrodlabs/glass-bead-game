@@ -1,0 +1,46 @@
+@import '../../Variables';
+
+.imagePreview {
+    object-fit: cover;
+    margin-bottom: 20px;
+    &.circle {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+    }
+    &.square {
+        width: 230px;
+        height: 230px;
+    }
+    &.rectangle {
+        width: 500px;
+        height: 150px;
+    }
+}
+
+.fileUploadInput {
+    margin-bottom: 20px;
+    label {
+        height: 40px;
+        border-radius: 20px;
+        padding: 0px 20px;
+        font-size: 14px;
+        border: none;
+        outline: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition-property: background-color, filter, color;
+        transition-duration: 0.3s;
+        flex-shrink: 0;
+        background-color: $aqua;
+        color: white;
+        &:hover {
+            &:not(.disabled) {
+                cursor: pointer;
+                filter: brightness(110%);
+                &.grey { filter: brightness(96%) }
+            }
+        }
+    }
+}

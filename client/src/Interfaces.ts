@@ -58,11 +58,12 @@ export interface IUser {
     id: number
     handle: string
     name: string
+    flagImagePath: string
     createdAt: string
-    // total_posts: number
+    //totalPosts: number
     // includes
-    // FollowedHolons: Partial<ISpace[]>
-    // ModeratedHolons: Partial<ISpace[]>
+    //FollowedHolons: Partial<ISpace[]>
+    //ModeratedHolons: Partial<ISpace[]>
 }
 
 export interface IComment {
