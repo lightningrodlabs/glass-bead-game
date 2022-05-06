@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useHistory } from 'react-router-dom'
 import styles from '@styles/pages/GamesPage.module.scss'
 import Column from '@components/Column'
 import Row from '@components/Row'
@@ -36,10 +37,7 @@ const sampleGames = [
 
 const GamesPage = (): JSX.Element => {
     const [games, setGames] = useState<any[]>(sampleGames)
-
-    function openGame(gameId) {
-        console.log('Open game: ', gameId)
-    }
+    const history = useHistory()
 
     useEffect(() => {
         console.log('Get games!')
@@ -57,7 +55,7 @@ const GamesPage = (): JSX.Element => {
                         <p>Id: {game.id}</p>
                         <p>Topic: {game.topic}</p>
                     </Column>
-                    <Button color='blue' text='Open game' onClick={() => openGame(game.id)} />
+                    <Button color='blue' text='Open game' onClick={() => history.push(`/game/${game.id}`)} />
                 </Row>
             ))}
         </Column>

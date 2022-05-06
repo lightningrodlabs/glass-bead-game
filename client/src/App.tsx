@@ -5,6 +5,7 @@ import styles from '@styles/App.module.scss'
 import Row from '@components/Row'
 import HomePage from '@pages/HomePage'
 import GamesPage from '@pages/GamesPage'
+import GamePage from '@pages/GamePage'
 
 const App = (): JSX.Element => {
     return (
@@ -21,6 +22,7 @@ const App = (): JSX.Element => {
                 <Switch>
                     <Route path='/' exact component={HomePage} />
                     <Route path='/games' exact component={GamesPage} />
+                    <Route path='/game/:gameId' component={GamePage} />
                 </Switch>
             </BrowserRouter>
         </div>
