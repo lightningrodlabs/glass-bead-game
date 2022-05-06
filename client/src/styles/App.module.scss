@@ -1,15 +1,18 @@
 @import '@styles/Variables';
 
 .wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    overflow: hidden;
+    width: 100%;
+    height: 100vh;
+    background-color: $black3;
 
-    .sidebarSmallWrapper {
-        position: fixed;
-        left: 0;
-        top: $navbarHeight;
-        height: 100%; // calc(100vh - $navbarHeight);
+    .navbar {
+        width: 100%;
+        height: 60px;
+        background-color: $black2;
+
+        p {
+            color: white;
+            padding: 20px;
+        }
     }
 }
