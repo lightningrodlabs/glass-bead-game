@@ -10,8 +10,18 @@ import LoadingWheel from '@components/LoadingWheel'
 import SuccessMessage from '@components/SuccessMessage'
 
 const Homepage = (): JSX.Element => {
-    const [creatGameModalOpen, setCreateGameModalOpen] = useState(false)
+    const [createGameModalOpen, setCreateGameModalOpen] = useState(false)
     const [formData, setFormData] = useState({
+        topic: {
+            value: '',
+            validate: (v) => {
+                const errors: string[] = []
+                if (!v) errors.push('Required')
+                if (v.length > 500) errors.push('Must be less than 500 characters')
+                return errors
+            },
+            ...defaultErrorState,
+        },
         introDuration: {
             value: 0,
             validate: (v) => (v < 10 || v > 300 ? ['Must be between 10 seconds and 5 mins'] : []),
@@ -40,23 +50,26 @@ const Homepage = (): JSX.Element => {
     })
     const [loading, setLoading] = useState(false)
     const [saved, setSaved] = useState(false)
-    const { introDuration, numberOfTurns, moveDuration, intervalDuration, outroDuration } = formData
+    const { topic, introDuration, numberOfTurns, moveDuration, intervalDuration, outroDuration } = formData
 
     function updateValue(name, value) {
         setFormData({ ...formData, [name]: { ...formData[name], value, state: 'default' } })
     }
 
-    function saveSettings(e) {
+    function saveGame(e) {
         e.preventDefault()
         if (allValid(formData, setFormData)) {
             setLoading(true)
             const data = {
+                locked: true,
+                topic: topic.value,
                 numberOfTurns: numberOfTurns.value,
                 moveDuration: moveDuration.value,
                 introDuration: introDuration.value,
                 intervalDuration: intervalDuration.value,
                 outroDuration: outroDuration.value,
             }
+            console.log('Save game data in backend: ', data)
             // backendShim
             //     .saveGameSettings(data)
             //     .then(() => {
@@ -71,11 +84,21 @@ const Homepage = (): JSX.Element => {
     return (
         <Column centerX centerY className={styles.wrapper}>
             <Button color='blue' text='Create game' onClick={() => setCreateGameModalOpen(true)} />
-            {creatGameModalOpen && (
+            {createGameModalOpen && (
                 <Modal centered close={() => setCreateGameModalOpen(false)}>
                     <h1>Create a new Glass Bead Game</h1>
-                    <form onSubmit={saveSettings}>
+                    <form onSubmit={saveGame}>
                         <Column style={{ marginBottom: 20 }}>
+                            <Input
+                                title='Topic'
+                                type='text'
+                                style={{ marginBottom: 10 }}
+                                disabled={loading || saved}
+                                state={topic.state}
+                                errors={topic.errors}
+                                value={topic.value}
+                                onChange={(v) => updateValue('topic', v)}
+                            />
                             <Input
                                 title='Intro duration (seconds)'
                                 type='text'
