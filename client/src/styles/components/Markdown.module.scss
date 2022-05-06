@@ -1,4 +1,4 @@
-@import '../Colors.scss';
+@import '@styles/Variables';
 
 .markdown {
     position: relative;
@@ -10,6 +10,7 @@
     line-height: 25px;
     font-weight: 400;
     text-decoration: none;
+    overflow-wrap: break-word;
     // transition-property: color;
     // transition-duration: 2s;
     &.showFullText {

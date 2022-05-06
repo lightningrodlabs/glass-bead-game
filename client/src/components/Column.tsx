@@ -1,23 +1,27 @@
-import React, {FC} from 'react'
-import styles from '../styles/components/Column.module.scss'
+import React from 'react'
+import styles from '@styles/components/Column.module.scss'
 
-interface ColumnProps {
-    style?: any;
-    centerX?: boolean;
-    centerY?: boolean;
-    scroll?: boolean;
-}
+const Column = (props: {
+    children: any
+    style?: any
+    className?: any
+    id?: string
+    centerX?: boolean
+    centerY?: boolean
+    spaceBetween?: boolean
+    scroll?: boolean
+}): JSX.Element => {
+    const { children, style, className, id, centerX, centerY, spaceBetween, scroll } = props
 
-const Column: FC<ColumnProps> = (props) => {
-    const { children, style, centerX, centerY, scroll } = props
+    const classes = [styles.wrapper]
+    if (className) classes.unshift(className)
+    if (centerX) classes.push(styles.centerX)
+    if (centerY) classes.push(styles.centerY)
+    if (spaceBetween) classes.push(styles.spaceBetween)
+    if (scroll) classes.push(styles.scroll)
 
     return (
-        <div
-            className={`${styles.column} ${centerX && styles.centerX} ${
-                centerY && styles.centerY
-            } ${scroll && styles.scroll} hide-scrollbars`}
-            style={style}
-        >
+        <div className={classes.join(' ')} style={style} id={id}>
             {children}
         </div>
     )
@@ -25,8 +29,11 @@ const Column: FC<ColumnProps> = (props) => {
 
 Column.defaultProps = {
     style: null,
+    className: false,
+    id: null,
     centerX: false,
     centerY: false,
+    spaceBetween: false,
     scroll: false,
 }
 

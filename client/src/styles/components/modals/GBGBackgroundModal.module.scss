@@ -1,0 +1,41 @@
+@import '@styles/Variables';
+
+.imagePreview {
+    object-fit: cover;
+    margin-bottom: 20px;
+    width: 400px;
+    height: 225px;
+}
+
+.videoPreview {
+    width: 400px;
+    height: 225px;
+    border: none;
+    margin-bottom: 20px;
+}
+
+.fileUploadInput {
+    margin-bottom: 20px;
+    label {
+        height: 40px;
+        border-radius: 20px;
+        padding: 0px 20px;
+        border: none;
+        outline: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition-property: background-color, filter, color;
+        transition-duration: 0.3s;
+        flex-shrink: 0;
+        background-color: $aqua;
+        color: white;
+        &:hover {
+            &:not(.disabled) {
+                cursor: pointer;
+                filter: brightness(110%);
+                &.grey { filter: brightness(96%) }
+            }
+        }
+    }
+}

@@ -1,23 +1,23 @@
 import React from 'react'
-import LoadingWheel from './LoadingWheel'
-import styles from '../styles/components/Button.module.scss'
+import styles from '@styles/components/Button.module.scss'
+import LoadingWheel from '@components/LoadingWheel'
 
 const Button = (props: {
     text?: string
     icon?: JSX.Element
-    colour: string
-    size?: 'small' | 'medium' | 'large'
+    color: 'blue' | 'aqua' | 'red' | 'purple' | 'grey' | 'light-green'
+    size?: 'small' | 'medium' | 'medium-large' | 'large'
     style?: any
     disabled?: boolean
     loading?: boolean
     submit?: boolean
     onClick?: () => void
 }): JSX.Element => {
-    const { text, icon, colour, size, style, disabled, loading, submit, onClick } = props
+    const { text, icon, color, size, style, disabled, loading, submit, onClick } = props
 
     return (
         <button
-            className={`${styles.button} ${styles[colour]} ${styles[size || 'medium']} ${
+            className={`${styles.button} ${styles[color]} ${styles[size || 'large']} ${
                 (disabled || loading) && styles.disabled
             }`}
             style={style}
@@ -25,8 +25,8 @@ const Button = (props: {
             disabled={disabled || loading}
             onClick={onClick}
         >
-            {!!text && <p>{text}</p>}
             {!!icon && icon}
+            {!!text && <p>{text}</p>}
             {loading && <LoadingWheel size={25} />}
         </button>
     )
@@ -35,7 +35,7 @@ const Button = (props: {
 Button.defaultProps = {
     text: null,
     icon: null,
-    size: 'medium',
+    size: 'large',
     style: null,
     disabled: false,
     loading: false,
