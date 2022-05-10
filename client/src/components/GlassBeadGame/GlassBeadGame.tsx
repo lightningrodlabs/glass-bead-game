@@ -36,6 +36,7 @@ import Scrollbars from '../Scrollbars'
 import Markdown from '../Markdown'
 import GBGBackgroundModal from '../Modals/GBGBackgroundModal'
 import BeadCard from '../Cards/BeadCard'
+//import { GlassBeadGameService } from './glassbeadgame.service'
 import { ReactComponent as AudioIconSVG } from '../../svgs/microphone-solid.svg'
 import { ReactComponent as AudioSlashIconSVG } from '../../svgs/microphone-slash-solid.svg'
 import { ReactComponent as VideoIconSVG } from '../../svgs/video-solid.svg'
@@ -109,6 +110,8 @@ interface GameData {
     GlassBeads: Bead[]
 }
 
+//const gbgService:GlassBeadGameService = new GlassBeadGameService();
+
 const backendShim = {
     saveGameSettings: (data: GameSettingsData): Promise<void> =>
         axios.post(`${config.apiURL}/save-glass-bead-game-settings`, data),
@@ -125,6 +128,7 @@ const backendShim = {
         axios.post(`${config.apiURL}/save-gbg-topic`, { gameId, newTopic }),
     getGameData: (postId: number): Promise<{ data: GameData }> =>
         axios.get(`${config.apiURL}/glass-bead-game-data?postId=${postId}`),
+        //gbgService.getGame(number)
 }
 
 const gameDefaults = {
@@ -2050,3 +2054,4 @@ export default GlassBeadGame
 // })
 
 // peer._debug = console.log
+console.log('styles: ', styles)
