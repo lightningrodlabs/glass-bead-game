@@ -1,0 +1,15 @@
+@import '@styles/Variables';
+
+.wrapper {
+    width: 100%;
+    height: calc(100% - 60px);
+
+    .game {
+        width: 300px;
+        height: 80px;
+        background-color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+}

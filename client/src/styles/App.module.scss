@@ -1,0 +1,18 @@
+@import '@styles/Variables';
+
+.wrapper {
+    width: 100%;
+    height: 100vh;
+    background-color: $black3;
+
+    .navbar {
+        width: 100%;
+        height: 60px;
+        background-color: $black2;
+
+        p {
+            color: white;
+            padding: 20px;
+        }
+    }
+}

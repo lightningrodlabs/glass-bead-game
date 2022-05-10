@@ -1,5 +1,5 @@
 import React from 'react'
-import styles from '../styles/components/Column.module.scss'
+import styles from '@styles/components/Column.module.scss'
 
 const Column = (props: {
     children: any

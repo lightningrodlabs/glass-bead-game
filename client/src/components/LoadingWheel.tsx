@@ -1,6 +1,6 @@
 import React from 'react'
-import styles from '../styles/components/LoadingWheel.module.scss'
-import { ReactComponent as LoadingWheelIconSVG } from '../svgs/spinner.svg'
+import styles from '@styles/components/LoadingWheel.module.scss'
+import { ReactComponent as LoadingWheelIconSVG } from '@svgs/spinner.svg'
 
 const LoadingWheel = (props: { size?: number }): JSX.Element => {
     const { size } = props

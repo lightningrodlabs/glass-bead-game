@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import gfm from 'remark-gfm'
 import { v4 as uuidv4 } from 'uuid'
-import styles from '../styles/components/Markdown.module.scss'
+import styles from '@styles/components/Markdown.module.scss'
 
 const Markdown = (props: { text: string; style?: any }): JSX.Element => {
     const { text, style } = props

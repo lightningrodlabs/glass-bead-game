@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 import axios from 'axios'
 import Cookies from 'universal-cookie'
-import styles from '../../styles/components/modals/GBGBackgroundModal.module.scss'
-import config from '../../Config'
-import Button from '../Button'
-import Modal from '../Modal'
-import Row from '../Row'
-import Input from '../Input'
+import styles from '@styles/components/modals/GBGBackgroundModal.module.scss'
+import config from '@src/Config'
+import Button from '@components/Button'
+import Modal from '@components/Modal'
+import Row from '@components/Row'
+import Input from '@components/Input'
 
 const GBGBackgroundModal = (props: {
     gameData: any
