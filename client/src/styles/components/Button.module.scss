@@ -1,8 +1,6 @@
-@import './../Colors.scss';
+@import '@styles/Variables';
 
 .button {
-    // font-size: 14px;
-    // height: 40px;
     border-radius: 20px;
     padding: 0px 20px;
     border: none;
@@ -12,6 +10,7 @@
     align-items: center;
     transition-property: background-color, filter, color;
     transition-duration: 0.3s;
+    flex-shrink: 0;
     &:hover { // &:focus
         &:not(.disabled) {
             cursor: pointer;
@@ -24,7 +23,7 @@
         background-color: $blue5; //#51a6dc; //#3a88f0;
         color: white;
     }
-    &.green {
+    &.aqua {
         background-color: $aqua;//#00b178; //#17b35d;
         color: white;
     }
@@ -37,12 +36,28 @@
         color: $black2;
         > svg > path { fill: $grey6 }
     }
+    &.purple {
+        background-color: $purple1;
+        color: white;
+    }
+
     // sizes
     &.small {
-        font-size: 14px;
-        height: 30px;
+        font-size: 10px;
+        height: 20px;
+        padding: 0 10px;
     }
     &.medium {
+        font-size: 14px;
+        height: 30px;
+        padding: 0 15px;
+    }
+    &.medium-large {
+        font-size: 14px;
+        height: 35px;
+        padding: 0 15px;
+    }
+    &.large {
         font-size: 14px;
         height: 40px;
     }
@@ -54,6 +69,11 @@
     > svg {
         width: 20px;
         height: 20px;
+        &:not(:last-child) {
+            margin-right: 5px;
+            margin-left: -8px;
+            opacity: 0.5;
+        }
     }
     // loading wheel
     > div {

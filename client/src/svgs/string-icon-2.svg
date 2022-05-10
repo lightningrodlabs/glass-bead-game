@@ -1,0 +1,50 @@
+<svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="500"
+      height="500"
+      version="1.1"
+      viewBox="0 0 132.292 132.292"
+    >
+      <g>
+        <g
+          fill="none"
+          stroke="currentColor"
+          strokeDasharray="none"
+          strokeLinejoin="miter"
+          strokeMiterlimit="4"
+          strokeOpacity="1"
+          strokeWidth="6.35"
+          transform="translate(0 1.626)"
+        >
+          <rect
+            width="29.92"
+            height="29.92"
+            x="51.186"
+            y="49.559"
+            strokeLinecap="square"
+            rx="7.56"
+            ry="7.56"
+          ></rect>
+          <path strokeLinecap="butt" d="M33.823 64.52h17.182"></path>
+          <rect
+            width="29.92"
+            height="29.92"
+            x="3.561"
+            y="49.559"
+            strokeLinecap="square"
+            rx="7.56"
+            ry="7.56"
+          ></rect>
+          <rect
+            width="29.92"
+            height="29.92"
+            x="98.811"
+            y="49.559"
+            strokeLinecap="square"
+            rx="7.56"
+            ry="7.56"
+          ></rect>
+          <path strokeLinecap="butt" d="M81.448 64.52H98.63"></path>
+        </g>
+      </g>
+    </svg>

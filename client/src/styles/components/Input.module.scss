@@ -1,4 +1,4 @@
-@import './../Colors.scss';
+@import '@styles/Variables';
 // todo: import all component and page styles into one file and import colors there
 
 .wrapper {
@@ -46,8 +46,8 @@
             border: none;
             display: flex;
             align-items: center;
-            background-color: transparent;
-            -webkit-background-clip: text !important;
+            // background-color: transparent;
+            // -webkit-background-clip: text !important;
         }
         // input:-internal-autofill-selected {
         //     background-color: transparent !important;

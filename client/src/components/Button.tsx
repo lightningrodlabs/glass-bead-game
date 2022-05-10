@@ -1,6 +1,6 @@
 import React from 'react'
-import styles from '../styles/components/Button.module.scss'
-import LoadingWheel from '../components/LoadingWheel'
+import styles from '@styles/components/Button.module.scss'
+import LoadingWheel from '@components/LoadingWheel'
 
 const Button = (props: {
     text?: string

@@ -1,15 +1,14 @@
-import {FC} from 'react'
-import styles from '../styles/components/Modal.module.scss'
-import CloseOnClickOutside from './CloseOnClickOutside'
-import CloseButton from './CloseButton'
+import React from 'react'
+import styles from '@styles/components/Modal.module.scss'
+import CloseOnClickOutside from '@components/CloseOnClickOutside'
+import CloseButton from '@components/CloseButton'
 
-interface ModalProps {
-    close: () => void;
-    style?: any;
-    centered?: boolean;
-}
-
-const Modal: FC<ModalProps> = (props) => {
+const Modal = (props: {
+    close: () => void
+    children: any
+    style?: any
+    centered?: boolean
+}): JSX.Element => {
     const { close, children, style, centered } = props
     return (
         <div className={`${styles.background} hide-scrollbars`}>

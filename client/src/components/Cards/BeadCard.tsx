@@ -1,16 +1,14 @@
-// @ts-nocheck
 import React, { useContext, useState } from 'react'
 import * as d3 from 'd3'
-import styles from '../../styles/components/cards/BeadCard.module.scss'
-import colors from '../../styles/Colors.module.scss'
-//import { AccountContext } from '../../contexts/AccountContext'
-import ImageTitle from '../ImageTitle'
-import Column from '../Column'
-import Row from '../Row'
-import AudioVisualiser from '../AudioVisualiser'
-import AudioTimeSlider from '../AudioTimeSlider'
-import { ReactComponent as PlayIconSVG } from '../../svgs/play-solid.svg'
-import { ReactComponent as PauseIconSVG } from '../../svgs/pause-solid.svg'
+import styles from '@styles/components/cards/BeadCard.module.scss'
+import colors from '@styles/Colors.module.scss'
+import ImageTitle from '@components/ImageTitle'
+import Column from '@src/components/Column'
+import Row from '@src/components/Row'
+import AudioVisualiser from '@src/components/AudioVisualiser'
+import AudioTimeSlider from '@src/components/AudioTimeSlider'
+import { ReactComponent as PlayIconSVG } from '@svgs/play-solid.svg'
+import { ReactComponent as PauseIconSVG } from '@svgs/pause-solid.svg'
 
 const BeadCard = (props: {
     postId: number
@@ -21,7 +19,6 @@ const BeadCard = (props: {
     className?: string
 }): JSX.Element => {
     const { postId, location, index, bead, style, className } = props
-//    const { accountData } = useContext(AccountContext)
     const [audioPlaying, setAudioPlaying] = useState(false)
     const audioId = `gbg-bead-audio-${postId}-${index}-${location}`
 

@@ -1,4 +1,4 @@
-@use '../Colors.scss';
+@import '@styles/Variables';
 
 .closeButton {
     border: none;
@@ -8,7 +8,5 @@
     cursor: pointer;
     color: #d6d8db; //$grey4;
     transition: color 1s;
-    &:hover {
-        color: #c0c4c9;
-    }
+    &:hover { color: #c0c4c9 }
 }
