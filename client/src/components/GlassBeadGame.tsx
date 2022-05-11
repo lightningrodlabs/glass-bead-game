@@ -22,6 +22,7 @@ import {
     allValid,
     defaultErrorState,
 } from '@src/Helpers'
+import { GameSettingsData, GameData, Comment, NewCommentData, Bead } from '@components/GameTypes'
 import FlagImage from '@components/FlagImage'
 import Modal from '@components/Modal'
 import ImageUploadModal from '@components/modals/ImageUploadModal'
@@ -36,7 +37,7 @@ import Scrollbars from '@components/Scrollbars'
 import Markdown from '@components/Markdown'
 import GBGBackgroundModal from '@components/modals/GBGBackgroundModal'
 import BeadCard from '@src/components/Cards/BeadCard'
-//import { GlassBeadGameService } from './glassbeadgame.service'
+import { GlassBeadGameService } from '@components/glassbeadgame.service'
 import { ReactComponent as AudioIconSVG } from '@svgs/microphone-solid.svg'
 import { ReactComponent as AudioSlashIconSVG } from '@svgs/microphone-slash-solid.svg'
 import { ReactComponent as VideoIconSVG } from '@svgs/video-solid.svg'
@@ -51,84 +52,26 @@ import { ReactComponent as CurvedDNASVG } from '@svgs/curved-dna.svg'
 import { ReactComponent as CommentIconSVG } from '@svgs/comment-solid.svg'
 import { ReactComponent as CastaliaIconSVG } from '@svgs/castalia-logo.svg'
 
-interface GameSettingsData {
-    gameId: number
-    numberOfTurns: number
-    moveDuration: number
-    introDuration: number
-    intervalDuration: number
-    outroDuration: number
-    playerOrder: string // user id's seperated by commas ('25,2,109,38')
-}
-
-interface NewCommentData {
-    gameId: number
-    userId: number
-    text: string
-}
-
-interface Bead {
-    id: number
-    index: number
-    beadUrl: string
-    createdAt: Date
-    updatedAt: Date
-    user: {
-        handle: string
-        name: string
-        flagImagePath: string
-    }
-}
-
-interface Comment {
-    id: number
-    text: string
-    createdAt: Date
-    updatedAt: Date
-    user: {
-        handle: string
-        name: string
-        flagImagePath: string
-    }
-}
-
-interface GameData {
-    id: number
-    locked: boolean
-    intervalDuration: number | null
-    introDuration: number | null
-    moveDuration: number | null
-    numberOfTurns: number | null
-    outroDuration: number | null
-    topic: string
-    topicGroup: string | null
-    topicImage: string | null
-    backgroundImage: string | null
-    backgroundVideo: string | null
-    backgroundVideoStartTime: number | null
-    GlassBeadGameComments: Comment[]
-    GlassBeads: Bead[]
-}
-
-//const gbgService:GlassBeadGameService = new GlassBeadGameService();
+const gbgService:GlassBeadGameService = new GlassBeadGameService();
 
 const backendShim = {
     saveGameSettings: (data: GameSettingsData): Promise<void> =>
-        axios.post(`${config.apiURL}/save-glass-bead-game-settings`, data),
+        axios.post(`${config.apiURL}/save-glass-bead-game-settings`, data), // createGame(game: GameSettingsData): Promise<CreateOutput>
     saveComment: (data: NewCommentData): Promise<void> =>
-        axios.post(`${config.apiURL}/glass-bead-game-comment`, data),
+        axios.post(`${config.apiURL}/glass-bead-game-comment`, data), // createComment(input: Comment) 
     uploadBeadAudio: (formData: FormData): Promise<{ data: string }> =>
         // returns bead audio url
         axios.post(`${config.apiURL}/audio-upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
-        }),
+        }), // No Holochain API yet
     saveGame: (gameId: number, beads: Bead[]): Promise<void> =>
-        axios.post(`${config.apiURL}/save-glass-bead-game`, { gameId, beads }),
+        axios.post(`${config.apiURL}/save-glass-bead-game`, { gameId, beads }), // for each createBead(input: Bead): Promise<CreateOutput>
     updateTopic: (gameId: number, newTopic: string): Promise<void> =>
-        axios.post(`${config.apiURL}/save-gbg-topic`, { gameId, newTopic }),
-    getGameData: (postId: number): Promise<{ data: GameData }> =>
-        axios.get(`${config.apiURL}/glass-bead-game-data?postId=${postId}`),
-        //gbgService.getGame(number)
+        axios.post(`${config.apiURL}/save-gbg-topic`, { gameId, newTopic }), // No Holochain API yet
+    getGameData: (postId: number): Promise<{ data: GameData }> => {
+        axios.get(`${config.apiURL}/glass-bead-game-data?postId=${postId}`)
+        //gbgService.getGame(postId)
+    }
 }
 
 const gameDefaults = {
