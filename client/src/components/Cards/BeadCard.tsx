@@ -23,14 +23,14 @@ const BeadCard = (props: {
     const audioId = `gbg-bead-audio-${postId}-${index}-${location}`
 
     function toggleBeadAudio(beadIndex: number, reset?: boolean): void {
-        const beadAudio = d3.select(`#gbg-bead-audio-${postId}-${beadIndex}-${location}`).node()
+        const beadAudio = d3.select(`#gbg-bead-audio-${postId}-${beadIndex}-${location}`).node() as HTMLAudioElement
         if (beadAudio) {
             if (!beadAudio.paused) beadAudio.pause()
             else {
                 // pause all playing audio
                 d3.selectAll('audio')
                     .nodes()
-                    .forEach((node) => node.pause())
+                    .forEach((node: any) => node.pause())
                 // start selected bead
                 if (reset) beadAudio.currentTime = 0
                 beadAudio.play()
