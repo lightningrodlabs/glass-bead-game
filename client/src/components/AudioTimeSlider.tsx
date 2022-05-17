@@ -26,7 +26,7 @@ const AudioTimeSlider = (props: {
     }
 
     function updateSlider(e) {
-        const audio = d3.select(`#${audioElementId}`).node()
+        const audio = d3.select(`#${audioElementId}`).node() as HTMLAudioElement
         if (audio) {
             setSliderPercent(e.target.value)
             updateThumbOffset(e.target.value)
@@ -47,7 +47,7 @@ const AudioTimeSlider = (props: {
     }
 
     useEffect(() => {
-        const audio = d3.select(`#${audioElementId}`).node()
+        const audio = d3.select(`#${audioElementId}`).node() as HTMLAudioElement
         if (audio) {
             audio.crossOrigin = 'anonymous'
             audio.src = audioURL

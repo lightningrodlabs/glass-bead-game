@@ -26,7 +26,7 @@ const AudioVisualiser = (props: {
     const audioSource = useRef<MediaElementAudioSourceNode | null>(null)
 
     function drawStaticVisualisation(buffer) {
-        const visualiser = d3.select(`#${audioElementId}-visualiser`)
+        const visualiser = d3.select(`#${audioElementId}-visualiser`) as any
         if (visualiser.node()) {
             const { height, width } = visualiser.node().getBoundingClientRect()
             const maxBars = 8000
@@ -92,12 +92,12 @@ const AudioVisualiser = (props: {
 
     useEffect(() => {
         loadAudioForStaticVisualisation()
-        const audio = d3.select(`#${audioElementId}`)
+        const audio = d3.select(`#${audioElementId}`) as any
         if (audio.node()) {
-            const { height, width } = d3
+            const visualiser = d3
                 .select(`#${audioElementId}-visualiser`)
-                .node()
-                .getBoundingClientRect()
+                .node() as HTMLDivElement
+            const { height, width } = visualiser.getBoundingClientRect()
 
             audio.on('play.visualiser', () => {
                 const totalBars = Math.min(dynamicBars, 255)

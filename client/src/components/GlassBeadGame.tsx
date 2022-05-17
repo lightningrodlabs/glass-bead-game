@@ -3,6 +3,7 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import React, { useState, useEffect, useContext, useRef } from 'react'
+import { useHistory, useLocation } from 'react-router-dom'
 import { io } from 'socket.io-client'
 import axios from 'axios'
 import Peer from 'simple-peer'
@@ -22,7 +23,8 @@ import {
     allValid,
     defaultErrorState,
 } from '@src/Helpers'
-import { GameSettingsData, GameData, Comment, NewCommentData, Bead } from '@components/GameTypes'
+// todo: move this to another folder as not a component and update names to remove conflicts
+// import { GameSettingsData, GameData, Comment, NewCommentData, Bead } from '@components/GameTypes'
 import FlagImage from '@components/FlagImage'
 import Modal from '@components/Modal'
 import ImageUploadModal from '@components/Modals/ImageUploadModal'
@@ -37,7 +39,8 @@ import Scrollbars from '@components/Scrollbars'
 import Markdown from '@components/Markdown'
 import GBGBackgroundModal from '@components/Modals/GBGBackgroundModal'
 import BeadCard from '@src/components/Cards/BeadCard'
-import { GlassBeadGameService } from '@components/glassbeadgame.service'
+// todo: move this to another folder as not a component
+// import { GlassBeadGameService } from '@components/glassbeadgame.service'
 import { ReactComponent as AudioIconSVG } from '@svgs/microphone-solid.svg'
 import { ReactComponent as AudioSlashIconSVG } from '@svgs/microphone-slash-solid.svg'
 import { ReactComponent as VideoIconSVG } from '@svgs/video-solid.svg'
@@ -52,27 +55,7 @@ import { ReactComponent as CurvedDNASVG } from '@svgs/curved-dna.svg'
 import { ReactComponent as CommentIconSVG } from '@svgs/comment-solid.svg'
 import { ReactComponent as CastaliaIconSVG } from '@svgs/castalia-logo.svg'
 
-const gbgService:GlassBeadGameService = new GlassBeadGameService();
-
-const backendShim = {
-    saveGameSettings: (data: GameSettingsData): Promise<void> =>
-        axios.post(`${config.apiURL}/save-glass-bead-game-settings`, data), // createGame(game: GameSettingsData): Promise<CreateOutput>
-    saveComment: (data: NewCommentData): Promise<void> =>
-        axios.post(`${config.apiURL}/glass-bead-game-comment`, data), // createComment(input: Comment) 
-    uploadBeadAudio: (formData: FormData): Promise<{ data: string }> =>
-        // returns bead audio url
-        axios.post(`${config.apiURL}/audio-upload`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        }), // No Holochain API yet
-    saveGame: (gameId: number, beads: Bead[]): Promise<void> =>
-        axios.post(`${config.apiURL}/save-glass-bead-game`, { gameId, beads }), // for each createBead(input: Bead): Promise<CreateOutput>
-    updateTopic: (gameId: number, newTopic: string): Promise<void> =>
-        axios.post(`${config.apiURL}/save-gbg-topic`, { gameId, newTopic }), // No Holochain API yet
-    getGameData: (postId: number): Promise<{ data: GameData }> => {
-        axios.get(`${config.apiURL}/glass-bead-game-data?postId=${postId}`)
-        //gbgService.getGame(postId)
-    }
-}
+// const gbgService:GlassBeadGameService = new GlassBeadGameService();
 
 const gameDefaults = {
     id: null,
@@ -354,7 +337,11 @@ const GameSettingsModal = (props) => {
     )
 }
 
-const GlassBeadGame = ({ history }): JSX.Element => {
+const GlassBeadGame = (): JSX.Element => {
+    const history = useHistory()
+    const location = useLocation()
+    const gameId = location.pathname.split('/')[2]
+
     // TODO: this should hook into a function that checks if there is a WeCo context and if not then it is false
     const loggedIn = false
     const accountData = {
@@ -400,7 +387,6 @@ const GlassBeadGame = ({ history }): JSX.Element => {
     const [topicTextModalOpen, setTopicTextModalOpen] = useState(false)
     const [leaveRoomModalOpen, setLeaveRoomModalOpen] = useState(false)
     const [mobileTab, setMobileTab] = useState<'comments' | 'game' | 'videos'>('game')
-    // const [videoRenderKey, setVideoRenderKey] = useState(0)
 
     // state refs (used for up to date values between renders)
     const roomIdRef = useRef<number>()
@@ -419,8 +405,6 @@ const GlassBeadGame = ({ history }): JSX.Element => {
     const showVideoRef = useRef(showVideos)
     const liveBeadIndexRef = useRef(1)
 
-    // const location = useLocation()
-    // const postId = +location.pathname.split('/')[2]
     const largeScreen = document.body.clientWidth >= 900
     const roomIntro = new Audio('/audio/room-intro.mp3')
     const highMetalTone = new Audio('/audio/hi-metal-tone.mp3')
@@ -457,9 +441,141 @@ const GlassBeadGame = ({ history }): JSX.Element => {
             },
         ],
     }
-    // todo: potentially remove and use players instead
     const totalUsersStreaming = videosRef.current.length + (userIsStreaming ? 1 : 0)
     const isYou = (id) => id === socketIdRef.current
+
+    const isWeco = false
+    const backendShim = {
+        //// DB queries
+
+        // getGameData:
+        // in weco we use the postId to find the game data in the db
+        // in the holochain version posts aren't used so we'll pass in the gameId instead (retrieved from the page url, see line: 341 above)
+        // below I've created a temporary promise to mimic the API request and return dummy game data so the page loads succesfully
+        getGameData: (id: number): Promise<{ data: GameData }> => {
+            return isWeco
+                ? axios.get(`${config.apiURL}/glass-bead-game-data?postId=${id}`)
+                :
+                //gbgService.getGame(id)
+                new Promise((resolve, reject) => {
+                    resolve({
+                        data: {
+                            id: 1,
+                            locked: true,
+                            topic: 'Sample Topic',
+                            topicGroup: null,
+                            topicImage: '/images/archetopics/art.png',
+                            backgroundImage: null,
+                            backgroundVideo: null,
+                            backgroundVideoStartTime: null,
+                            GlassBeadGameComments: [],
+                            GlassBeads: [],
+                        }
+                    })
+                })
+        },
+    
+        // saveGameSettings:
+        // once in a game room and streaming their audio/video a user can click the start game button
+        // here they have the option to edit the games settings before they start the game
+        // this includes the number of turns, length of intro, move, interval, and outro, and the player order
+        // when they hit start game, it saves these updated settings in the backend using this API request
+        // no data is returned to the client
+        saveGameSettings: (data: GameSettingsData): Promise<void> => {
+            return isWeco
+                ? axios.post(`${config.apiURL}/save-glass-bead-game-settings`, data)
+                : null // updateGa,me(game: GameSettingsData): Promise<CreateOutput>
+        },
+    
+        // saveComment:
+        // when a user types in the input on the left hand comment bar and hits enter or clicks send their comment is saved in the db
+        // no data is returned to the client
+        saveComment: (data: NewCommentData): Promise<void> => {
+            return isWeco
+                ? axios.post(`${config.apiURL}/glass-bead-game-comment`, data)
+                : null // createComment(input: Comment)
+        },
+    
+        // uploadBeadAudio:
+        // after a players move has finished recording it is sent up to the server to be converted from a raw audio Blob to an mp3 file and then stored on the backend
+        // after being stored, a url (string) pointing to the files location is returned to the client
+        uploadBeadAudio: (formData: FormData): Promise<{ data: string }> => {
+            return isWeco
+                ? axios.post(`${config.apiURL}/audio-upload`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+                : null // No Holochain API yet
+        },
+    
+        // saveGame:
+        // after all the players have finished their moves and the timer has finished, the option to save the game appears
+        // when a user clicks the save game button, this API request is fired sending up the gameId and bead data to the backend
+        // the beads are then saved in the db and linked to the game so they can be retrieved by other users opening the game room in the future
+        // no data is returned to the client
+        saveGame: (gameId: number, beads: Bead[]): Promise<void> => {
+            return isWeco
+                ? axios.post(`${config.apiURL}/save-glass-bead-game`, { gameId, beads })
+                : null // for each createBead(input: Bead): Promise<CreateOutput>
+        },
+    
+        // updateTopic:
+        // this request updates the games topic only
+        // no data is returned to the client
+        updateTopic: (gameId: number, newTopic: string): Promise<void> => {
+            return isWeco
+                ? axios.post(`${config.apiURL}/save-gbg-topic`, { gameId, newTopic })
+                : null // No Holochain API yet
+        },
+    
+        //// WebRTC signals:
+
+        // on weco we're using socket.io (https://socket.io/) to send real-time webrtc signals between users in each game room.
+        // once the socket is initialised (on line: 1305), signals are emitted by passing in the signal name (string) and signal data (any).
+        // client side example: socket.emit('signalName', data)
+        // on the server (https://github.com/wecollective/rest-api/blob/develop/Server.js) we listen for those signals and handle them there, usually relaying the data to other users:
+        // server side example: socket.on('signalName', data => { do something here... then: io.in(roomId).emit('signalName', newData) })
+        // then back on the client we listen for signals sent from the server:
+        // client side example: socket.on('signalName', data => { do something here... })
+        // to recreate this functionality on holochain I think we'll need to replace the socket instance with something that works without a central server
+        socket: isWeco
+            ? socketRef.current
+            : null // holochain socket instance
+
+        // below is a list of the signals we emit from the client side:
+        // 'outgoing-join-room'
+        // 'outgoing-signal-request'
+        // 'outgoing-signal'
+        // 'outgoing-refresh-request'
+        // 'outgoing-comment'
+        // 'outgoing-start-game'
+        // 'outgoing-stop-game'
+        // 'outgoing-save-game'
+        // 'outgoing-audio-bead'
+        // 'outgoing-new-topic-text'
+        // 'outgoing-new-topic-image'
+        // 'outgoing-new-background'
+        // 'outgoing-stream-disconnected'
+
+        // and here is a list of signals we listen for:
+        // 'incoming-room-joined'
+        // 'incoming-user-joined'
+        // 'incoming-signal-request'
+        // 'incoming-signal'
+        // 'incoming-refresh-request'
+        // 'incoming-comment'
+        // 'incoming-start-game'
+        // 'incoming-stop-game'
+        // 'incoming-save-game'
+        // 'incoming-audio-bead'
+        // 'incoming-new-topic-text'
+        // 'incoming-new-topic-image'
+        // 'incoming-new-background'
+        // 'incoming-stream-disconnected'
+        // 'incoming-user-left'
+
+        // you can search for each signal in the code using the names above to see what data is passed in or recieved
+
+        // we're also using simple-peer (https://www.npmjs.com/package/simple-peer) to enable audio video streaming between users
+        // when we have a better understanding of how that will be approached in holochain we might add that to the shim as well
+    }
 
     function updateShowVideos(value: boolean) {
         setShowVideos(value)
@@ -516,7 +632,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
                 socketId: socketIdRef.current,
                 userData: userRef.current,
             }
-            socketRef.current.emit('outgoing-stream-disconnected', data)
+            backendShim.socket.emit('outgoing-stream-disconnected', data)
             if (!videosRef.current.length) {
                 updateShowVideos(false)
                 updateMobileTab('game')
@@ -587,7 +703,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
 
     function refreshStream(socketId, user) {
         // singal refresh request
-        socketRef.current.emit('outgoing-refresh-request', {
+        backendShim.socket.emit('outgoing-refresh-request', {
             userToSignal: socketId,
             userSignaling: {
                 socketId: socketRef.current.id,
@@ -609,7 +725,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
             stream: streamRef.current,
         })
         peer.on('signal', (data) => {
-            socketRef.current.emit('outgoing-signal-request', {
+            backendShim.socket.emit('outgoing-signal-request', {
                 userToSignal: socketId,
                 userSignaling: {
                     socketId: socketRef.current.id,
@@ -682,7 +798,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
                         text: newComment,
                         createdAt: new Date(),
                     }
-                    socketRef.current.emit('outgoing-comment', signalData)
+                    backendShim.socket.emit('outgoing-comment', signalData)
                     setNewComment('')
                 })
                 .catch((error) => console.log(error))
@@ -738,7 +854,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
                         beadUrl: res.data,
                         index: moveNumber,
                     }
-                    socketRef.current.emit('outgoing-audio-bead', signalData)
+                    backendShim.socket.emit('outgoing-audio-bead', signalData)
                 })
                 .catch((error) => {
                     const { message } = error.response.data
@@ -766,7 +882,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
             userSignaling: userRef.current,
             gameData: data,
         }
-        socketRef.current.emit('outgoing-start-game', signalData)
+        backendShim.socket.emit('outgoing-start-game', signalData)
     }
 
     function startGame(data) {
@@ -909,7 +1025,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
             userSignaling: userRef.current,
             gameId: gameData.id,
         }
-        socketRef.current.emit('outgoing-stop-game', data)
+        backendShim.socket.emit('outgoing-stop-game', data)
     }
 
     function saveGame() {
@@ -918,7 +1034,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
             userSignaling: userRef.current,
             gameData,
         }
-        socketRef.current.emit('outgoing-save-game', signalData)
+        backendShim.socket.emit('outgoing-save-game', signalData)
         backendShim.saveGame(gameData.id, beads).catch((error) => console.log(error))
     }
 
@@ -965,7 +1081,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
             gameData,
             url,
         }
-        socketRef.current.emit('outgoing-new-topic-image', data)
+        backendShim.socket.emit('outgoing-new-topic-image', data)
     }
 
     function signalNewBackground(type, url, startTime) {
@@ -977,7 +1093,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
             url,
             startTime,
         }
-        socketRef.current.emit('outgoing-new-background', data)
+        backendShim.socket.emit('outgoing-new-background', data)
     }
 
     function saveNewTopic(e) {
@@ -991,7 +1107,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
                     gameData,
                     newTopicText: newTopic,
                 }
-                socketRef.current.emit('outgoing-new-topic-text', data)
+                backendShim.socket.emit('outgoing-new-topic-text', data)
                 setTopicTextModalOpen(false)
             })
             .catch((error) => console.log(error))
@@ -1169,7 +1285,6 @@ const GlassBeadGame = ({ history }): JSX.Element => {
         if (!accountDataLoading && !postDataLoading && postData.id) {
             backendShim.getGameData(postData.id).then((res) => {
                 const { GlassBeadGameComments, GlassBeads } = res.data
-                // todo: move beads and comments into gamedata and set in one go?
                 setGameData(res.data)
                 setComments(GlassBeadGameComments)
                 setBeads(GlassBeads.sort((a, b) => a.index - b.index))
@@ -1189,13 +1304,13 @@ const GlassBeadGame = ({ history }): JSX.Element => {
                 // create new connection to socket
                 socketRef.current = io(config.apiWebSocketURL || '')
                 // join room
-                socketRef.current.emit('outgoing-join-room', {
+                backendShim.socket.emit('outgoing-join-room', {
                     roomId: roomIdRef.current,
                     userData: userRef.current,
                 })
 
                 // listen for signals:
-                socketRef.current.on('incoming-room-joined', (payload) => {
+                backendShim.socket.on('incoming-room-joined', (payload) => {
                     const { socketId, usersInRoom } = payload
                     socketIdRef.current = socketId
                     // userRef.current.socketId = socketId
@@ -1221,7 +1336,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
                             config: iceConfig,
                         })
                         peer.on('signal', (data) => {
-                            socketRef.current.emit('outgoing-signal-request', {
+                            backendShim.socket.emit('outgoing-signal-request', {
                                 userToSignal: user.socketId,
                                 userSignaling: {
                                     socketId: socketRef.current.id,
@@ -1258,7 +1373,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
                     })
                 })
                 // signal returned from peer
-                socketRef.current.on('incoming-signal', (payload) => {
+                backendShim.socket.on('incoming-signal', (payload) => {
                     const peerObject = peersRef.current.find((p) => p.socketId === payload.id)
                     if (peerObject) {
                         if (peerObject.peer.readable) peerObject.peer.signal(payload.signal)
@@ -1271,7 +1386,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
                     } else console.log('no peer!')
                 })
                 // signal request from peer
-                socketRef.current.on('incoming-signal-request', (payload) => {
+                backendShim.socket.on('incoming-signal-request', (payload) => {
                     const { signal, userSignaling } = payload
                     const { socketId, userData } = userSignaling
                     // search for peer in peers array
@@ -1287,7 +1402,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
                             config: iceConfig,
                         })
                         peer.on('signal', (data) => {
-                            socketRef.current.emit('outgoing-signal', {
+                            backendShim.socket.emit('outgoing-signal', {
                                 userToSignal: socketId,
                                 signal: data,
                             })
@@ -1317,12 +1432,12 @@ const GlassBeadGame = ({ history }): JSX.Element => {
                     }
                 })
                 // user joined room
-                socketRef.current.on('incoming-user-joined', (user) => {
+                backendShim.socket.on('incoming-user-joined', (user) => {
                     usersRef.current.push(user)
                     pushComment(`${user.userData.name} joined the room`)
                 })
                 // user left room
-                socketRef.current.on('incoming-user-left', (user) => {
+                backendShim.socket.on('incoming-user-left', (user) => {
                     const { socketId, userData } = user
                     const peerObject = peersRef.current.find((p) => p.socketId === socketId)
                     if (peerObject) {
@@ -1336,11 +1451,11 @@ const GlassBeadGame = ({ history }): JSX.Element => {
                     pushComment(`${userData.name} left the room`)
                 })
                 // comment recieved
-                socketRef.current.on('incoming-comment', (data) => {
+                backendShim.socket.on('incoming-comment', (data) => {
                     pushComment(data)
                 })
                 // start game signal recieved
-                socketRef.current.on('incoming-start-game', (data) => {
+                backendShim.socket.on('incoming-start-game', (data) => {
                     setGameSettingsModalOpen(false)
                     setGameInProgress(true)
                     setBeads([])
@@ -1361,7 +1476,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
                     startGame(data.gameData)
                 })
                 // stop game signal recieved
-                socketRef.current.on('incoming-stop-game', (data) => {
+                backendShim.socket.on('incoming-stop-game', (data) => {
                     if (largeScreen) {
                         setShowComments(true)
                         updateShowVideos(true)
@@ -1380,17 +1495,17 @@ const GlassBeadGame = ({ history }): JSX.Element => {
                         mediaRecorderRef.current.stop()
                 })
                 // save game signal recieved
-                socketRef.current.on('incoming-save-game', (data) => {
+                backendShim.socket.on('incoming-save-game', (data) => {
                     pushComment(`${data.userSignaling.name} saved the game`)
                     setGameData({ ...data.gameData, locked: true })
                 })
                 // audio bead recieved
-                socketRef.current.on('incoming-audio-bead', (data) => {
+                backendShim.socket.on('incoming-audio-bead', (data) => {
                     setBeads((previousBeads) => [...previousBeads, data])
                     addEventListenersToBead(data.index)
                 })
                 // peer refresh request
-                socketRef.current.on('incoming-refresh-request', (data) => {
+                backendShim.socket.on('incoming-refresh-request', (data) => {
                     const { id } = data
                     const peerObject = peersRef.current.find((p) => p.socketId === id)
                     if (peerObject) {
@@ -1401,7 +1516,7 @@ const GlassBeadGame = ({ history }): JSX.Element => {
                     }
                 })
                 // new background
-                socketRef.current.on('incoming-new-background', (data) => {
+                backendShim.socket.on('incoming-new-background', (data) => {
                     const { type, url, startTime, userSignaling } = data
                     if (type === 'image') {
                         setGameData({
@@ -1421,19 +1536,19 @@ const GlassBeadGame = ({ history }): JSX.Element => {
                     pushComment(`${userSignaling.name} added a new background`)
                 })
                 // new topic text
-                socketRef.current.on('incoming-new-topic-text', (data) => {
+                backendShim.socket.on('incoming-new-topic-text', (data) => {
                     const { userSignaling, newTopicText } = data
                     setGameData({ ...data.gameData, topic: newTopicText, topicGroup: null })
                     pushComment(`${userSignaling.name} updated the topic`)
                 })
                 // new topic image
-                socketRef.current.on('incoming-new-topic-image', (data) => {
+                backendShim.socket.on('incoming-new-topic-image', (data) => {
                     const { userSignaling, url } = data
                     setGameData({ ...data.gameData, topicImage: url })
                     pushComment(`${userSignaling.name} added a new topic image`)
                 })
                 // stream disconnected
-                socketRef.current.on('incoming-stream-disconnected', (data) => {
+                backendShim.socket.on('incoming-stream-disconnected', (data) => {
                     const { socketId, userData } = data
                     videosRef.current = videosRef.current.filter((v) => v.socketId !== socketId)
                     if (!videosRef.current.length && !streamRef.current) updateShowVideos(false)
