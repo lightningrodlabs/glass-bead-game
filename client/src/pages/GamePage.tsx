@@ -1,20 +1,12 @@
-import React, { useState, useEffect } from 'react'
-import { useHistory } from 'react-router-dom'
+import React from 'react'
 import styles from '@styles/pages/GamePage.module.scss'
 import Column from '@components/Column'
 import GlassBeadGame from '@src/components/GlassBeadGame'
 
-const GamePage = ({ match }: {
-    match: { url: string; params: { gameId: number } }
-}): JSX.Element => {
-    const { gameId } = match.params
-    const history = useHistory()
-
-    console.log('gameId: ', gameId)
-
+const GamePage = (): JSX.Element => {
     return (
         <Column className={styles.wrapper}>
-            <GlassBeadGame history={history} />
+            <GlassBeadGame />
         </Column>
     )
 }
