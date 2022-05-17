@@ -23,6 +23,7 @@ import {
     allValid,
     defaultErrorState,
 } from '@src/Helpers'
+// todo: move this to another folder as not a component and update names to remove conflicts
 // import { GameSettingsData, GameData, Comment, NewCommentData, Bead } from '@components/GameTypes'
 import FlagImage from '@components/FlagImage'
 import Modal from '@components/Modal'
@@ -38,7 +39,8 @@ import Scrollbars from '@components/Scrollbars'
 import Markdown from '@components/Markdown'
 import GBGBackgroundModal from '@components/Modals/GBGBackgroundModal'
 import BeadCard from '@src/components/Cards/BeadCard'
-import { GlassBeadGameService } from '@components/glassbeadgame.service'
+// todo: move this to another folder as not a component
+// import { GlassBeadGameService } from '@components/glassbeadgame.service'
 import { ReactComponent as AudioIconSVG } from '@svgs/microphone-solid.svg'
 import { ReactComponent as AudioSlashIconSVG } from '@svgs/microphone-slash-solid.svg'
 import { ReactComponent as VideoIconSVG } from '@svgs/video-solid.svg'
@@ -526,7 +528,7 @@ const GlassBeadGame = (): JSX.Element => {
         //// WebRTC signals:
 
         // on weco we're using socket.io (https://socket.io/) to send real-time webrtc signals between users in each game room.
-        // once the socket is initialised (on line: 1303), signals are emitted by passing in the signal name (string) and signal data (any).
+        // once the socket is initialised (on line: 1305), signals are emitted by passing in the signal name (string) and signal data (any).
         // client side example: socket.emit('signalName', data)
         // on the server (https://github.com/wecollective/rest-api/blob/develop/Server.js) we listen for those signals and handle them there, usually relaying the data to other users:
         // server side example: socket.on('signalName', data => { do something here... then: io.in(roomId).emit('signalName', newData) })
