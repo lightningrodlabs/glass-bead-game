@@ -71,6 +71,7 @@
     "@types/uuid": "^8.3.3",
     "react-app-rewired": "^2.1.8",
     "eslint-config-airbnb-typescript-prettier": "^4.2.0",
-    "prettier": "^2.2.1"
+    "prettier": "^2.2.1",
+    "eslint": "^6.8.0"
   }
 }
