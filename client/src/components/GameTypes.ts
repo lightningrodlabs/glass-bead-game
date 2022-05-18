@@ -19,6 +19,11 @@ export interface GameSettingsData {
 
 export interface GameData {
     id: number
+    numberOfTurns: number,
+    moveDuration: number,
+    introDuration: number,
+    intervalDuration: number,
+    outroDuration: number,
     locked: boolean
     topic: string
     topicGroup: string | null
