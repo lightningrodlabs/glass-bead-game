@@ -3,55 +3,41 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@testing-library/jest-dom": "^5.14.1",
-    "@testing-library/react": "^12.0.0",
-    "@testing-library/user-event": "^13.2.1",
-    "@types/jest": "^27.0.1",
-    "@types/node": "^16.7.13",
-    "@types/react": "^17.0.20",
-    "@types/react-dom": "^17.0.9",
-    "axios": "^0.24.0",
+    "@testing-library/jest-dom": "^4.2.4",
+    "@testing-library/react": "^9.3.2",
+    "@testing-library/user-event": "^7.1.2",
+    "axios": "^0.19.2",
     "cheerio": "^1.0.0-rc.3",
     "cors": "^2.8.5",
-    "d3": "^7.2.1",
+    "d3": "^5.15.1",
     "d3-force": "^2.1.0",
     "d3-hexbin": "^0.2.2",
     "flatpickr": "^4.6.11",
     "get-blob-duration": "^1.2.0",
-    "history": "^5.2.0",
+    "history": "^4.10.1",
     "lodash": "^4.17.20",
+    "node-sass": "^4.13.1",
     "overlayscrollbars": "^1.13.1",
     "overlayscrollbars-react": "^0.2.3",
     "query-string": "^6.13.1",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "react-google-recaptcha-v3": "^1.9.7",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "react-google-recaptcha-v3": "^1.8.0",
     "react-markdown": "^5.0.3",
     "react-router-dom": "^5.1.2",
-    "react-scripts": "5.0.0",
+    "react-scripts": "3.4.1",
     "react-transition-group": "^4.3.0",
     "remark-gfm": "^1.0.0",
-    "sass": "^1.45.1",
     "simple-peer": "^9.11.0",
-    "socket.io-client": "^4.4.0",
-    "typescript": "^4.4.2",
-    "universal-cookie": "^4.0.4",
-    "uuid": "^8.3.2",
-    "web-vitals": "^2.1.0",
-    "@holochain-open-dev/cell-client": "^0.3.2",
-    "@holochain-open-dev/core-types": "^0.1.1"
+    "socket.io-client": "^4.1.2",
+    "universal-cookie": "^4.0.3",
+    "uuid": "^8.3.2"
   },
   "scripts": {
     "start": "react-app-rewired start",
     "build": "react-app-rewired build",
     "test": "react-app-rewired test",
     "eject": "react-app-rewired eject"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
   },
   "browserslist": {
     "production": [
@@ -66,12 +52,18 @@
     ]
   },
   "devDependencies": {
-    "@types/d3": "^7.1.0",
-    "@types/simple-peer": "^9.11.3",
-    "@types/uuid": "^8.3.3",
-    "react-app-rewired": "^2.1.8",
+    "@types/dom-mediacapture-record": "^1.0.10",
+    "@types/jest": "^26.0.22",
+    "@types/node": "^14.14.37",
+    "@types/overlayscrollbars": "^1.12.1",
+    "@types/react": "^17.0.3",
+    "@types/react-dom": "^17.0.3",
+    "eslint": "^7.23.0",
     "eslint-config-airbnb-typescript-prettier": "^4.2.0",
     "prettier": "^2.2.1",
-    "eslint": "^6.8.0"
+    "react-app-rewired": "^2.1.8",
+    "typescript": "^4.2.3",
+    "@holochain-open-dev/cell-client": "^0.3.2",
+    "@holochain-open-dev/core-types": "^0.1.1"
   }
 }
