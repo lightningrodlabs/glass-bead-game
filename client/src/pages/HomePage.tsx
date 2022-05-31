@@ -70,6 +70,7 @@ const Homepage = (): JSX.Element => {
                 outroDuration: outroDuration.value,
             }
             console.log('Save game data in backend: ', data)
+            
             // backendShim
             //     .saveGameSettings(data)
             //     .then(() => {
