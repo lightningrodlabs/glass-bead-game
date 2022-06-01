@@ -2,6 +2,7 @@
 
 .cargo/
 .hc
+.hc_live_?
 Cargo.lock
 dna/workdir/dna/*.dna
 dna/workdir/happ/*.happ
