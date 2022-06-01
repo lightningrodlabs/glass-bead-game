@@ -1,4 +1,6 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { HolochainClient } from '@holochain-open-dev/cell-client'
+import GlassBeadGameService from '@src/glassbeadgame.service'
 import styles from '@styles/pages/HomePage.module.scss'
 import { defaultErrorState, allValid } from '@src/Helpers'
 import Column from '@components/Column'
@@ -50,7 +52,22 @@ const Homepage = (): JSX.Element => {
     })
     const [loading, setLoading] = useState(false)
     const [saved, setSaved] = useState(false)
-    const { topic, introDuration, numberOfTurns, moveDuration, intervalDuration, outroDuration } = formData
+    const { topic, introDuration, numberOfTurns, moveDuration, intervalDuration, outroDuration } =
+        formData
+    const [gbgService, setGbgService] = useState<any>()
+    const [entryHash, setEntryHash] = useState<any>()
+
+    async function initialiseGBGService() {
+        const client = await HolochainClient.connect('ws://localhost:8888', 'glassbeadgame')
+        const roleId = 'glassbeadgame-role'
+        const cellData = client.cellDataByRoleId(roleId)
+        const cellClient = client.forCell(cellData!)
+        setGbgService(new GlassBeadGameService(cellClient))
+    }
+
+    useEffect(() => {
+        initialiseGBGService()
+    }, [])
 
     function updateValue(name, value) {
         setFormData({ ...formData, [name]: { ...formData[name], value, state: 'default' } })
@@ -60,31 +77,41 @@ const Homepage = (): JSX.Element => {
         e.preventDefault()
         if (allValid(formData, setFormData)) {
             setLoading(true)
-            const data = {
+            const gameData = {
                 locked: true,
                 topic: topic.value,
+                topicGroup: 'custom',
+                topicImageUrl: '',
+                backgroundVideoUrl: '',
+                backgroundVideoStartTime: 0,
                 numberOfTurns: numberOfTurns.value,
                 moveDuration: moveDuration.value,
                 introDuration: introDuration.value,
                 intervalDuration: intervalDuration.value,
                 outroDuration: outroDuration.value,
             }
-            console.log('Save game data in backend: ', data)
-            
-            // backendShim
-            //     .saveGameSettings(data)
-            //     .then(() => {
-            //         setLoading(false)
-            //         setSaved(true)
-            //         close()
-            //     })
-            //     .catch((error) => console.log(error))
+            gbgService
+                .createGame(gameData)
+                .then((res) => {
+                    setEntryHash(res.entryHash)
+                    setLoading(false)
+                    setSaved(true)
+                    setCreateGameModalOpen(false)
+                })
+                .catch((error) => console.log(error))
         }
+    }
+
+    function getGame() {
+        gbgService.getGame(entryHash).then((res) => {
+            console.log('game data!: ', res)
+        })
     }
 
     return (
         <Column centerX centerY className={styles.wrapper}>
             <Button color='blue' text='Create game' onClick={() => setCreateGameModalOpen(true)} />
+            <Button color='blue' text='Get game' disabled={!entryHash} onClick={getGame} />
             {createGameModalOpen && (
                 <Modal centered close={() => setCreateGameModalOpen(false)}>
                     <h1>Create a new Glass Bead Game</h1>
@@ -108,7 +135,9 @@ const Homepage = (): JSX.Element => {
                                 state={introDuration.state}
                                 errors={introDuration.errors}
                                 value={introDuration.value}
-                                onChange={(v) => updateValue('introDuration', +v.replace(/\D/g, ''))}
+                                onChange={(v) =>
+                                    updateValue('introDuration', +v.replace(/\D/g, ''))
+                                }
                             />
                             <Input
                                 title='Number of turns'
@@ -118,7 +147,9 @@ const Homepage = (): JSX.Element => {
                                 state={numberOfTurns.state}
                                 errors={numberOfTurns.errors}
                                 value={numberOfTurns.value}
-                                onChange={(v) => updateValue('numberOfTurns', +v.replace(/\D/g, ''))}
+                                onChange={(v) =>
+                                    updateValue('numberOfTurns', +v.replace(/\D/g, ''))
+                                }
                             />
                             <Input
                                 title='Move duration (seconds)'
@@ -138,7 +169,9 @@ const Homepage = (): JSX.Element => {
                                 state={intervalDuration.state}
                                 errors={intervalDuration.errors}
                                 value={intervalDuration.value}
-                                onChange={(v) => updateValue('intervalDuration', +v.replace(/\D/g, ''))}
+                                onChange={(v) =>
+                                    updateValue('intervalDuration', +v.replace(/\D/g, ''))
+                                }
                             />
                             <Input
                                 title='Outro duration (seconds)'
@@ -148,12 +181,19 @@ const Homepage = (): JSX.Element => {
                                 state={outroDuration.state}
                                 errors={outroDuration.errors}
                                 value={outroDuration.value}
-                                onChange={(v) => updateValue('outroDuration', +v.replace(/\D/g, ''))}
+                                onChange={(v) =>
+                                    updateValue('outroDuration', +v.replace(/\D/g, ''))
+                                }
                             />
                         </Column>
                         <Row>
                             {!saved && (
-                                <Button text='Create game' color='blue' disabled={loading || saved} submit />
+                                <Button
+                                    text='Create game'
+                                    color='blue'
+                                    disabled={loading || saved}
+                                    submit
+                                />
                             )}
                             {loading && <LoadingWheel />}
                             {saved && <SuccessMessage text='Saved' />}
