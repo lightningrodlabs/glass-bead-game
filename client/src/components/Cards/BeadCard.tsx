@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useState } from 'react'
 import * as d3 from 'd3'
 import styles from '@styles/components/cards/BeadCard.module.scss'
 import colors from '@styles/Colors.module.scss'
@@ -23,7 +23,9 @@ const BeadCard = (props: {
     const audioId = `gbg-bead-audio-${postId}-${index}-${location}`
 
     function toggleBeadAudio(beadIndex: number, reset?: boolean): void {
-        const beadAudio = d3.select(`#gbg-bead-audio-${postId}-${beadIndex}-${location}`).node() as HTMLAudioElement
+        const beadAudio = d3
+            .select(`#gbg-bead-audio-${postId}-${beadIndex}-${location}`)
+            .node() as HTMLAudioElement
         if (beadAudio) {
             if (!beadAudio.paused) beadAudio.pause()
             else {

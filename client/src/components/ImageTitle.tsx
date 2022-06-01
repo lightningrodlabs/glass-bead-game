@@ -15,18 +15,8 @@ const ImageTitle = (props: {
     wrapText?: boolean
     onClick?: () => void
 }): JSX.Element => {
-    const {
-        type,
-        imagePath,
-        imageSize,
-        title,
-        fontSize,
-        style,
-        shadow,
-        link,
-        wrapText,
-        onClick,
-    } = props
+    const { type, imagePath, imageSize, title, fontSize, style, shadow, link, wrapText, onClick } =
+        props
     if (link) {
         return (
             <Link

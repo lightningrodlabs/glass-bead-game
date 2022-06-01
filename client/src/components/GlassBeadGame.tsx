@@ -1,8 +1,8 @@
-// @ts-nocheck
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-return-assign */
 /* eslint-disable no-param-reassign */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import React, { useState, useEffect, useContext, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useHistory, useLocation } from 'react-router-dom'
 import { io } from 'socket.io-client'
 import axios from 'axios'
@@ -10,10 +10,6 @@ import Peer from 'simple-peer'
 import * as d3 from 'd3'
 import { v4 as uuidv4 } from 'uuid'
 import styles from '@styles/components/GlassBeadGame.module.scss'
-// TODO: later we should create a way to look up the AccountContext and if the app is deployed standalone then that is fine
-// if there is an account context then use it the same as when GBG was merely a component within weco
-//import { PostContext } from '@contexts/PostContext'
-//import { AccountContext } from '@contexts/AccountContext'
 import config from '@src/Config'
 import {
     isPlural,
@@ -23,8 +19,7 @@ import {
     allValid,
     defaultErrorState,
 } from '@src/Helpers'
-// todo: move this to another folder as not a component and update names to remove conflicts
-// import { GameSettingsData, GameData, Comment, NewCommentData, Bead } from '@components/GameTypes'
+import { GameSettingsData, GameData, IComment, NewCommentData, Bead } from '@src/GameTypes'
 import FlagImage from '@components/FlagImage'
 import Modal from '@components/Modal'
 import ImageUploadModal from '@components/Modals/ImageUploadModal'
@@ -212,23 +207,23 @@ const GameSettingsModal = (props) => {
                 outroDuration: outroDuration.value,
                 playerOrder: players.map((p) => p.id).join(','),
             }
-            backendShim
-                .saveGameSettings(data)
-                .then(() => {
-                    setLoading(false)
-                    setSaved(true)
-                    signalStartGame({
-                        ...gameData,
-                        numberOfTurns: numberOfTurns.value,
-                        moveDuration: moveDuration.value,
-                        introDuration: introDuration.value,
-                        intervalDuration: intervalDuration.value,
-                        outroDuration: outroDuration.value,
-                        players,
-                    })
-                    close()
-                })
-                .catch((error) => console.log(error))
+            // backendShim
+            //     .saveGameSettings(data)
+            //     .then(() => {
+            //         setLoading(false)
+            //         setSaved(true)
+            //         signalStartGame({
+            //             ...gameData,
+            //             numberOfTurns: numberOfTurns.value,
+            //             moveDuration: moveDuration.value,
+            //             introDuration: introDuration.value,
+            //             intervalDuration: intervalDuration.value,
+            //             outroDuration: outroDuration.value,
+            //             players,
+            //         })
+            //         close()
+            //     })
+            //     .catch((error) => console.log(error))
         }
     }
 
@@ -340,7 +335,7 @@ const GameSettingsModal = (props) => {
 const GlassBeadGame = (): JSX.Element => {
     const history = useHistory()
     const location = useLocation()
-    const gameId = location.pathname.split('/')[2]
+    // const gameId = location.pathname.split('/')[2]
 
     // TODO: this should hook into a function that checks if there is a WeCo context and if not then it is false
     const loggedIn = false
@@ -446,7 +441,7 @@ const GlassBeadGame = (): JSX.Element => {
 
     const isWeco = false
     const backendShim = {
-        //// DB queries
+        /// / DB queries
 
         // getGameData:
         // in weco we use the postId to find the game data in the db
@@ -455,26 +450,30 @@ const GlassBeadGame = (): JSX.Element => {
         getGameData: (id: number): Promise<{ data: GameData }> => {
             return isWeco
                 ? axios.get(`${config.apiURL}/glass-bead-game-data?postId=${id}`)
-                :
-                //gbgService.getGame(id)
-                new Promise((resolve, reject) => {
-                    resolve({
-                        data: {
-                            id: 1,
-                            locked: true,
-                            topic: 'Sample Topic',
-                            topicGroup: null,
-                            topicImage: '/images/archetopics/art.png',
-                            backgroundImage: null,
-                            backgroundVideo: null,
-                            backgroundVideoStartTime: null,
-                            GlassBeadGameComments: [],
-                            GlassBeads: [],
-                        }
-                    })
-                })
+                : // gbgService.getGame(id)
+                  new Promise((resolve, reject) => {
+                      resolve({
+                          data: {
+                              id: 1,
+                              locked: true,
+                              topic: 'Sample Topic',
+                              topicGroup: null,
+                              topicImage: '/images/archetopics/art.png',
+                              backgroundImage: null,
+                              backgroundVideo: null,
+                              backgroundVideoStartTime: null,
+                              numberOfTurns: 3,
+                              moveDuration: 20,
+                              introDuration: 15,
+                              intervalDuration: 0,
+                              outroDuration: 30,
+                              GlassBeadGameComments: [],
+                              GlassBeads: [],
+                          },
+                      })
+                  })
         },
-    
+
         // saveGameSettings:
         // once in a game room and streaming their audio/video a user can click the start game button
         // here they have the option to edit the games settings before they start the game
@@ -484,48 +483,50 @@ const GlassBeadGame = (): JSX.Element => {
         saveGameSettings: (data: GameSettingsData): Promise<void> => {
             return isWeco
                 ? axios.post(`${config.apiURL}/save-glass-bead-game-settings`, data)
-                : null // updateGa,me(game: GameSettingsData): Promise<CreateOutput>
+                : new Promise((resolve, reject) => resolve()) // updateGa,me(game: GameSettingsData): Promise<CreateOutput>
         },
-    
+
         // saveComment:
         // when a user types in the input on the left hand comment bar and hits enter or clicks send their comment is saved in the db
         // no data is returned to the client
         saveComment: (data: NewCommentData): Promise<void> => {
             return isWeco
                 ? axios.post(`${config.apiURL}/glass-bead-game-comment`, data)
-                : null // createComment(input: Comment)
+                : new Promise((resolve, reject) => resolve()) // createComment(input: Comment)
         },
-    
+
         // uploadBeadAudio:
         // after a players move has finished recording it is sent up to the server to be converted from a raw audio Blob to an mp3 file and then stored on the backend
         // after being stored, a url (string) pointing to the files location is returned to the client
         uploadBeadAudio: (formData: FormData): Promise<{ data: string }> => {
             return isWeco
-                ? axios.post(`${config.apiURL}/audio-upload`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
-                : null // No Holochain API yet
+                ? axios.post(`${config.apiURL}/audio-upload`, formData, {
+                      headers: { 'Content-Type': 'multipart/form-data' },
+                  })
+                : new Promise((resolve, reject) => resolve({ data: '' })) // No Holochain API yet
         },
-    
+
         // saveGame:
         // after all the players have finished their moves and the timer has finished, the option to save the game appears
         // when a user clicks the save game button, this API request is fired sending up the gameId and bead data to the backend
         // the beads are then saved in the db and linked to the game so they can be retrieved by other users opening the game room in the future
         // no data is returned to the client
-        saveGame: (gameId: number, beads: Bead[]): Promise<void> => {
+        saveGame: (gameId: number, gameBeads: Bead[]): Promise<void> => {
             return isWeco
-                ? axios.post(`${config.apiURL}/save-glass-bead-game`, { gameId, beads })
-                : null // for each createBead(input: Bead): Promise<CreateOutput>
+                ? axios.post(`${config.apiURL}/save-glass-bead-game`, { gameId, beads: gameBeads })
+                : new Promise((resolve, reject) => resolve()) // for each createBead(input: Bead): Promise<CreateOutput>
         },
-    
+
         // updateTopic:
         // this request updates the games topic only
         // no data is returned to the client
-        updateTopic: (gameId: number, newTopic: string): Promise<void> => {
+        updateTopic: (gameId: number, topic: string): Promise<void> => {
             return isWeco
-                ? axios.post(`${config.apiURL}/save-gbg-topic`, { gameId, newTopic })
-                : null // No Holochain API yet
+                ? axios.post(`${config.apiURL}/save-gbg-topic`, { gameId, newTopic: topic })
+                : new Promise((resolve, reject) => resolve()) // No Holochain API yet
         },
-    
-        //// WebRTC signals:
+
+        /// / WebRTC signals:
 
         // on weco we're using socket.io (https://socket.io/) to send real-time webrtc signals between users in each game room.
         // once the socket is initialised (on line: 1305), signals are emitted by passing in the signal name (string) and signal data (any).
@@ -535,9 +536,7 @@ const GlassBeadGame = (): JSX.Element => {
         // then back on the client we listen for signals sent from the server:
         // client side example: socket.on('signalName', data => { do something here... })
         // to recreate this functionality on holochain I think we'll need to replace the socket instance with something that works without a central server
-        socket: isWeco
-            ? socketRef.current
-            : null // holochain socket instance
+        socket: isWeco ? socketRef.current : null, // holochain socket instance
 
         // below is a list of the signals we emit from the client side:
         // 'outgoing-join-room'
@@ -699,7 +698,7 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     // todo: set up general createPeer function
-    function createPeer(isInitiator) {}
+    // function createPeer(isInitiator) {}
 
     function refreshStream(socketId, user) {
         // singal refresh request

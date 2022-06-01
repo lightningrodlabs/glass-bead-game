@@ -11,15 +11,8 @@ const AudioVisualiser = (props: {
     dynamicColor: string
     style?: any
 }): JSX.Element => {
-    const {
-        audioElementId,
-        audioURL,
-        staticBars,
-        staticColor,
-        dynamicBars,
-        dynamicColor,
-        style,
-    } = props
+    const { audioElementId, audioURL, staticBars, staticColor, dynamicBars, dynamicColor, style } =
+        props
 
     const offlineAudioContext = useRef<OfflineAudioContext | null>(null)
     const audioContext = useRef<AudioContext | null>(null)
@@ -94,9 +87,7 @@ const AudioVisualiser = (props: {
         loadAudioForStaticVisualisation()
         const audio = d3.select(`#${audioElementId}`) as any
         if (audio.node()) {
-            const visualiser = d3
-                .select(`#${audioElementId}-visualiser`)
-                .node() as HTMLDivElement
+            const visualiser = d3.select(`#${audioElementId}-visualiser`).node() as HTMLDivElement
             const { height, width } = visualiser.getBoundingClientRect()
 
             audio.on('play.visualiser', () => {

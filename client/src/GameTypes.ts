@@ -1,29 +1,32 @@
-import { Timestamp } from "@holochain/client";
-import { EntryHashB64, AgentPubKeyB64, HeaderHashB64 } from "@holochain-open-dev/core-types";
+import { Timestamp } from '@holochain/client'
+import { EntryHashB64, AgentPubKeyB64, HeaderHashB64 } from '@holochain-open-dev/core-types'
 
-
-export type Signal =
-  | {
-    attestationHash: EntryHashB64, message: {type: "NewGame", content: GameOutput}
-  }
+export type Signal = {
+    attestationHash: EntryHashB64
+    message: { type: 'NewGame'; content: GameOutput }
+}
 
 export interface GameSettingsData {
-    gameId: number,
-    numberOfTurns: number,
-    moveDuration: number,
-    introDuration: number,
-    intervalDuration: number,
-    outroDuration: number,
-    playerOrder: string // user id's seperated by commas ('25,2,109,38')
+    topic: string
+    topicGroup: string
+    topicImageUrl: string
+    backgroundVideoUrl: string
+    backgroundVideoStartTime: number
+    locked: boolean
+    introDuration: number
+    outroDuration: number
+    numberOfTurns: number
+    moveDuration: number
+    intervalDuration: number
 }
 
 export interface GameData {
     id: number
-    numberOfTurns: number,
-    moveDuration: number,
-    introDuration: number,
-    intervalDuration: number,
-    outroDuration: number,
+    numberOfTurns: number
+    moveDuration: number
+    introDuration: number
+    intervalDuration: number
+    outroDuration: number
     locked: boolean
     topic: string
     topicGroup: string | null
@@ -37,25 +40,25 @@ export interface GameData {
 
 // TODO: Eric added this, but James needs to consider if it is necessary
 export interface JoinGameInput {
-    agent: AgentPubKeyB64,
+    agent: AgentPubKeyB64
     entryHash: EntryHashB64
 }
 
 // TODO: Eric added this, but James needs to consider if it is necessary
 export interface CreateOutput {
-    headerHash: HeaderHashB64,
+    headerHash: HeaderHashB64
     entryHash: EntryHashB64
 }
 
 // TODO: Eric added this, but James needs to consider if it is necessary
 export interface GameOutput {
-    headerHash: HeaderHashB64,
-    entryHash: EntryHashB64,
-    game: GameSettingsData,
-    author: AgentPubKeyB64,
+    headerHash: HeaderHashB64
+    entryHash: EntryHashB64
+    game: GameSettingsData
+    author: AgentPubKeyB64
 }
 
-export interface Comment {
+export interface IComment {
     id: number
     text: string
     createdAt: Date
@@ -74,16 +77,16 @@ export interface NewCommentData {
 }
 
 export interface CommentInput {
-    entryHash: EntryHashB64,
-    comment: string,
+    entryHash: EntryHashB64
+    comment: string
 }
 
 export interface CommentOutput {
-    headerHash: HeaderHashB64,
-    entryHash: EntryHashB64,
-    agent: AgentPubKeyB64,
-    comment: string,
-    timestamp: Timestamp,
+    headerHash: HeaderHashB64
+    entryHash: EntryHashB64
+    agent: AgentPubKeyB64
+    comment: string
+    timestamp: Timestamp
 }
 
 export interface Bead {
@@ -100,14 +103,14 @@ export interface Bead {
 }
 
 export interface BeadInput {
-    entryHash: EntryHashB64,
-    bead: Bead,
+    entryHash: EntryHashB64
+    bead: Bead
 }
 
 export interface BeadOutput {
-    headerHash: HeaderHashB64,
-    entryHash: EntryHashB64,
-    agent: AgentPubKeyB64,
-    bead: Bead,
-    timestamp: Timestamp,
+    headerHash: HeaderHashB64
+    entryHash: EntryHashB64
+    agent: AgentPubKeyB64
+    bead: Bead
+    timestamp: Timestamp
 }

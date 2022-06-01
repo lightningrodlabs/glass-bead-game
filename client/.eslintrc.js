@@ -11,6 +11,7 @@ module.exports = {
         'import/no-unresolved': 'off',
         // // disable no console
         // 'no-console': 'off',
+        'react/jsx-no-bind': 'off',
     },
     parserOptions: {
         project: 'tsconfig.json',

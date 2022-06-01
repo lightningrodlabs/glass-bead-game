@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from 'react'
 import { useHistory } from 'react-router-dom'
 import styles from '@styles/pages/GamesPage.module.scss'
@@ -13,7 +14,7 @@ const sampleGames = [
         numberOfTurns: 5,
         moveDuration: 30,
         intervalDuration: 0,
-        outroDuration: 30
+        outroDuration: 30,
     },
     {
         id: 2,
@@ -22,7 +23,7 @@ const sampleGames = [
         numberOfTurns: 5,
         moveDuration: 30,
         intervalDuration: 0,
-        outroDuration: 30
+        outroDuration: 30,
     },
     {
         id: 3,
@@ -31,8 +32,8 @@ const sampleGames = [
         numberOfTurns: 5,
         moveDuration: 30,
         intervalDuration: 0,
-        outroDuration: 30
-    }
+        outroDuration: 30,
+    },
 ]
 
 const GamesPage = (): JSX.Element => {
@@ -55,7 +56,11 @@ const GamesPage = (): JSX.Element => {
                         <p>Id: {game.id}</p>
                         <p>Topic: {game.topic}</p>
                     </Column>
-                    <Button color='blue' text='Open game' onClick={() => history.push(`/game/${game.id}`)} />
+                    <Button
+                        color='blue'
+                        text='Open game'
+                        onClick={() => history.push(`/game/${game.id}`)}
+                    />
                 </Row>
             ))}
         </Column>

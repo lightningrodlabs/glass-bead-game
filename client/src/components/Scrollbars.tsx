@@ -10,15 +10,8 @@ const Scrollbars = (props: {
     style?: any
     children: any
 }): JSX.Element => {
-    const {
-        id,
-        className,
-        onScrollBottom,
-        onScrollTop,
-        autoScrollToBottom,
-        style,
-        children,
-    } = props
+    const { id, className, onScrollBottom, onScrollTop, autoScrollToBottom, style, children } =
+        props
     const ref = useRef<OverlayScrollbarsComponent>(null)
     const OSOptions = {
         className: 'os-theme-none',
