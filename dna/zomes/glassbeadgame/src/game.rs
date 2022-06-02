@@ -8,6 +8,7 @@ pub struct Game {
     pub topic : String,
     pub topic_group: String,
     pub topic_image_url: String,
+    pub description: String,
     pub background_video_url: String,
     pub background_video_start_time: usize,
     pub locked: bool,

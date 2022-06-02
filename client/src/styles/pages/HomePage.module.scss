@@ -2,13 +2,23 @@
 
 .wrapper {
     width: 100%;
-    height: calc(100% - 60px);
-
-    .game {
-        height: 80px;
+    padding: 50px;
+    
+    .gbgIcon {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
         background-color: white;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
+        margin-bottom: 40px;
+
+        > svg {
+            width: 80px;
+            height: 80px;
+        }
+    }
+
+    .games {
+        margin-top: 50px;
+        width: 800px;
     }
 }

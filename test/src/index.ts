@@ -41,6 +41,7 @@ orchestrator.registerScenario(
     let game1 = {
       topic: "testing",
       topicGroup: "testing",
+      description: "",
       topicImageUrl: "",
       backgroundVideoUrl: "",
       backgroundVideoStartTime: 0,

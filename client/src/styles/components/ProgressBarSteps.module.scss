@@ -1,0 +1,59 @@
+@import '@styles/Variables';
+
+.wrapper {
+    width: 100%;
+
+    .circle {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 3px solid $green3;
+        background-color: white;
+        color: $green3;
+        flex-shrink: 0;
+
+        &.todo {
+            background-color: white;
+            border: 3px solid $grey3;
+            color: $grey3;
+        }
+
+        &.done {
+            background-color: $green3;
+            color: white;
+        }
+
+        > svg {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
+    .line {
+        width: 100%;
+        height: 30px;
+
+        > div {
+            height: 3px;
+            background-color: $green3;
+        }
+
+        &.todo {
+            > div {
+                background-color: $grey3;
+            }
+        }
+    }
+
+    .text {
+        width: 100%;
+        margin-top: 5px;
+
+        p {
+            color: $green3;
+            font-size: 12px;
+            text-align: center;
+            &.todo { color: $grey6 }
+        }
+    }
+}

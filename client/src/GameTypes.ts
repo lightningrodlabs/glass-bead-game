@@ -10,6 +10,7 @@ export interface GameSettingsData {
     topic: string
     topicGroup: string
     topicImageUrl: string
+    description: string
     backgroundVideoUrl: string
     backgroundVideoStartTime: number
     locked: boolean
@@ -31,6 +32,7 @@ export interface GameData {
     topic: string
     topicGroup: string | null
     topicImage: string | null
+    description: string
     backgroundImage: string | null
     backgroundVideo: string | null
     backgroundVideoStartTime: number | null

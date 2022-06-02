@@ -1,18 +1,17 @@
 import React, { useEffect, useState } from 'react'
-import { useHistory } from 'react-router-dom'
 import { HolochainClient } from '@holochain-open-dev/cell-client'
 import GlassBeadGameService from '@src/glassbeadgame.service'
 import styles from '@styles/pages/HomePage.module.scss'
 import Column from '@components/Column'
-import Row from '@components/Row'
 import Button from '@components/Button'
 import CreateGameModal from '@components/Modals/CreateGameModal'
+import GameCard from '@components/Cards/GameCard'
+import { ReactComponent as CastaliaIcon } from '@svgs/castalia-logo.svg'
 
 const Homepage = (): JSX.Element => {
     const [gbgService, setGbgService] = useState<null | GlassBeadGameService>(null)
     const [games, setGames] = useState<any[]>([])
     const [createGameModalOpen, setCreateGameModalOpen] = useState(false)
-    const history = useHistory()
 
     async function initialiseGBGService() {
         const client = await HolochainClient.connect('ws://localhost:8888', 'glassbeadgame')
@@ -34,7 +33,10 @@ const Homepage = (): JSX.Element => {
     }, [gbgService])
 
     return (
-        <Column centerX centerY className={styles.wrapper}>
+        <Column centerX className={styles.wrapper}>
+            <Column centerX centerY className={styles.gbgIcon}>
+                <CastaliaIcon />
+            </Column>
             <Button color='blue' text='Create game' onClick={() => setCreateGameModalOpen(true)} />
             {createGameModalOpen && (
                 <CreateGameModal
@@ -44,19 +46,9 @@ const Homepage = (): JSX.Element => {
                     close={() => setCreateGameModalOpen(false)}
                 />
             )}
-            <Column centerX centerY className={styles.wrapper}>
+            <Column centerX centerY className={styles.games}>
                 {games.map((data) => (
-                    <Row key={data.entryHash} spaceBetween className={styles.game}>
-                        <Column>
-                            <p>EntryHash: {data.entryHash}</p>
-                            <p>Topic: {data.game.topic}</p>
-                        </Column>
-                        <Button
-                            color='blue'
-                            text='Open game'
-                            onClick={() => history.push(`/game/${data.entryHash}`)}
-                        />
-                    </Row>
+                    <GameCard key={data.entryHash} data={data} />
                 ))}
             </Column>
         </Column>
