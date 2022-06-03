@@ -9,6 +9,8 @@ import axios from 'axios'
 import Peer from 'simple-peer'
 import * as d3 from 'd3'
 import { v4 as uuidv4 } from 'uuid'
+import { HolochainClient } from '@holochain-open-dev/cell-client'
+import GlassBeadGameService from '@src/glassbeadgame.service'
 import styles from '@styles/components/GlassBeadGame.module.scss'
 import config from '@src/Config'
 import {
@@ -19,7 +21,14 @@ import {
     allValid,
     defaultErrorState,
 } from '@src/Helpers'
-import { GameSettingsData, GameData, IComment, NewCommentData, Bead } from '@src/GameTypes'
+import {
+    GameSettingsData,
+    GameOutput,
+    GameData,
+    IComment,
+    NewCommentData,
+    Bead,
+} from '@src/GameTypes'
 import FlagImage from '@components/FlagImage'
 import Modal from '@components/Modal'
 import ImageUploadModal from '@components/Modals/ImageUploadModal'
@@ -34,8 +43,6 @@ import Scrollbars from '@components/Scrollbars'
 import Markdown from '@components/Markdown'
 import GBGBackgroundModal from '@components/Modals/GBGBackgroundModal'
 import BeadCard from '@src/components/Cards/BeadCard'
-// todo: move this to another folder as not a component
-// import { GlassBeadGameService } from '@components/glassbeadgame.service'
 import { ReactComponent as AudioIconSVG } from '@svgs/microphone-solid.svg'
 import { ReactComponent as AudioSlashIconSVG } from '@svgs/microphone-slash-solid.svg'
 import { ReactComponent as VideoIconSVG } from '@svgs/video-solid.svg'
@@ -335,7 +342,7 @@ const GameSettingsModal = (props) => {
 const GlassBeadGame = (): JSX.Element => {
     const history = useHistory()
     const location = useLocation()
-    // const gameId = location.pathname.split('/')[2]
+    const entryHash = location.pathname.split('/')[2]
 
     // TODO: this should hook into a function that checks if there is a WeCo context and if not then it is false
     const loggedIn = false
@@ -358,6 +365,8 @@ const GlassBeadGame = (): JSX.Element => {
     //     setAlertMessage,
     // } = useContext(AccountContext)
     // const { postData, postDataLoading } = useContext(PostContext)
+
+    const [gbgService, setGbgService] = useState<null | GlassBeadGameService>(null)
 
     const [gameData, setGameData] = useState<any>(gameDefaults)
     const [gameInProgress, setGameInProgress] = useState(false)
@@ -447,30 +456,14 @@ const GlassBeadGame = (): JSX.Element => {
         // in weco we use the postId to find the game data in the db
         // in the holochain version posts aren't used so we'll pass in the gameId instead (retrieved from the page url, see line: 341 above)
         // below I've created a temporary promise to mimic the API request and return dummy game data so the page loads succesfully
-        getGameData: (id: number): Promise<{ data: GameData }> => {
+        getGameData: (): Promise<any> => {
             return isWeco
-                ? axios.get(`${config.apiURL}/glass-bead-game-data?postId=${id}`)
-                : // gbgService.getGame(id)
-                  new Promise((resolve, reject) => {
-                      resolve({
-                          data: {
-                              id: 1,
-                              locked: true,
-                              topic: 'Sample Topic',
-                              topicGroup: null,
-                              topicImage: '/images/archetopics/art.png',
-                              backgroundImage: null,
-                              backgroundVideo: null,
-                              backgroundVideoStartTime: null,
-                              numberOfTurns: 3,
-                              moveDuration: 20,
-                              introDuration: 15,
-                              intervalDuration: 0,
-                              outroDuration: 30,
-                              GlassBeadGameComments: [],
-                              GlassBeads: [],
-                          },
-                      })
+                ? axios.get(`${config.apiURL}/glass-bead-game-data?postId=${postData.id}`)
+                : new Promise((resolve, reject) => {
+                      gbgService!
+                          .getGame(entryHash)
+                          .then((res) => resolve({ data: res.game }))
+                          .catch((error) => console.log(error))
                   })
         },
 
@@ -1279,16 +1272,27 @@ const GlassBeadGame = (): JSX.Element => {
         }
     }
 
+    async function initialiseGBGService() {
+        const client = await HolochainClient.connect('ws://localhost:8888', 'glassbeadgame')
+        const cellData = client.cellDataByRoleId('glassbeadgame-role')
+        const cellClient = client.forCell(cellData!)
+        setGbgService(new GlassBeadGameService(cellClient))
+    }
+
+    useEffect(() => {
+        initialiseGBGService()
+    }, [])
+
     // todo: flatten out userData into user object with socketId
     useEffect(() => {
-        if (!accountDataLoading && !postDataLoading && postData.id) {
-            backendShim.getGameData(postData.id).then((res) => {
-                const { GlassBeadGameComments, GlassBeads } = res.data
+        if (gbgService) {
+            backendShim.getGameData().then((res) => {
                 setGameData(res.data)
-                setComments(GlassBeadGameComments)
-                setBeads(GlassBeads.sort((a, b) => a.index - b.index))
-                GlassBeads.forEach((bead) => addEventListenersToBead(bead.index))
-                if (GlassBeads.length) addPlayButtonToCenterBead()
+                // const { GlassBeadGameComments, GlassBeads } = res.data
+                // setComments(GlassBeadGameComments)
+                // setBeads(GlassBeads.sort((a, b) => a.index - b.index))
+                // GlassBeads.forEach((bead) => addEventListenersToBead(bead.index))
+                // if (GlassBeads.length) addPlayButtonToCenterBead()
                 // set roomIdRef and userRef
                 roomIdRef.current = postData.id
                 userRef.current = {
@@ -1558,7 +1562,7 @@ const GlassBeadGame = (): JSX.Element => {
         }
 
         return () => socketRef.current && socketRef.current.disconnect()
-    }, [accountDataLoading, postDataLoading, postData.id])
+    }, [gbgService])
 
     useEffect(() => {
         const loadingAnimationDuration = 2000
@@ -1960,7 +1964,7 @@ const GlassBeadGame = (): JSX.Element => {
                             </button>
                         </Row>
                         <Row centerY centerX className={styles.topicImage}>
-                            {gameData.topicImage && <img src={gameData.topicImage} alt='' />}
+                            {gameData.topicImageUrl && <img src={gameData.topicImageUrl} alt='' />}
                             <button
                                 type='button'
                                 className={styles.uploadTopicImageButton}

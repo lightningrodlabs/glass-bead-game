@@ -26,52 +26,42 @@ export default class GlassBeadGameService {
     }
 
     async createGame(game: GameSettingsData): Promise<CreateOutput> {
-        // saveGameSettings
         return this.callZome('create_game', game)
     }
 
-    async joinGame(input: JoinGameInput): Promise<HeaderHashB64> {
-        // no shim yet
-        return this.callZome('join_game', input)
-    }
-
-    async getPlayers(input: EntryHashB64): Promise<Array<[AgentPubKeyB64, HeaderHashB64]>> {
-        // no shim yet
-        return this.callZome('get_players', input)
-    }
-
-    async leaveGame(input: HeaderHashB64): Promise<HeaderHashB64> {
-        // no shim yet
-        return this.callZome('leave_game', input)
-    }
-
     async getGames(): Promise<Array<GameOutput>> {
-        // no shim yet
         return this.callZome('get_games', null)
     }
 
     async getGame(input: EntryHashB64): Promise<GameOutput> {
-        // getGameData
         return this.callZome('get_game', input)
     }
 
+    async joinGame(input: JoinGameInput): Promise<HeaderHashB64> {
+        return this.callZome('join_game', input)
+    }
+
+    async getPlayers(input: EntryHashB64): Promise<Array<[AgentPubKeyB64, HeaderHashB64]>> {
+        return this.callZome('get_players', input)
+    }
+
+    async leaveGame(input: HeaderHashB64): Promise<HeaderHashB64> {
+        return this.callZome('leave_game', input)
+    }
+
     async createComment(input: Comment): Promise<CreateOutput> {
-        // saveComment
         return this.callZome('create_comment', input)
     }
 
     async getComments(input: EntryHashB64): Promise<CommentOutput> {
-        // not sure if one of the shim methods would call into this? Is this necessary?
         return this.callZome('get_comments', input)
     }
 
     async createBead(input: Bead): Promise<CreateOutput> {
-        // saveGame
         return this.callZome('create_bead', input)
     }
 
     async getBeads(input: EntryHashB64): Promise<BeadOutput> {
-        // not sure if one of the shim methods would call into this? Is this necessary?
         return this.callZome('get_beads', input)
     }
 

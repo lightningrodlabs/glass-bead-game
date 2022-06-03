@@ -40,19 +40,16 @@ export interface GameData {
     GlassBeads: Bead[]
 }
 
-// TODO: Eric added this, but James needs to consider if it is necessary
 export interface JoinGameInput {
     agent: AgentPubKeyB64
     entryHash: EntryHashB64
 }
 
-// TODO: Eric added this, but James needs to consider if it is necessary
 export interface CreateOutput {
     headerHash: HeaderHashB64
     entryHash: EntryHashB64
 }
 
-// TODO: Eric added this, but James needs to consider if it is necessary
 export interface GameOutput {
     headerHash: HeaderHashB64
     entryHash: EntryHashB64
