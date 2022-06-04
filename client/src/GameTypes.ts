@@ -40,6 +40,11 @@ export interface GameData {
     GlassBeads: Bead[]
 }
 
+export interface IComment {
+    entryHash: EntryHashB64
+    comment: string
+}
+
 export interface JoinGameInput {
     agent: AgentPubKeyB64
     entryHash: EntryHashB64
@@ -57,17 +62,17 @@ export interface GameOutput {
     author: AgentPubKeyB64
 }
 
-export interface IComment {
-    id: number
-    text: string
-    createdAt: Date
-    updatedAt: Date
-    user: {
-        handle: string
-        name: string
-        flagImagePath: string
-    }
-}
+// export interface IComment {
+//     id: number
+//     text: string
+//     createdAt: Date
+//     updatedAt: Date
+//     user: {
+//         handle: string
+//         name: string
+//         flagImagePath: string
+//     }
+// }
 
 export interface NewCommentData {
     gameId: number

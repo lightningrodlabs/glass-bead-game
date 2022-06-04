@@ -87,7 +87,7 @@ const CreateGameModal = (props: {
         if (gbgService && allValid(settingsForm, setSettingsForm)) {
             setLoading(true)
             const gameData = {
-                locked: true,
+                locked: false,
                 topic,
                 topicGroup,
                 topicImageUrl:

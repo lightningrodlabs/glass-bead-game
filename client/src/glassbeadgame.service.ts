@@ -16,6 +16,7 @@ import {
     Bead,
     CommentOutput,
     BeadOutput,
+    IComment,
 } from '@src/GameTypes'
 
 export default class GlassBeadGameService {
@@ -49,7 +50,7 @@ export default class GlassBeadGameService {
         return this.callZome('leave_game', input)
     }
 
-    async createComment(input: Comment): Promise<CreateOutput> {
+    async createComment(input: IComment): Promise<CreateOutput> {
         return this.callZome('create_comment', input)
     }
 
