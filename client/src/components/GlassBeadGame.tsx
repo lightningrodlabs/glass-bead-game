@@ -26,6 +26,7 @@ import {
     CreateOutput,
     GameOutput,
     GameData,
+    JoinGameInput,
     IComment,
     NewCommentData,
     Bead,
@@ -368,6 +369,8 @@ const GlassBeadGame = (): JSX.Element => {
     // const { postData, postDataLoading } = useContext(PostContext)
 
     const [gbgService, setGbgService] = useState<null | GlassBeadGameService>(null)
+    const joinedGameHeaderHash = useRef<any>()
+    const [holoPlayers, setHoloPlayers] = useState<any[]>([])
 
     const [gameData, setGameData] = useState<any>(gameDefaults)
     const [gameInProgress, setGameInProgress] = useState(false)
@@ -465,9 +468,28 @@ const GlassBeadGame = (): JSX.Element => {
                 : new Promise((resolve, reject) => {
                       gbgService!
                           .getGame(entryHash)
-                          .then((res) => resolve({ data: res.game }))
+                          .then((response) => resolve(response))
                           .catch((error) => console.log(error))
                   })
+        },
+
+        joinGame: (): Promise<any> => {
+            return new Promise((resolve, reject) => {
+                gbgService!
+                    .joinGame({ agent: gbgService!.myAgentPubKey, entryHash })
+                    .then((response) => resolve(response))
+                    .catch((error) => console.log(error))
+            })
+        },
+
+        getPlayers: (): Promise<any> => {
+            // entryHash: EntryHashB64
+            return new Promise((resolve, reject) => {
+                gbgService!
+                    .getPlayers(entryHash)
+                    .then((response) => resolve(response))
+                    .catch((error) => console.log(error))
+            })
         },
 
         // saveGameSettings:
@@ -1061,8 +1083,10 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function peopleInRoomText() {
-        const totalUsers = usersRef.current.length
+        const totalUsers = holoPlayers.length
         return `${totalUsers} ${isPlural(totalUsers) ? 'people' : 'person'} in room`
+        // const totalUsers = usersRef.current.length
+        // return `${totalUsers} ${isPlural(totalUsers) ? 'people' : 'person'} in room`
     }
 
     function peopleStreamingText() {
@@ -1316,14 +1340,42 @@ const GlassBeadGame = (): JSX.Element => {
     // todo: flatten out userData into user object with socketId
     useEffect(() => {
         if (gbgService) {
+            console.log('my agent key: ', gbgService!.myAgentPubKey)
+            backendShim.getPlayers().then((playersArray) => {
+                console.log('getPlayers: ', playersArray)
+                setHoloPlayers(playersArray.map((p) => p[0]))
+                const agentKey = gbgService!.myAgentPubKey
+                const agentInRoom = playersArray.find((p) => p[0] === agentKey)
+                if (!agentInRoom) {
+                    gbgService!
+                        .joinGame({ agent: agentKey, entryHash })
+                        .then((res) => {
+                            console.log('joinGame: ', res)
+                            joinedGameHeaderHash.current = res
+                            setHoloPlayers((p) => [...p, agentKey])
+                            // notify other players
+                            const signal = {
+                                attestationHash: entryHash,
+                                message: {
+                                    type: 'NewPlayer',
+                                    content: 'new player!!!',
+                                },
+                            }
+                            gbgService!
+                                .notify(
+                                    signal,
+                                    playersArray.map((p) => p[0])
+                                )
+                                .then((resp) => console.log('notify res: ', resp))
+                                .catch((error) => console.log('notify error: ', error))
+                        })
+                        .catch((error) => console.log(error))
+                }
+            })
+
             backendShim.getGameData().then((res) => {
-                setGameData(res.data)
-                // const { GlassBeadGameComments, GlassBeads } = res.data
-                // setComments(GlassBeadGameComments)
-                // setBeads(GlassBeads.sort((a, b) => a.index - b.index))
-                // GlassBeads.forEach((bead) => addEventListenersToBead(bead.index))
-                // if (GlassBeads.length) addPlayButtonToCenterBead()
-                // set roomIdRef and userRef
+                console.log('getGameData: ', res)
+                setGameData(res.game)
                 roomIdRef.current = postData.id
                 userRef.current = {
                     // todo: store socketId as well after returned from server
@@ -1610,7 +1662,18 @@ const GlassBeadGame = (): JSX.Element => {
                 .catch((error) => console.log(error))
         }
 
-        return () => socketRef.current && socketRef.current.disconnect()
+        return () => {
+            if (gbgService && joinedGameHeaderHash.current) {
+                console.log('leaveGame hash: ', joinedGameHeaderHash.current)
+                gbgService
+                    .leaveGame(joinedGameHeaderHash.current)
+                    .then((response) => {
+                        console.log('leaveGame response: ', response)
+                    })
+                    .catch((error) => console.log(error))
+            }
+            // if(socketRef.current) socketRef.current.disconnect()
+        }
     }, [gbgService])
 
     useEffect(() => {
@@ -2084,7 +2147,18 @@ const GlassBeadGame = (): JSX.Element => {
                             </Column>
                             <Column className={styles.peopleInRoom}>
                                 <p style={{ marginBottom: 10 }}>{peopleInRoomText()}</p>
-                                {usersRef.current.map((user) => (
+                                {holoPlayers.map((user) => (
+                                    <ImageTitle
+                                        key={user}
+                                        type='user'
+                                        imagePath=''
+                                        title={user}
+                                        fontSize={16}
+                                        imageSize={40}
+                                        style={{ marginBottom: 10 }}
+                                    />
+                                ))}
+                                {/* {usersRef.current.map((user) => (
                                     <ImageTitle
                                         key={user.socketId}
                                         type='user'
@@ -2094,7 +2168,7 @@ const GlassBeadGame = (): JSX.Element => {
                                         imageSize={40}
                                         style={{ marginBottom: 10 }}
                                     />
-                                ))}
+                                ))} */}
                             </Column>
                         </Column>
                     )}
