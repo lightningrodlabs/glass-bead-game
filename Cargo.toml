@@ -2,6 +2,7 @@
 resolver = "2" #needed to not bundle dev-dependencies into wasm builds
 members = [
   "dna/zomes/glassbeadgame",
+  "dna/zomes/glassbeadgame_core"
   ]
 
 [profile.dev]

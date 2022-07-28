@@ -2,14 +2,6 @@ pub use hdk::prelude::*;
 
 pub mod game;
 
-entry_defs![
-    PathEntry::entry_def(),
-    Anchor::entry_def(),
-    game::Comment::entry_def(),
-    game::Bead::entry_def(),
-    game::Game::entry_def()
-    ];
-
 #[hdk_extern]
 fn init(_: ()) -> ExternResult<InitCallbackResult> {
     let mut functions: GrantedFunctions = BTreeSet::new();
