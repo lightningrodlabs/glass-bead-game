@@ -1,9 +1,20 @@
 import { Timestamp } from '@holochain/client'
 import { EntryHashB64, AgentPubKeyB64, HeaderHashB64 } from '@holochain-open-dev/core-types'
 
+export type Message = 
+{
+    type: 'NewPlayer',
+    content: AgentPubKeyB64
+}
+|
+{
+    type: 'NewGame',
+    content: GameOutput
+}
+
 export type Signal = {
-    attestationHash: EntryHashB64
-    message: { type: 'NewGame'; content: GameOutput }
+    gameHash: EntryHashB64
+    message: Message
 }
 
 export interface GameSettingsData {

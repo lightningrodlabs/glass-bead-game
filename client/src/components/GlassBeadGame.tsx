@@ -30,6 +30,8 @@ import {
     IComment,
     NewCommentData,
     Bead,
+    Signal,
+    Message,
 } from '@src/GameTypes'
 import FlagImage from '@components/FlagImage'
 import Modal from '@components/Modal'
@@ -1354,17 +1356,18 @@ const GlassBeadGame = (): JSX.Element => {
                             joinedGameHeaderHash.current = res
                             setHoloPlayers((p) => [...p, agentKey])
                             // notify other players
-                            const signal = {
-                                attestationHash: entryHash,
-                                message: {
-                                    type: 'NewPlayer',
-                                    content: 'new player!!!',
-                                },
+                            const message : Message = {
+                                type: 'NewPlayer',
+                                content: agentKey
+                            }
+                            const signal : Signal = {
+                                gameHash: entryHash,
+                                message
                             }
                             gbgService!
                                 .notify(
                                     signal,
-                                    playersArray.map((p) => p[0])
+                                    playersArray.map((p:any) => p[0])
                                 )
                                 .then((resp) => console.log('notify res: ', resp))
                                 .catch((error) => console.log('notify error: ', error))
