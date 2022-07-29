@@ -1356,18 +1356,17 @@ const GlassBeadGame = (): JSX.Element => {
                             joinedGameHeaderHash.current = res
                             setHoloPlayers((p) => [...p, agentKey])
                             // notify other players
-                            const message : Message = {
-                                type: 'NewPlayer',
-                                content: agentKey
-                            }
-                            const signal : Signal = {
+                            const signal: Signal = {
                                 gameHash: entryHash,
-                                message
+                                message: {
+                                    type: 'NewPlayer',
+                                    content: agentKey,
+                                },
                             }
                             gbgService!
                                 .notify(
                                     signal,
-                                    playersArray.map((p:any) => p[0])
+                                    playersArray.map((p: any) => p[0])
                                 )
                                 .then((resp) => console.log('notify res: ', resp))
                                 .catch((error) => console.log('notify error: ', error))
