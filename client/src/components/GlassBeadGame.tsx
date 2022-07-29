@@ -9,7 +9,8 @@ import axios from 'axios'
 import Peer from 'simple-peer'
 import * as d3 from 'd3'
 import { v4 as uuidv4 } from 'uuid'
-import { HolochainClient } from '@holochain-open-dev/cell-client'
+import { AppWebsocket } from '@holochain/client'
+import { HolochainClient, CellClient } from '@holochain-open-dev/cell-client'
 import GlassBeadGameService from '@src/glassbeadgame.service'
 import styles from '@styles/components/GlassBeadGame.module.scss'
 import config from '@src/Config'
@@ -371,7 +372,7 @@ const GlassBeadGame = (): JSX.Element => {
     // const { postData, postDataLoading } = useContext(PostContext)
 
     const [gbgService, setGbgService] = useState<null | GlassBeadGameService>(null)
-    const joinedGameHeaderHash = useRef<any>()
+    const joinedGameActionHash = useRef<any>()
     const [holoPlayers, setHoloPlayers] = useState<any[]>([])
 
     const [gameData, setGameData] = useState<any>(gameDefaults)
@@ -1329,9 +1330,18 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     async function initialiseGBGService() {
-        const client = await HolochainClient.connect('ws://localhost:8888', 'glassbeadgame')
-        const cellData = client.cellDataByRoleId('glassbeadgame-role')
-        const cellClient = client.forCell(cellData!)
+        const appWebsocket = await AppWebsocket.connect(
+            `ws://localhost:8888` // ${process.env.HC_PORT}`
+        )
+
+        const client = new HolochainClient(appWebsocket)
+        const appInfo = await appWebsocket.appInfo({
+            installed_app_id: 'attestations',
+        })
+
+        const cell = appInfo.cell_data[0]
+        const cellClient = new CellClient(client, cell)
+
         setGbgService(new GlassBeadGameService(cellClient))
     }
 
@@ -1353,7 +1363,7 @@ const GlassBeadGame = (): JSX.Element => {
                         .joinGame({ agent: agentKey, entryHash })
                         .then((res) => {
                             console.log('joinGame: ', res)
-                            joinedGameHeaderHash.current = res
+                            joinedGameActionHash.current = res
                             setHoloPlayers((p) => [...p, agentKey])
                             // notify other players
                             const signal: Signal = {
@@ -1665,10 +1675,10 @@ const GlassBeadGame = (): JSX.Element => {
         }
 
         return () => {
-            if (gbgService && joinedGameHeaderHash.current) {
-                console.log('leaveGame hash: ', joinedGameHeaderHash.current)
+            if (gbgService && joinedGameActionHash.current) {
+                console.log('leaveGame hash: ', joinedGameActionHash.current)
                 gbgService
-                    .leaveGame(joinedGameHeaderHash.current)
+                    .leaveGame(joinedGameActionHash.current)
                     .then((response) => {
                         console.log('leaveGame response: ', response)
                     })
@@ -1894,7 +1904,7 @@ const GlassBeadGame = (): JSX.Element => {
                     close={() => setTopicImageModalOpen(false)}
                 />
             )}
-            <Row centerY className={styles.mobileHeader}>
+            <Row centerY className={styles.mobileAction}>
                 <button
                     type='button'
                     onClick={() => updateMobileTab('comments')}

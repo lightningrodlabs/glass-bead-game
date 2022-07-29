@@ -1,12 +1,8 @@
 /* eslint-disable camelcase */
 /* eslint-disable no-useless-constructor */
 import { CellClient } from '@holochain-open-dev/cell-client'
-import {
-    serializeHash,
-    EntryHashB64,
-    AgentPubKeyB64,
-    HeaderHashB64,
-} from '@holochain-open-dev/core-types'
+import { EntryHashB64, AgentPubKeyB64, ActionHashB64 } from '@holochain-open-dev/core-types'
+import { serializeHash } from '@holochain-open-dev/utils'
 import {
     GameOutput,
     GameSettingsData,
@@ -23,7 +19,7 @@ export default class GlassBeadGameService {
     constructor(public cellClient: CellClient, protected zomeName = 'glassbeadgame') {}
 
     get myAgentPubKey(): AgentPubKeyB64 {
-        return serializeHash(this.cellClient.cellId[1])
+        return serializeHash(this.cellClient.cell.cell_id[1])
     }
 
     async createGame(game: GameSettingsData): Promise<CreateOutput> {
@@ -38,15 +34,15 @@ export default class GlassBeadGameService {
         return this.callZome('get_game', input)
     }
 
-    async joinGame(input: JoinGameInput): Promise<HeaderHashB64> {
+    async joinGame(input: JoinGameInput): Promise<ActionHashB64> {
         return this.callZome('join_game', input)
     }
 
-    async getPlayers(input: EntryHashB64): Promise<Array<[AgentPubKeyB64, HeaderHashB64]>> {
+    async getPlayers(input: EntryHashB64): Promise<Array<[AgentPubKeyB64, ActionHashB64]>> {
         return this.callZome('get_players', input)
     }
 
-    async leaveGame(input: HeaderHashB64): Promise<HeaderHashB64> {
+    async leaveGame(input: ActionHashB64): Promise<ActionHashB64> {
         return this.callZome('leave_game', input)
     }
 
