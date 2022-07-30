@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { HolochainClient } from '@holochain-open-dev/cell-client'
+import { CellClient, HolochainClient } from '@holochain-open-dev/cell-client'
 import GlassBeadGameService from '@src/glassbeadgame.service'
 import styles from '@styles/pages/HomePage.module.scss'
 import Column from '@components/Column'
@@ -7,6 +7,7 @@ import Button from '@components/Button'
 import CreateGameModal from '@components/Modals/CreateGameModal'
 import GameCard from '@components/Cards/GameCard'
 import { ReactComponent as CastaliaIcon } from '@svgs/castalia-logo.svg'
+import { AppWebsocket, InstalledCell } from '@holochain/client'
 
 const Homepage = (): JSX.Element => {
     const [gbgService, setGbgService] = useState<null | GlassBeadGameService>(null)
@@ -14,9 +15,16 @@ const Homepage = (): JSX.Element => {
     const [createGameModalOpen, setCreateGameModalOpen] = useState(false)
 
     async function initialiseGBGService() {
-        const client = await HolochainClient.connect('ws://localhost:8888', 'glassbeadgame')
-        const cellData = client.cellDataByRoleId('glassbeadgame-role')
-        const cellClient = client.forCell(cellData!)
+        const client = await AppWebsocket.connect('ws://localhost:8888')
+        const appInfo = await client.appInfo({ installed_app_id: 'glassbeadgame' })
+        const holochainClient = new HolochainClient(client)
+        const cellData = appInfo.cell_data.find(
+            (c: InstalledCell) => c.role_id === 'glassbeadgame-role'
+        )
+
+        if (!cellData) throw new Error('No cell with glassbeadgame-role role id was found')
+
+        const cellClient = new CellClient(holochainClient, cellData)
         setGbgService(new GlassBeadGameService(cellClient))
     }
 

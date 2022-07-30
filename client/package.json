@@ -43,18 +43,11 @@
         "test": "react-app-rewired test",
         "eject": "react-app-rewired eject"
     },
-    "browserslist": {
-        "production": [
-            ">0.2%",
-            "not dead",
-            "not op_mini all"
-        ],
-        "development": [
-            "last 1 chrome version",
-            "last 1 firefox version",
-            "last 1 safari version"
-        ]
-    },
+    "browserslist": [
+        ">0.2%",
+        "not dead",
+        "not op_mini all"
+    ],
     "devDependencies": {
         "@types/body-parser": "^1.19.2",
         "@types/dom-mediacapture-record": "^1.0.10",
