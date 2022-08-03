@@ -6,7 +6,7 @@
         "@holochain-open-dev/cell-client": "^0.6.1",
         "@holochain-open-dev/core-types": "^0.4.0",
         "@holochain-open-dev/utils": "^0.2.4",
-        "@holochain/client": "^0.6.0",
+        "@holochain/client": "^0.7.0",
         "@testing-library/jest-dom": "^4.2.4",
         "@testing-library/react": "^9.3.2",
         "@testing-library/user-event": "^7.1.2",
