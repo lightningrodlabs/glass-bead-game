@@ -1,15 +1,16 @@
 [package]
 name = "glassbeadgame"
 version = "0.1.0"
-edition = "2018"
-authors = ["test@test.com"]
+edition = "2021"
+authors = ["eric@harris-braun.com"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 name = "glassbeadgame"
 
 [dependencies]
-hdk = {version = "0.0.127", features = ["encoding"]}
+hdk = {version = "0.0.142", features = ["encoding"]}
 serde = "1.0"
 derive_more = "0"
 chrono = "0.4"
+glassbeadgame_core = { path = "../glassbeadgame_core" }

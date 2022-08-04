@@ -1,9 +1,19 @@
 import { Timestamp } from '@holochain/client'
-import { EntryHashB64, AgentPubKeyB64, HeaderHashB64 } from '@holochain-open-dev/core-types'
+import { EntryHashB64, AgentPubKeyB64, ActionHashB64 } from '@holochain-open-dev/core-types'
+
+export type Message =
+    | {
+          type: 'NewPlayer'
+          content: AgentPubKeyB64
+      }
+    | {
+          type: 'NewGame'
+          content: GameOutput
+      }
 
 export type Signal = {
-    attestationHash: EntryHashB64
-    message: { type: 'NewGame'; content: GameOutput }
+    gameHash: EntryHashB64
+    message: Message
 }
 
 export interface GameSettingsData {
@@ -51,12 +61,12 @@ export interface JoinGameInput {
 }
 
 export interface CreateOutput {
-    headerHash: HeaderHashB64
+    headerHash: ActionHashB64
     entryHash: EntryHashB64
 }
 
 export interface GameOutput {
-    headerHash: HeaderHashB64
+    headerHash: ActionHashB64
     entryHash: EntryHashB64
     game: GameSettingsData
     author: AgentPubKeyB64
@@ -86,7 +96,7 @@ export interface CommentInput {
 }
 
 export interface CommentOutput {
-    headerHash: HeaderHashB64
+    headerHash: ActionHashB64
     entryHash: EntryHashB64
     agent: AgentPubKeyB64
     comment: string
@@ -112,7 +122,7 @@ export interface BeadInput {
 }
 
 export interface BeadOutput {
-    headerHash: HeaderHashB64
+    headerHash: ActionHashB64
     entryHash: EntryHashB64
     agent: AgentPubKeyB64
     bead: Bead

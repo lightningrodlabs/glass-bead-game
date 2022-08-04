@@ -5,7 +5,7 @@ use crate::game::*;
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
 #[serde(tag = "type", content = "content")]
 pub enum Message {
-    NewAttestation(),
+    NewPlayer(AgentPubKeyB64),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
