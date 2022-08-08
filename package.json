@@ -3,12 +3,12 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "start": "cross-env HC_PORT=$(port) concurrently \"npm run start:happ\" \"sleep 5 && cd client && yarn start\"",
+        "start": "npm run build:happ && npm run start:agent",
         "network": "npm run build:happ && concurrently-repeat \"npm run start:agent\"",
         "build": "cd client && yarn install",
         "test": "npm run build:happ && cd test && npm run test",
-        "start:agent": "cross-env HC_PORT=$(port) concurrently \"npm run start:happ\" \"sleep 5 && cd client && yarn start\"",
-        "start:happ": "rimraf .hc* && RUST_LOG=warn hc sandbox generate ./dna/workdir/happ/glassbeadgame.happ --run=$HC_PORT -a glassbeadgame network mdns",
+        "start:agent": "cross-env REACT_APP_HC_PORT=$(port) REACT_APP_CLIENT_PORT=$(port) concurrently \"npm run start:happ\" \"sleep 5 && cd client && yarn start\"",
+        "start:happ": "rimraf .hc* && RUST_LOG=warn hc sandbox generate ./dna/workdir/happ/glassbeadgame.happ --run=$REACT_APP_HC_PORT -a glassbeadgame network mdns",
         "build:happ": "npm run build:dna && hc app pack ./dna/workdir/happ",
         "build:dna": "npm run build:zome && hc dna pack ./dna/workdir/dna",
         "build:zome": "CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown"

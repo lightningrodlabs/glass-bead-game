@@ -15,7 +15,7 @@ const Homepage = (): JSX.Element => {
     const [createGameModalOpen, setCreateGameModalOpen] = useState(false)
 
     async function initialiseGBGService() {
-        const client = await AppWebsocket.connect('ws://localhost:8888')
+        const client = await AppWebsocket.connect(`ws://localhost:${process.env.REACT_APP_HC_PORT}`)
         const appInfo = await client.appInfo({ installed_app_id: 'glassbeadgame' })
         const holochainClient = new HolochainClient(client)
         const cellData = appInfo.cell_data.find(

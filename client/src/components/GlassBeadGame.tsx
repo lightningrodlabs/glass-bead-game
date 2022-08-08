@@ -9,7 +9,7 @@ import axios from 'axios'
 import Peer from 'simple-peer'
 import * as d3 from 'd3'
 import { v4 as uuidv4 } from 'uuid'
-import { AppWebsocket } from '@holochain/client'
+import { AppWebsocket, InstalledCell } from '@holochain/client'
 import { HolochainClient, CellClient } from '@holochain-open-dev/cell-client'
 import GlassBeadGameService from '@src/glassbeadgame.service'
 import styles from '@styles/components/GlassBeadGame.module.scss'
@@ -1330,18 +1330,16 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     async function initialiseGBGService() {
-        const appWebsocket = await AppWebsocket.connect(
-            `ws://localhost:8888` // ${process.env.HC_PORT}`
+        const client = await AppWebsocket.connect(`ws://localhost:${process.env.REACT_APP_HC_PORT}`)
+        const appInfo = await client.appInfo({ installed_app_id: 'glassbeadgame' })
+        const holochainClient = new HolochainClient(client)
+        const cellData = appInfo.cell_data.find(
+            (c: InstalledCell) => c.role_id === 'glassbeadgame-role'
         )
 
-        const client = new HolochainClient(appWebsocket)
-        const appInfo = await appWebsocket.appInfo({
-            installed_app_id: 'attestations',
-        })
+        if (!cellData) throw new Error('No cell with glassbeadgame-role role id was found')
 
-        const cell = appInfo.cell_data[0]
-        const cellClient = new CellClient(client, cell)
-
+        const cellClient = new CellClient(holochainClient, cellData)
         setGbgService(new GlassBeadGameService(cellClient))
     }
 
