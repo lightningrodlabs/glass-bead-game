@@ -7,13 +7,22 @@ export type Message =
           content: AgentPubKeyB64
       }
     | {
-          type: 'NewGame'
-          content: GameOutput
+          type: 'NewComment'
+          content: NewComment
+      }
+    | {
+          type: 'Generic'
+          content: string
       }
 
 export type Signal = {
     gameHash: EntryHashB64
     message: Message
+}
+
+export type NewComment = {
+    agentKey: string
+    comment: string
 }
 
 export interface GameSettingsData {

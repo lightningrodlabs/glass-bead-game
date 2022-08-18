@@ -372,7 +372,7 @@ const GlassBeadGame = (): JSX.Element => {
     // const { postData, postDataLoading } = useContext(PostContext)
 
     const [gbgService, setGbgService] = useState<null | GlassBeadGameService>(null)
-    const joinedGameActionHash = useRef<any>()
+    const joinGameHash = useRef<any>()
     const [holoPlayers, setHoloPlayers] = useState<any[]>([])
 
     const [gameData, setGameData] = useState<any>(gameDefaults)
@@ -808,47 +808,25 @@ const GlassBeadGame = (): JSX.Element => {
     function createComment(e) {
         e.preventDefault()
         if (allowedTo('comment') && newComment.length) {
-            // const data = {
-            //     gameId: gameData.id,
-            //     userId: accountData.id,
-            //     text: newComment,
-            // }
-            const data = {
-                entryHash,
-                comment: newComment,
+            // save comment
+            gbgService!
+                .createComment({ entryHash, comment: newComment })
+                .then((res) => console.log('createComment res:', res))
+            // signal comment
+            const signal: Signal = {
+                gameHash: entryHash,
+                message: {
+                    type: 'NewComment',
+                    content: {
+                        agentKey: gbgService!.myAgentPubKey,
+                        comment: newComment,
+                    },
+                },
             }
-            backendShim
-                .saveComment(data)
-                .then(() => {
-                    backendShim
-                        .getComments(entryHash)
-                        .then((res) =>
-                            setComments(
-                                res.map((item) => {
-                                    return {
-                                        user: {
-                                            id: 1,
-                                            name: item.agent,
-                                            handle: 'testHandle',
-                                            flagImagePath: '',
-                                        },
-                                        text: item.comment,
-                                        createAt: new Date(item.timestamp).toISOString(),
-                                    }
-                                })
-                            )
-                        )
-                        .catch((error) => console.log(error))
-                    // const signalData = {
-                    //     roomId: roomIdRef.current,
-                    //     user: userRef.current,
-                    //     text: newComment,
-                    //     createdAt: new Date(),
-                    // }
-                    // backendShim.socket.emit('outgoing-comment', signalData)
-                    // setNewComment('')
-                })
-                .catch((error) => console.log(error))
+            gbgService!
+                .notify(signal, holoPlayers)
+                .then((res) => console.log('notify res: ', res))
+                .catch((error) => console.log('notify error: ', error))
         }
     }
 
@@ -1329,6 +1307,32 @@ const GlassBeadGame = (): JSX.Element => {
         }
     }
 
+    function signalHandler(signal) {
+        const { type, content } = signal.data.payload.message
+        switch (type) {
+            case 'NewPlayer':
+                setHoloPlayers((p) => [...p, content])
+                break
+            case 'NewComment': {
+                const { agentKey, comment } = content
+                const commentData = {
+                    user: {
+                        id: 1,
+                        name: agentKey,
+                        handle: 'testHandle',
+                        flagImagePath: '',
+                    },
+                    text: comment,
+                    createdAt: new Date().toISOString(),
+                }
+                setComments((c) => [...c, commentData])
+                break
+            }
+            default:
+                break
+        }
+    }
+
     async function initialiseGBGService() {
         const client = await AppWebsocket.connect(`ws://localhost:${process.env.REACT_APP_HC_PORT}`)
         const appInfo = await client.appInfo({ installed_app_id: 'glassbeadgame' })
@@ -1336,347 +1340,320 @@ const GlassBeadGame = (): JSX.Element => {
         const cellData = appInfo.cell_data.find(
             (c: InstalledCell) => c.role_id === 'glassbeadgame-role'
         )
-
         if (!cellData) throw new Error('No cell with glassbeadgame-role role id was found')
-
         const cellClient = new CellClient(holochainClient, cellData)
         setGbgService(new GlassBeadGameService(cellClient))
+        cellClient.addSignalHandler(signalHandler)
+    }
+
+    function formatComments(holoComments) {
+        return holoComments.map((item) => {
+            return {
+                user: {
+                    id: 1,
+                    name: item.agent,
+                    handle: 'testHandle',
+                    flagImagePath: '',
+                },
+                text: item.comment,
+                createAt: new Date(item.timestamp).toISOString(),
+            }
+        })
+    }
+
+    async function initialiseGame() {
+        const agentKey = gbgService!.myAgentPubKey
+        const { game } = await gbgService!.getGame(entryHash)
+        const playersArray = await gbgService!.getPlayers(entryHash)
+        const gameComments = await gbgService!.getComments(entryHash)
+        setGameData(game)
+        setHoloPlayers(playersArray.map((p) => p[0]))
+        setComments(formatComments(gameComments))
+        // if new to game, join game and notify other platers
+        const playerInRoom = playersArray.find((p) => p[0] === agentKey)
+        if (!playerInRoom) {
+            gbgService!.joinGame({ agent: agentKey, entryHash }).then((res) => {
+                joinGameHash.current = res
+                setHoloPlayers((p) => [...p, agentKey])
+            })
+            if (playersArray.length > 0) {
+                const signal: Signal = {
+                    gameHash: entryHash,
+                    message: {
+                        type: 'NewPlayer',
+                        content: agentKey,
+                    },
+                }
+                gbgService!
+                    .notify(
+                        signal,
+                        playersArray.map((p: any) => p[0])
+                    )
+                    .then((res) => console.log('notify res: ', res))
+                    .catch((error) => console.log('notify error: ', error))
+            }
+        }
     }
 
     useEffect(() => {
         initialiseGBGService()
     }, [])
 
-    // todo: flatten out userData into user object with socketId
     useEffect(() => {
-        if (gbgService) {
-            console.log('my agent key: ', gbgService!.myAgentPubKey)
-            backendShim.getPlayers().then((playersArray) => {
-                console.log('getPlayers: ', playersArray)
-                setHoloPlayers(playersArray.map((p) => p[0]))
-                const agentKey = gbgService!.myAgentPubKey
-                const agentInRoom = playersArray.find((p) => p[0] === agentKey)
-                if (!agentInRoom) {
-                    gbgService!
-                        .joinGame({ agent: agentKey, entryHash })
-                        .then((res) => {
-                            console.log('joinGame: ', res)
-                            joinedGameActionHash.current = res
-                            setHoloPlayers((p) => [...p, agentKey])
-                            // notify other players
-                            const signal: Signal = {
-                                gameHash: entryHash,
-                                message: {
-                                    type: 'NewPlayer',
-                                    content: agentKey,
-                                },
-                            }
-                            gbgService!
-                                .notify(
-                                    signal,
-                                    playersArray.map((p: any) => p[0])
-                                )
-                                .then((resp) => console.log('notify res: ', resp))
-                                .catch((error) => console.log('notify error: ', error))
-                        })
-                        .catch((error) => console.log(error))
-                }
-            })
+        if (gbgService) initialiseGame()
 
-            backendShim.getGameData().then((res) => {
-                console.log('getGameData: ', res)
-                setGameData(res.game)
-                roomIdRef.current = postData.id
-                userRef.current = {
-                    // todo: store socketId as well after returned from server
-                    id: accountData.id,
-                    handle: accountData.handle,
-                    name: accountData.name || 'Anonymous',
-                    flagImagePath: accountData.flagImagePath,
-                }
-                // disconnect previous socket connections if present
-                if (socketRef.current) socketRef.current.disconnect()
-                // create new connection to socket
-                socketRef.current = io(config.apiWebSocketURL || '')
-                // join room
-                // backendShim.socket.emit('outgoing-join-room', {
-                //     roomId: roomIdRef.current,
-                //     userData: userRef.current,
-                // })
-
-                // listen for signals:
-                // backendShim.socket.on('incoming-room-joined', (payload) => {
-                //     const { socketId, usersInRoom } = payload
-                //     socketIdRef.current = socketId
-                //     // userRef.current.socketId = socketId
-                //     usersRef.current = [...usersInRoom, { socketId, userData: userRef.current }]
-                //     pushComment(`You joined the room`)
-                //     usersInRoom.forEach((user) => {
-                //         // remove old peer if present
-                //         const peerObject = peersRef.current.find(
-                //             (p) => p.socketId === user.socketId
-                //         )
-                //         if (peerObject) {
-                //             peerObject.peer.destroy()
-                //             peersRef.current = peersRef.current.filter(
-                //                 (p) => p.socketId !== user.socketId
-                //             )
-                //             videosRef.current = videosRef.current.filter(
-                //                 (v) => v.socketId !== user.socketId
-                //             )
-                //         }
-                //         // create peer connection
-                //         const peer = new Peer({
-                //             initiator: true,
-                //             config: iceConfig,
-                //         })
-                //         peer.on('signal', (data) => {
-                //             backendShim.socket.emit('outgoing-signal-request', {
-                //                 userToSignal: user.socketId,
-                //                 userSignaling: {
-                //                     socketId: socketRef.current.id,
-                //                     userData: userRef.current,
-                //                 },
-                //                 signal: data,
-                //             })
-                //         })
-                //         // peer.on('connect', () => console.log('connect 1'))
-                //         peer.on('stream', (stream) => {
-                //             videosRef.current.push({
-                //                 socketId: user.socketId,
-                //                 userData: user.userData,
-                //                 peer,
-                //                 audioOnly: !stream.getVideoTracks().length,
-                //             })
-                //             pushComment(`${user.userData.name}'s video connected`)
-                //             addStreamToVideo(user.socketId, stream)
-                //             const newPlayer = {
-                //                 id: user.userData.id,
-                //                 name: user.userData.name,
-                //                 flagImagePath: user.userData.flagImagePath,
-                //                 socketId: user.socketId,
-                //             }
-                //             setPlayers((previousPlayers) => [...previousPlayers, newPlayer])
-                //         })
-                //         peer.on('close', () => peer.destroy())
-                //         peer.on('error', (error) => console.log(error))
-                //         peersRef.current.push({
-                //             socketId: user.socketId,
-                //             userData: user.userData,
-                //             peer,
-                //         })
-                //     })
-                // })
-                // // signal returned from peer
-                // backendShim.socket.on('incoming-signal', (payload) => {
-                //     const peerObject = peersRef.current.find((p) => p.socketId === payload.id)
-                //     if (peerObject) {
-                //         if (peerObject.peer.readable) peerObject.peer.signal(payload.signal)
-                //         else {
-                //             peerObject.peer.destroy()
-                //             peersRef.current = peersRef.current.filter(
-                //                 (p) => p.socketId !== payload.id
-                //             )
-                //         }
-                //     } else console.log('no peer!')
-                // })
-                // // signal request from peer
-                // backendShim.socket.on('incoming-signal-request', (payload) => {
-                //     const { signal, userSignaling } = payload
-                //     const { socketId, userData } = userSignaling
-                //     // search for peer in peers array
-                //     const existingPeer = peersRef.current.find((p) => p.socketId === socketId)
-                //     // if peer exists, pass signal to peer
-                //     if (existingPeer) {
-                //         existingPeer.peer.signal(signal)
-                //     } else {
-                //         // otherwise, create new peer connection (with stream if running)
-                //         const peer = new Peer({
-                //             initiator: false,
-                //             stream: streamRef.current,
-                //             config: iceConfig,
-                //         })
-                //         peer.on('signal', (data) => {
-                //             backendShim.socket.emit('outgoing-signal', {
-                //                 userToSignal: socketId,
-                //                 signal: data,
-                //             })
-                //         })
-                //         peer.on('connect', () => console.log('connect 2'))
-                //         peer.on('stream', (stream) => {
-                //             videosRef.current.push({
-                //                 socketId,
-                //                 userData,
-                //                 peer,
-                //                 audioOnly: !stream.getVideoTracks().length,
-                //             })
-                //             pushComment(`${userData.name}'s video connected`)
-                //             addStreamToVideo(socketId, stream)
-                //             const newPlayer = {
-                //                 id: userData.id,
-                //                 name: userData.name,
-                //                 flagImagePath: userData.flagImagePath,
-                //                 socketId,
-                //             }
-                //             setPlayers((previousPlayers) => [...previousPlayers, newPlayer])
-                //         })
-                //         peer.on('close', () => peer.destroy())
-                //         peer.on('error', (error) => console.log('error 2: ', error))
-                //         peer.signal(signal)
-                //         peersRef.current.push({ socketId, userData, peer })
-                //     }
-                // })
-                // // user joined room
-                // backendShim.socket.on('incoming-user-joined', (user) => {
-                //     usersRef.current.push(user)
-                //     pushComment(`${user.userData.name} joined the room`)
-                // })
-                // // user left room
-                // backendShim.socket.on('incoming-user-left', (user) => {
-                //     const { socketId, userData } = user
-                //     const peerObject = peersRef.current.find((p) => p.socketId === socketId)
-                //     if (peerObject) {
-                //         peerObject.peer.destroy()
-                //         peersRef.current = peersRef.current.filter((p) => p.socketId !== socketId)
-                //     }
-                //     usersRef.current = usersRef.current.filter((u) => u.socketId !== socketId)
-                //     peersRef.current = peersRef.current.filter((p) => p.socketId !== socketId)
-                //     videosRef.current = videosRef.current.filter((v) => v.socketId !== socketId)
-                //     setPlayers((ps) => [...ps.filter((p) => p.socketId !== socketId)])
-                //     pushComment(`${userData.name} left the room`)
-                // })
-                // // comment recieved
-                // backendShim.socket.on('incoming-comment', (data) => {
-                //     pushComment(data)
-                // })
-                // // start game signal recieved
-                // backendShim.socket.on('incoming-start-game', (data) => {
-                //     setGameSettingsModalOpen(false)
-                //     setGameInProgress(true)
-                //     setBeads([])
-                //     d3.select('#play-button')
-                //         .classed('transitioning', true)
-                //         .transition()
-                //         .duration(1000)
-                //         .style('opacity', 0)
-                //         .remove()
-                //     d3.select('#pause-button')
-                //         .classed('transitioning', true)
-                //         .transition()
-                //         .duration(1000)
-                //         .style('opacity', 0)
-                //         .remove()
-                //     liveBeadIndexRef.current = 1
-                //     pushComment(`${data.userSignaling.name} started the game`)
-                //     startGame(data.gameData)
-                // })
-                // // stop game signal recieved
-                // backendShim.socket.on('incoming-stop-game', (data) => {
-                //     if (largeScreen) {
-                //         setShowComments(true)
-                //         updateShowVideos(true)
-                //     }
-                //     pushComment(`${data.userSignaling.name} stopped the game`)
-                //     setGameInProgress(false)
-                //     clearInterval(secondsTimerRef.current)
-                //     d3.selectAll(`.${styles.playerState}`).text('')
-                //     d3.select(`#game-arc`).remove()
-                //     d3.select(`#turn-arc`).remove()
-                //     d3.select(`#move-arc`).remove()
-                //     d3.select('#timer-seconds').text('')
-                //     addPlayButtonToCenterBead()
-                //     setTurn(0)
-                //     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording')
-                //         mediaRecorderRef.current.stop()
-                // })
-                // // save game signal recieved
-                // backendShim.socket.on('incoming-save-game', (data) => {
-                //     pushComment(`${data.userSignaling.name} saved the game`)
-                //     setGameData({ ...data.gameData, locked: true })
-                // })
-                // // audio bead recieved
-                // backendShim.socket.on('incoming-audio-bead', (data) => {
-                //     setBeads((previousBeads) => [...previousBeads, data])
-                //     addEventListenersToBead(data.index)
-                // })
-                // // peer refresh request
-                // backendShim.socket.on('incoming-refresh-request', (data) => {
-                //     const { id } = data
-                //     const peerObject = peersRef.current.find((p) => p.socketId === id)
-                //     if (peerObject) {
-                //         peerObject.peer.destroy()
-                //         peersRef.current = peersRef.current.filter((p) => p.socketId !== id)
-                //         videosRef.current = videosRef.current.filter((v) => v.socketId !== id)
-                //         setPlayers((ps) => [...ps.filter((p) => p.socketId !== id)])
-                //     }
-                // })
-                // // new background
-                // backendShim.socket.on('incoming-new-background', (data) => {
-                //     const { type, url, startTime, userSignaling } = data
-                //     if (type === 'image') {
-                //         setGameData({
-                //             ...data.gameData,
-                //             backgroundImage: url,
-                //             backgroundVideo: null,
-                //             backgroundVideoStartTime: null,
-                //         })
-                //     } else {
-                //         setGameData({
-                //             ...data.gameData,
-                //             backgroundImage: null,
-                //             backgroundVideo: url,
-                //             backgroundVideoStartTime: startTime,
-                //         })
-                //     }
-                //     pushComment(`${userSignaling.name} added a new background`)
-                // })
-                // // new topic text
-                // backendShim.socket.on('incoming-new-topic-text', (data) => {
-                //     const { userSignaling, newTopicText } = data
-                //     setGameData({ ...data.gameData, topic: newTopicText, topicGroup: null })
-                //     pushComment(`${userSignaling.name} updated the topic`)
-                // })
-                // // new topic image
-                // backendShim.socket.on('incoming-new-topic-image', (data) => {
-                //     const { userSignaling, url } = data
-                //     setGameData({ ...data.gameData, topicImage: url })
-                //     pushComment(`${userSignaling.name} added a new topic image`)
-                // })
-                // // stream disconnected
-                // backendShim.socket.on('incoming-stream-disconnected', (data) => {
-                //     const { socketId, userData } = data
-                //     videosRef.current = videosRef.current.filter((v) => v.socketId !== socketId)
-                //     if (!videosRef.current.length && !streamRef.current) updateShowVideos(false)
-                //     setPlayers((ps) => [...ps.filter((p) => p.socketId !== socketId)])
-                //     pushComment(`${userData.name}'s stream disconnected`)
-                // })
-            })
-            backendShim
-                .getComments(entryHash)
-                .then((res) =>
-                    setComments(
-                        res.map((item) => {
-                            return {
-                                user: {
-                                    id: 1,
-                                    name: item.agent,
-                                    handle: 'testHandle',
-                                    flagImagePath: '',
-                                },
-                                text: item.comment,
-                                createAt: new Date(item.timestamp).toISOString(),
-                            }
-                        })
-                    )
-                )
-                .catch((error) => console.log(error))
-        }
+        // listen for signals:
+        // backendShim.socket.on('incoming-room-joined', (payload) => {
+        //     const { socketId, usersInRoom } = payload
+        //     socketIdRef.current = socketId
+        //     // userRef.current.socketId = socketId
+        //     usersRef.current = [...usersInRoom, { socketId, userData: userRef.current }]
+        //     pushComment(`You joined the room`)
+        //     usersInRoom.forEach((user) => {
+        //         // remove old peer if present
+        //         const peerObject = peersRef.current.find(
+        //             (p) => p.socketId === user.socketId
+        //         )
+        //         if (peerObject) {
+        //             peerObject.peer.destroy()
+        //             peersRef.current = peersRef.current.filter(
+        //                 (p) => p.socketId !== user.socketId
+        //             )
+        //             videosRef.current = videosRef.current.filter(
+        //                 (v) => v.socketId !== user.socketId
+        //             )
+        //         }
+        //         // create peer connection
+        //         const peer = new Peer({
+        //             initiator: true,
+        //             config: iceConfig,
+        //         })
+        //         peer.on('signal', (data) => {
+        //             backendShim.socket.emit('outgoing-signal-request', {
+        //                 userToSignal: user.socketId,
+        //                 userSignaling: {
+        //                     socketId: socketRef.current.id,
+        //                     userData: userRef.current,
+        //                 },
+        //                 signal: data,
+        //             })
+        //         })
+        //         // peer.on('connect', () => console.log('connect 1'))
+        //         peer.on('stream', (stream) => {
+        //             videosRef.current.push({
+        //                 socketId: user.socketId,
+        //                 userData: user.userData,
+        //                 peer,
+        //                 audioOnly: !stream.getVideoTracks().length,
+        //             })
+        //             pushComment(`${user.userData.name}'s video connected`)
+        //             addStreamToVideo(user.socketId, stream)
+        //             const newPlayer = {
+        //                 id: user.userData.id,
+        //                 name: user.userData.name,
+        //                 flagImagePath: user.userData.flagImagePath,
+        //                 socketId: user.socketId,
+        //             }
+        //             setPlayers((previousPlayers) => [...previousPlayers, newPlayer])
+        //         })
+        //         peer.on('close', () => peer.destroy())
+        //         peer.on('error', (error) => console.log(error))
+        //         peersRef.current.push({
+        //             socketId: user.socketId,
+        //             userData: user.userData,
+        //             peer,
+        //         })
+        //     })
+        // })
+        // // signal returned from peer
+        // backendShim.socket.on('incoming-signal', (payload) => {
+        //     const peerObject = peersRef.current.find((p) => p.socketId === payload.id)
+        //     if (peerObject) {
+        //         if (peerObject.peer.readable) peerObject.peer.signal(payload.signal)
+        //         else {
+        //             peerObject.peer.destroy()
+        //             peersRef.current = peersRef.current.filter(
+        //                 (p) => p.socketId !== payload.id
+        //             )
+        //         }
+        //     } else console.log('no peer!')
+        // })
+        // // signal request from peer
+        // backendShim.socket.on('incoming-signal-request', (payload) => {
+        //     const { signal, userSignaling } = payload
+        //     const { socketId, userData } = userSignaling
+        //     // search for peer in peers array
+        //     const existingPeer = peersRef.current.find((p) => p.socketId === socketId)
+        //     // if peer exists, pass signal to peer
+        //     if (existingPeer) {
+        //         existingPeer.peer.signal(signal)
+        //     } else {
+        //         // otherwise, create new peer connection (with stream if running)
+        //         const peer = new Peer({
+        //             initiator: false,
+        //             stream: streamRef.current,
+        //             config: iceConfig,
+        //         })
+        //         peer.on('signal', (data) => {
+        //             backendShim.socket.emit('outgoing-signal', {
+        //                 userToSignal: socketId,
+        //                 signal: data,
+        //             })
+        //         })
+        //         peer.on('connect', () => console.log('connect 2'))
+        //         peer.on('stream', (stream) => {
+        //             videosRef.current.push({
+        //                 socketId,
+        //                 userData,
+        //                 peer,
+        //                 audioOnly: !stream.getVideoTracks().length,
+        //             })
+        //             pushComment(`${userData.name}'s video connected`)
+        //             addStreamToVideo(socketId, stream)
+        //             const newPlayer = {
+        //                 id: userData.id,
+        //                 name: userData.name,
+        //                 flagImagePath: userData.flagImagePath,
+        //                 socketId,
+        //             }
+        //             setPlayers((previousPlayers) => [...previousPlayers, newPlayer])
+        //         })
+        //         peer.on('close', () => peer.destroy())
+        //         peer.on('error', (error) => console.log('error 2: ', error))
+        //         peer.signal(signal)
+        //         peersRef.current.push({ socketId, userData, peer })
+        //     }
+        // })
+        // // user joined room
+        // backendShim.socket.on('incoming-user-joined', (user) => {
+        //     usersRef.current.push(user)
+        //     pushComment(`${user.userData.name} joined the room`)
+        // })
+        // // user left room
+        // backendShim.socket.on('incoming-user-left', (user) => {
+        //     const { socketId, userData } = user
+        //     const peerObject = peersRef.current.find((p) => p.socketId === socketId)
+        //     if (peerObject) {
+        //         peerObject.peer.destroy()
+        //         peersRef.current = peersRef.current.filter((p) => p.socketId !== socketId)
+        //     }
+        //     usersRef.current = usersRef.current.filter((u) => u.socketId !== socketId)
+        //     peersRef.current = peersRef.current.filter((p) => p.socketId !== socketId)
+        //     videosRef.current = videosRef.current.filter((v) => v.socketId !== socketId)
+        //     setPlayers((ps) => [...ps.filter((p) => p.socketId !== socketId)])
+        //     pushComment(`${userData.name} left the room`)
+        // })
+        // // comment recieved
+        // backendShim.socket.on('incoming-comment', (data) => {
+        //     pushComment(data)
+        // })
+        // // start game signal recieved
+        // backendShim.socket.on('incoming-start-game', (data) => {
+        //     setGameSettingsModalOpen(false)
+        //     setGameInProgress(true)
+        //     setBeads([])
+        //     d3.select('#play-button')
+        //         .classed('transitioning', true)
+        //         .transition()
+        //         .duration(1000)
+        //         .style('opacity', 0)
+        //         .remove()
+        //     d3.select('#pause-button')
+        //         .classed('transitioning', true)
+        //         .transition()
+        //         .duration(1000)
+        //         .style('opacity', 0)
+        //         .remove()
+        //     liveBeadIndexRef.current = 1
+        //     pushComment(`${data.userSignaling.name} started the game`)
+        //     startGame(data.gameData)
+        // })
+        // // stop game signal recieved
+        // backendShim.socket.on('incoming-stop-game', (data) => {
+        //     if (largeScreen) {
+        //         setShowComments(true)
+        //         updateShowVideos(true)
+        //     }
+        //     pushComment(`${data.userSignaling.name} stopped the game`)
+        //     setGameInProgress(false)
+        //     clearInterval(secondsTimerRef.current)
+        //     d3.selectAll(`.${styles.playerState}`).text('')
+        //     d3.select(`#game-arc`).remove()
+        //     d3.select(`#turn-arc`).remove()
+        //     d3.select(`#move-arc`).remove()
+        //     d3.select('#timer-seconds').text('')
+        //     addPlayButtonToCenterBead()
+        //     setTurn(0)
+        //     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording')
+        //         mediaRecorderRef.current.stop()
+        // })
+        // // save game signal recieved
+        // backendShim.socket.on('incoming-save-game', (data) => {
+        //     pushComment(`${data.userSignaling.name} saved the game`)
+        //     setGameData({ ...data.gameData, locked: true })
+        // })
+        // // audio bead recieved
+        // backendShim.socket.on('incoming-audio-bead', (data) => {
+        //     setBeads((previousBeads) => [...previousBeads, data])
+        //     addEventListenersToBead(data.index)
+        // })
+        // // peer refresh request
+        // backendShim.socket.on('incoming-refresh-request', (data) => {
+        //     const { id } = data
+        //     const peerObject = peersRef.current.find((p) => p.socketId === id)
+        //     if (peerObject) {
+        //         peerObject.peer.destroy()
+        //         peersRef.current = peersRef.current.filter((p) => p.socketId !== id)
+        //         videosRef.current = videosRef.current.filter((v) => v.socketId !== id)
+        //         setPlayers((ps) => [...ps.filter((p) => p.socketId !== id)])
+        //     }
+        // })
+        // // new background
+        // backendShim.socket.on('incoming-new-background', (data) => {
+        //     const { type, url, startTime, userSignaling } = data
+        //     if (type === 'image') {
+        //         setGameData({
+        //             ...data.gameData,
+        //             backgroundImage: url,
+        //             backgroundVideo: null,
+        //             backgroundVideoStartTime: null,
+        //         })
+        //     } else {
+        //         setGameData({
+        //             ...data.gameData,
+        //             backgroundImage: null,
+        //             backgroundVideo: url,
+        //             backgroundVideoStartTime: startTime,
+        //         })
+        //     }
+        //     pushComment(`${userSignaling.name} added a new background`)
+        // })
+        // // new topic text
+        // backendShim.socket.on('incoming-new-topic-text', (data) => {
+        //     const { userSignaling, newTopicText } = data
+        //     setGameData({ ...data.gameData, topic: newTopicText, topicGroup: null })
+        //     pushComment(`${userSignaling.name} updated the topic`)
+        // })
+        // // new topic image
+        // backendShim.socket.on('incoming-new-topic-image', (data) => {
+        //     const { userSignaling, url } = data
+        //     setGameData({ ...data.gameData, topicImage: url })
+        //     pushComment(`${userSignaling.name} added a new topic image`)
+        // })
+        // // stream disconnected
+        // backendShim.socket.on('incoming-stream-disconnected', (data) => {
+        //     const { socketId, userData } = data
+        //     videosRef.current = videosRef.current.filter((v) => v.socketId !== socketId)
+        //     if (!videosRef.current.length && !streamRef.current) updateShowVideos(false)
+        //     setPlayers((ps) => [...ps.filter((p) => p.socketId !== socketId)])
+        //     pushComment(`${userData.name}'s stream disconnected`)
+        // })
 
         return () => {
-            if (gbgService && joinedGameActionHash.current) {
-                console.log('leaveGame hash: ', joinedGameActionHash.current)
+            if (gbgService && joinGameHash.current) {
+                console.log('leaveGame hash: ', joinGameHash.current)
                 gbgService
-                    .leaveGame(joinedGameActionHash.current)
+                    .leaveGame(joinGameHash.current)
                     .then((response) => {
                         console.log('leaveGame response: ', response)
                     })
@@ -1902,7 +1879,7 @@ const GlassBeadGame = (): JSX.Element => {
                     close={() => setTopicImageModalOpen(false)}
                 />
             )}
-            <Row centerY className={styles.mobileAction}>
+            <Row centerY className={styles.mobileHeader}>
                 <button
                     type='button'
                     onClick={() => updateMobileTab('comments')}

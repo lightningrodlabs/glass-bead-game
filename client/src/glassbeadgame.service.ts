@@ -50,7 +50,7 @@ export default class GlassBeadGameService {
         return this.callZome('create_comment', input)
     }
 
-    async getComments(input: EntryHashB64): Promise<CommentOutput> {
+    async getComments(input: EntryHashB64): Promise<CommentOutput[]> {
         return this.callZome('get_comments', input)
     }
 

@@ -1,6 +1,7 @@
 pub use hdk::prelude::*;
 
 pub mod game;
+pub mod signals;
 
 #[hdk_extern]
 fn init(_: ()) -> ExternResult<InitCallbackResult> {
