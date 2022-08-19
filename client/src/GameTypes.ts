@@ -22,6 +22,10 @@ export type Message =
           type: 'NewBackground'
           content: NewBackground
       }
+    | {
+          type: 'StartGame'
+          content: StartGame
+      }
 
 export type Signal = {
     gameHash: EntryHashB64
@@ -48,6 +52,11 @@ export type NewBackground = {
     subType: string
     url: string
     startTime: number
+}
+
+export type StartGame = {
+    agentKey: string
+    data: string
 }
 
 export interface GameSettingsData {

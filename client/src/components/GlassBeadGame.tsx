@@ -159,7 +159,7 @@ const Comment = (props) => {
 }
 
 const GameSettingsModal = (props) => {
-    const { close, gameData, socketId, players, setPlayers, signalStartGame } = props
+    const { close, gameData, agentKey, players, setPlayers, signalStartGame } = props
 
     const [formData, setFormData] = useState({
         introDuration: {
@@ -209,33 +209,16 @@ const GameSettingsModal = (props) => {
         e.preventDefault()
         setPlayersError(players.length ? '' : 'At least one player must be streaming')
         if (allValid(formData, setFormData) && players.length) {
-            setLoading(true)
-            const data = {
-                gameId: gameData.id,
+            signalStartGame({
+                ...gameData,
                 numberOfTurns: numberOfTurns.value,
                 moveDuration: moveDuration.value,
                 introDuration: introDuration.value,
                 intervalDuration: intervalDuration.value,
                 outroDuration: outroDuration.value,
-                playerOrder: players.map((p) => p.id).join(','),
-            }
-            // backendShim
-            //     .saveGameSettings(data)
-            //     .then(() => {
-            //         setLoading(false)
-            //         setSaved(true)
-            //         signalStartGame({
-            //             ...gameData,
-            //             numberOfTurns: numberOfTurns.value,
-            //             moveDuration: moveDuration.value,
-            //             introDuration: introDuration.value,
-            //             intervalDuration: intervalDuration.value,
-            //             outroDuration: outroDuration.value,
-            //             players,
-            //         })
-            //         close()
-            //     })
-            //     .catch((error) => console.log(error))
+                players,
+            })
+            close()
         }
     }
 
@@ -296,10 +279,10 @@ const GameSettingsModal = (props) => {
                             onChange={(v) => updateValue('outroDuration', +v.replace(/\D/g, ''))}
                         />
                     </Column>
-                    <Column style={{ width: 250, marginBottom: 20 }}>
+                    <Column style={{ marginBottom: 20 }}>
                         <h2 style={{ margin: 0, lineHeight: '20px' }}>Player order</h2>
-                        {players.map((player, i) => (
-                            <Row style={{ marginTop: 10 }} key={player.socketId}>
+                        {players.map((playerKey, i) => (
+                            <Row style={{ marginTop: 10 }} key={playerKey}>
                                 <div className={styles.position}>{i + 1}</div>
                                 <div className={styles.positionControls}>
                                     {i > 0 && (
@@ -321,8 +304,8 @@ const GameSettingsModal = (props) => {
                                 </div>
                                 <ImageTitle
                                     type='user'
-                                    imagePath={player.flagImagePath}
-                                    title={player.socketId === socketId ? 'You' : player.name}
+                                    imagePath=''
+                                    title={playerKey === agentKey ? 'You' : playerKey}
                                     fontSize={16}
                                     imageSize={35}
                                 />
@@ -372,6 +355,7 @@ const GlassBeadGame = (): JSX.Element => {
     // const { postData, postDataLoading } = useContext(PostContext)
 
     const [gbgService, setGbgService] = useState<null | GlassBeadGameService>(null)
+    const [myAgentPubKey, setMyAgentPubKey] = useState('')
     const joinGameHash = useRef<any>()
     const [holoPlayers, setHoloPlayers] = useState<any[]>([])
 
@@ -816,7 +800,7 @@ const GlassBeadGame = (): JSX.Element => {
                     message: {
                         type: 'NewComment',
                         content: {
-                            agentKey: gbgService!.myAgentPubKey,
+                            agentKey: myAgentPubKey,
                             comment: newComment,
                         },
                     },
@@ -901,12 +885,17 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function signalStartGame(data) {
-        const signalData = {
-            roomId: roomIdRef.current,
-            userSignaling: userRef.current,
-            gameData: data,
+        const signal: Signal = {
+            gameHash: entryHash,
+            message: {
+                type: 'StartGame',
+                content: {
+                    agentKey: myAgentPubKey,
+                    data: JSON.stringify(data),
+                },
+            },
         }
-        // backendShim.socket.emit('outgoing-start-game', signalData)
+        gbgService!.notify(signal, holoPlayers).catch((error) => console.log(error))
     }
 
     function startGame(data) {
@@ -1106,7 +1095,7 @@ const GlassBeadGame = (): JSX.Element => {
             message: {
                 type: 'NewTopicImage',
                 content: {
-                    agentKey: gbgService!.myAgentPubKey,
+                    agentKey: myAgentPubKey,
                     topicImageUrl: url,
                 },
             },
@@ -1120,7 +1109,7 @@ const GlassBeadGame = (): JSX.Element => {
             message: {
                 type: 'NewBackground',
                 content: {
-                    agentKey: gbgService!.myAgentPubKey,
+                    agentKey: myAgentPubKey,
                     subType: type,
                     url,
                     startTime,
@@ -1130,14 +1119,14 @@ const GlassBeadGame = (): JSX.Element => {
         gbgService!.notify(signal, holoPlayers).catch((error) => console.log(error))
     }
 
-    function saveNewTopic(e) {
+    function signalNewTopic(e) {
         e.preventDefault()
         const signal: Signal = {
             gameHash: entryHash,
             message: {
                 type: 'NewTopic',
                 content: {
-                    agentKey: gbgService!.myAgentPubKey,
+                    agentKey: myAgentPubKey,
                     topic: newTopic,
                 },
             },
@@ -1365,6 +1354,30 @@ const GlassBeadGame = (): JSX.Element => {
                 // pushComment(`${agentKey} updated the background`)
                 break
             }
+            case 'StartGame': {
+                const { agentKey, data } = content
+                const parsedData = JSON.parse(data)
+                setGameData(parsedData)
+                setHoloPlayers(parsedData.players)
+                setGameInProgress(true)
+                setBeads([])
+                d3.select('#play-button')
+                    .classed('transitioning', true)
+                    .transition()
+                    .duration(1000)
+                    .style('opacity', 0)
+                    .remove()
+                d3.select('#pause-button')
+                    .classed('transitioning', true)
+                    .transition()
+                    .duration(1000)
+                    .style('opacity', 0)
+                    .remove()
+                liveBeadIndexRef.current = 1
+                startGame(parsedData)
+                pushComment(`${agentKey} started the game`)
+                break
+            }
             default:
                 break
         }
@@ -1403,6 +1416,7 @@ const GlassBeadGame = (): JSX.Element => {
         const { game } = await gbgService!.getGame(entryHash)
         const playersArray = await gbgService!.getPlayers(entryHash)
         const gameComments = await gbgService!.getComments(entryHash)
+        setMyAgentPubKey(agentKey)
         setGameData(game)
         setHoloPlayers(playersArray.map((p) => p[0]))
         setComments(formatComments(gameComments))
@@ -1893,7 +1907,7 @@ const GlassBeadGame = (): JSX.Element => {
                 <Modal centered close={() => setTopicTextModalOpen(false)}>
                     <h1>Change the topic</h1>
                     <p>Current topic: {gameData.topic}</p>
-                    <form onSubmit={saveNewTopic}>
+                    <form onSubmit={signalNewTopic}>
                         <Input
                             type='text'
                             placeholder='new topic...'
@@ -2042,18 +2056,18 @@ const GlassBeadGame = (): JSX.Element => {
                             )}
                             {!gameData.locked && (
                                 <>
-                                    {userIsStreaming && (
-                                        <Button
-                                            text={`${beads.length ? 'Restart' : 'Start'} game`}
-                                            color={beads.length ? 'red' : 'blue'}
-                                            size={largeScreen ? 'large' : 'small'}
-                                            style={{ marginBottom: 10 }}
-                                            onClick={() =>
-                                                allowedTo('start-game') &&
-                                                setGameSettingsModalOpen(true)
-                                            }
-                                        />
-                                    )}
+                                    {/* {userIsStreaming && ( */}
+                                    <Button
+                                        text={`${beads.length ? 'Restart' : 'Start'} game`}
+                                        color={beads.length ? 'red' : 'blue'}
+                                        size={largeScreen ? 'large' : 'small'}
+                                        style={{ marginBottom: 10 }}
+                                        onClick={() =>
+                                            allowedTo('start-game') &&
+                                            setGameSettingsModalOpen(true)
+                                        }
+                                    />
+                                    {/* )} */}
                                     {beads.length > 0 && (
                                         <Button
                                             text='Save game'
@@ -2084,9 +2098,10 @@ const GlassBeadGame = (): JSX.Element => {
                         <GameSettingsModal
                             close={() => setGameSettingsModalOpen(false)}
                             gameData={gameData}
-                            socketId={socketIdRef.current}
-                            players={players}
-                            setPlayers={setPlayers}
+                            // socketId={socketIdRef.current}
+                            agentKey={myAgentPubKey}
+                            players={holoPlayers}
+                            setPlayers={setHoloPlayers}
                             signalStartGame={signalStartGame}
                         />
                     )}
@@ -2123,7 +2138,7 @@ const GlassBeadGame = (): JSX.Element => {
                     </Column>
                     {largeScreen && (
                         <Column className={styles.people}>
-                            <Button
+                            {/* <Button
                                 text={`${userIsStreaming ? 'Stop' : 'Start'} streaming`}
                                 color={userIsStreaming ? 'red' : 'aqua'}
                                 style={{ marginBottom: 10, alignSelf: 'flex-start' }}
@@ -2168,7 +2183,7 @@ const GlassBeadGame = (): JSX.Element => {
                                         ))}
                                     </Column>
                                 )}
-                            </Column>
+                            </Column> */}
                             <Column className={styles.peopleInRoom}>
                                 <p style={{ marginBottom: 10 }}>{peopleInRoomText()}</p>
                                 {holoPlayers.map((user) => (

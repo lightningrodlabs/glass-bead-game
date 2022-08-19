@@ -32,6 +32,13 @@ pub struct NewBackgroundSignal {
     start_time: usize
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StartGameSignal {
+    agent_key: String,
+    data: String
+}
+
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
 #[serde(tag = "type", content = "content")]
 pub enum Message {
@@ -40,7 +47,8 @@ pub enum Message {
     NewComment(CommentSignal),
     NewTopic(NewTopicSignal),
     NewTopicImage(NewTopicImageSignal),
-    NewBackground(NewBackgroundSignal)
+    NewBackground(NewBackgroundSignal),
+    StartGame(StartGameSignal)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
