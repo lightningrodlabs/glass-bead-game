@@ -18,6 +18,10 @@ export type Message =
           type: 'NewTopicImage'
           content: NewTopicImage
       }
+    | {
+          type: 'NewBackground'
+          content: NewBackground
+      }
 
 export type Signal = {
     gameHash: EntryHashB64
@@ -39,11 +43,19 @@ export type NewTopicImage = {
     topicImageUrl: string
 }
 
+export type NewBackground = {
+    agentKey: string
+    subType: string
+    url: string
+    startTime: number
+}
+
 export interface GameSettingsData {
     topic: string
     topicGroup: string
     topicImageUrl: string
     description: string
+    backgroundImage: string
     backgroundVideoUrl: string
     backgroundVideoStartTime: number
     locked: boolean

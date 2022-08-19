@@ -1115,15 +1115,19 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function signalNewBackground(type, url, startTime) {
-        const data = {
-            roomId: roomIdRef.current,
-            userSignaling: userRef.current,
-            gameData,
-            type,
-            url,
-            startTime,
+        const signal: Signal = {
+            gameHash: entryHash,
+            message: {
+                type: 'NewBackground',
+                content: {
+                    agentKey: gbgService!.myAgentPubKey,
+                    subType: type,
+                    url,
+                    startTime,
+                },
+            },
         }
-        // backendShim.socket.emit('outgoing-new-background', data)
+        gbgService!.notify(signal, holoPlayers).catch((error) => console.log(error))
     }
 
     function saveNewTopic(e) {
@@ -1346,6 +1350,19 @@ const GlassBeadGame = (): JSX.Element => {
                     return { ...data, topicImageUrl }
                 })
                 // pushComment(`${agentKey} updated the topic image`)
+                break
+            }
+            case 'NewBackground': {
+                const { agentKey, subType, url, startTime } = content
+                setGameData((data) => {
+                    return {
+                        ...data,
+                        backgroundImage: subType === 'image' ? url : null,
+                        backgroundVideo: subType === 'video' ? url : null,
+                        backgroundVideoStartTime: startTime,
+                    }
+                })
+                // pushComment(`${agentKey} updated the background`)
                 break
             }
             default:

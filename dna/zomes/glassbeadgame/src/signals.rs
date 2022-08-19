@@ -23,6 +23,15 @@ pub struct NewTopicImageSignal {
     topic_image_url: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct NewBackgroundSignal {
+    agent_key: String,
+    sub_type: String,
+    url: String,
+    start_time: usize
+}
+
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
 #[serde(tag = "type", content = "content")]
 pub enum Message {
@@ -30,7 +39,8 @@ pub enum Message {
     NewPlayer(AgentPubKeyB64),
     NewComment(CommentSignal),
     NewTopic(NewTopicSignal),
-    NewTopicImage(NewTopicImageSignal)
+    NewTopicImage(NewTopicImageSignal),
+    NewBackground(NewBackgroundSignal)
 }
 
 #[derive(Serialize, Deserialize, Debug)]

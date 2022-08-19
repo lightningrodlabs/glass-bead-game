@@ -96,6 +96,7 @@ const CreateGameModal = (props: {
                         : GlassBeadGameTopics[topicGroup].find((item) => item.name === topic)
                               .imagePath,
                 description: descriptionForm.description.value,
+                backgroundImage: '',
                 backgroundVideoUrl: '',
                 backgroundVideoStartTime: 0,
                 numberOfTurns: numberOfTurns.value,

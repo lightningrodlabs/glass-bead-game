@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react'
 import axios from 'axios'
 import Cookies from 'universal-cookie'
@@ -74,26 +75,10 @@ const GBGBackgroundModal = (props: {
     }
 
     function saveBackground() {
-        setLoading(true)
-        const accessToken = cookies.get('accessToken')
-        const options = { headers: { Authorization: `Bearer ${accessToken}` } }
-        let data
-        if (imageFile) {
-            data = new FormData()
-            data.append('image', imageFile)
-            options.headers['Content-Type'] = 'multipart/form-data'
-        } else if (imageURL) data = { imageURL }
-        else data = { id: gameData.id, videoURL, videoStartTime }
-
-        axios
-            .post(`${config.apiURL}/gbg-background?gameId=${gameData.id}`, data, options)
-            .then((res) => {
-                if (videoURL) signalNewBackground('video', videoURL, videoStartTime)
-                else signalNewBackground('image', imageURL || res.data.imageURL)
-                setLoading(false)
-                close()
-            })
-            .catch((error) => console.log(error))
+        if (videoURL) signalNewBackground('video', videoURL, videoStartTime)
+        else signalNewBackground('image', imageURL, 0)
+        setLoading(false)
+        close()
     }
 
     return (
@@ -115,7 +100,7 @@ const GBGBackgroundModal = (props: {
                     src={`https://www.youtube.com/embed/${videoURL}?t=9&autoplay=1&mute=1&enablejsapi=1`}
                 />
             )}
-            <p>Upload an image from your device</p>
+            {/* <p>Upload an image from your device</p>
             {fileSizeError && <p>Image too large. Max size: {mbLimit}MB</p>}
             <Row className={styles.fileUploadInput}>
                 <label htmlFor='file-input'>
@@ -128,8 +113,8 @@ const GBGBackgroundModal = (props: {
                         hidden
                     />
                 </label>
-            </Row>
-            <p>or paste an image URL:</p>
+            </Row> */}
+            <p>Paste an image URL:</p>
             <Input
                 type='text'
                 placeholder='image url...'

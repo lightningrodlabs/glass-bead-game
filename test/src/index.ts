@@ -30,6 +30,7 @@ test("attestations basic tests", async (t) => {
       topicGroup: "testing",
       description: "",
       topicImageUrl: "",
+      backgroundImage: "",
       backgroundVideoUrl: "",
       backgroundVideoStartTime: 0,
       locked: false,
