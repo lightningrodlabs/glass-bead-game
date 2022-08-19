@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react'
 import axios from 'axios'
 import Cookies from 'universal-cookie'
@@ -15,7 +16,7 @@ const ImageUploadModal = (props: {
     title: string
     subTitle?: string
     mbLimit?: number
-    onSaved?: (imageURL: string) => void
+    onSaved: (imageURL: string) => void
     close: () => void
 }): JSX.Element => {
     const { type, shape, id, title, subTitle, mbLimit, onSaved, close } = props
@@ -53,24 +54,8 @@ const ImageUploadModal = (props: {
     }
 
     function saveImage() {
-        setLoading(true)
-        const accessToken = cookies.get('accessToken')
-        const options = { headers: { Authorization: `Bearer ${accessToken}` } }
-        let data
-        if (imageURL) data = { imageURL }
-        else {
-            data = new FormData()
-            data.append('image', imageFile)
-            options.headers['Content-Type'] = 'multipart/form-data'
-        }
-        axios
-            .post(`${config.apiURL}/image-upload?type=${type}&id=${id}`, data, options)
-            .then((res) => {
-                if (onSaved) onSaved(imageURL || res.data.imageURL)
-                setLoading(false)
-                close()
-            })
-            .catch((error) => console.log(error))
+        onSaved(imageURL)
+        close()
     }
 
     return (
@@ -85,7 +70,7 @@ const ImageUploadModal = (props: {
                     alt=''
                 />
             )}
-            {imageSizeError && <p>Image too large. Max size: {mbLimit}MB</p>}
+            {/* {imageSizeError && <p>Image too large. Max size: {mbLimit}MB</p>}
             <Row className={styles.fileUploadInput}>
                 <label htmlFor='file-input'>
                     {imageFile ? 'Change' : 'Upload'} image
@@ -97,8 +82,8 @@ const ImageUploadModal = (props: {
                         hidden
                     />
                 </label>
-            </Row>
-            <p>or paste an image URL:</p>
+            </Row> */}
+            <p>Paste an image URL:</p>
             <Input
                 type='text'
                 placeholder='image url...'
@@ -120,7 +105,6 @@ const ImageUploadModal = (props: {
 ImageUploadModal.defaultProps = {
     subTitle: null,
     mbLimit: 2,
-    onSaved: null,
 }
 
 export default ImageUploadModal

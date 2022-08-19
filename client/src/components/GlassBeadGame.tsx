@@ -809,24 +809,23 @@ const GlassBeadGame = (): JSX.Element => {
         e.preventDefault()
         if (allowedTo('comment') && newComment.length) {
             // save comment
-            gbgService!
-                .createComment({ entryHash, comment: newComment })
-                .then((res) => console.log('createComment res:', res))
-            // signal comment
-            const signal: Signal = {
-                gameHash: entryHash,
-                message: {
-                    type: 'NewComment',
-                    content: {
-                        agentKey: gbgService!.myAgentPubKey,
-                        comment: newComment,
+            gbgService!.createComment({ entryHash, comment: newComment }).then(() => {
+                // signal comment
+                const signal: Signal = {
+                    gameHash: entryHash,
+                    message: {
+                        type: 'NewComment',
+                        content: {
+                            agentKey: gbgService!.myAgentPubKey,
+                            comment: newComment,
+                        },
                     },
-                },
-            }
-            gbgService!
-                .notify(signal, holoPlayers)
-                .then((res) => console.log('notify res: ', res))
-                .catch((error) => console.log('notify error: ', error))
+                }
+                gbgService!
+                    .notify(signal, holoPlayers)
+                    .then(() => setNewComment(''))
+                    .catch((error) => console.log('notify error: ', error))
+            })
         }
     }
 
@@ -1102,13 +1101,17 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function signalNewTopicImage(url) {
-        const data = {
-            roomId: roomIdRef.current,
-            userSignaling: userRef.current,
-            gameData,
-            url,
+        const signal: Signal = {
+            gameHash: entryHash,
+            message: {
+                type: 'NewTopicImage',
+                content: {
+                    agentKey: gbgService!.myAgentPubKey,
+                    topicImageUrl: url,
+                },
+            },
         }
-        // backendShim.socket.emit('outgoing-new-topic-image', data)
+        gbgService!.notify(signal, holoPlayers).catch((error) => console.log(error))
     }
 
     function signalNewBackground(type, url, startTime) {
@@ -1125,18 +1128,19 @@ const GlassBeadGame = (): JSX.Element => {
 
     function saveNewTopic(e) {
         e.preventDefault()
-        backendShim
-            .updateTopic(gameData.id, newTopic)
-            .then(() => {
-                const data = {
-                    roomId: roomIdRef.current,
-                    userSignaling: userRef.current,
-                    gameData,
-                    newTopicText: newTopic,
-                }
-                // backendShim.socket.emit('outgoing-new-topic-text', data)
-                setTopicTextModalOpen(false)
-            })
+        const signal: Signal = {
+            gameHash: entryHash,
+            message: {
+                type: 'NewTopic',
+                content: {
+                    agentKey: gbgService!.myAgentPubKey,
+                    topic: newTopic,
+                },
+            },
+        }
+        gbgService!
+            .notify(signal, holoPlayers)
+            .then(() => setTopicTextModalOpen(false))
             .catch((error) => console.log(error))
     }
 
@@ -1326,6 +1330,22 @@ const GlassBeadGame = (): JSX.Element => {
                     createdAt: new Date().toISOString(),
                 }
                 setComments((c) => [...c, commentData])
+                break
+            }
+            case 'NewTopic': {
+                const { agentKey, topic } = content
+                setGameData((data) => {
+                    return { ...data, topic, topicGroup: null }
+                })
+                // pushComment(`${agentKey} updated the topic`)
+                break
+            }
+            case 'NewTopicImage': {
+                const { agentKey, topicImageUrl } = content
+                setGameData((data) => {
+                    return { ...data, topicImageUrl }
+                })
+                // pushComment(`${agentKey} updated the topic image`)
                 break
             }
             default:

@@ -11,8 +11,12 @@ export type Message =
           content: NewComment
       }
     | {
-          type: 'Generic'
-          content: string
+          type: 'NewTopic'
+          content: NewTopic
+      }
+    | {
+          type: 'NewTopicImage'
+          content: NewTopicImage
       }
 
 export type Signal = {
@@ -23,6 +27,16 @@ export type Signal = {
 export type NewComment = {
     agentKey: string
     comment: string
+}
+
+export type NewTopic = {
+    agentKey: string
+    topic: string
+}
+
+export type NewTopicImage = {
+    agentKey: string
+    topicImageUrl: string
 }
 
 export interface GameSettingsData {

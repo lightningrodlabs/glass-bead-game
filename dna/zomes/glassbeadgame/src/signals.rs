@@ -9,13 +9,28 @@ pub struct CommentSignal {
     comment: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct NewTopicSignal {
+    agent_key: String,
+    topic: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct NewTopicImageSignal {
+    agent_key: String,
+    topic_image_url: String,
+}
+
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
 #[serde(tag = "type", content = "content")]
 pub enum Message {
     NewGame(GameOutput),
     NewPlayer(AgentPubKeyB64),
     NewComment(CommentSignal),
-    Generic(String)
+    NewTopic(NewTopicSignal),
+    NewTopicImage(NewTopicImageSignal)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
