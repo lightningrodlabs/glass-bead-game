@@ -353,7 +353,7 @@ const GlassBeadGame = (): JSX.Element => {
     // } = useContext(AccountContext)
     // const { postData, postDataLoading } = useContext(PostContext)
 
-    const [gbgService, setGbgService] = useState<null | GlassBeadGameService>(null)
+    const gbgServiceRef = useRef<any>()
     const myAgentPubKeyRef = useRef<any>()
     const joinGameHash = useRef<any>()
     const [holoPlayers, setHoloPlayers] = useState<any[]>([])
@@ -452,8 +452,8 @@ const GlassBeadGame = (): JSX.Element => {
             return isWeco
                 ? axios.get(`${config.apiURL}/glass-bead-game-data?postId=${postData.id}`)
                 : new Promise((resolve, reject) => {
-                      gbgService!
-                          .getGame(entryHash)
+                      gbgServiceRef
+                          .current!.getGame(entryHash)
                           .then((response) => resolve(response))
                           .catch((error) => console.log(error))
                   })
@@ -461,8 +461,8 @@ const GlassBeadGame = (): JSX.Element => {
 
         joinGame: (): Promise<any> => {
             return new Promise((resolve, reject) => {
-                gbgService!
-                    .joinGame({ agent: gbgService!.myAgentPubKey, entryHash })
+                gbgServiceRef
+                    .current!.joinGame({ agent: gbgServiceRef.current!.myAgentPubKey, entryHash })
                     .then((response) => resolve(response))
                     .catch((error) => console.log(error))
             })
@@ -471,8 +471,8 @@ const GlassBeadGame = (): JSX.Element => {
         getPlayers: (): Promise<any> => {
             // entryHash: EntryHashB64
             return new Promise((resolve, reject) => {
-                gbgService!
-                    .getPlayers(entryHash)
+                gbgServiceRef
+                    .current!.getPlayers(entryHash)
                     .then((response) => resolve(response))
                     .catch((error) => console.log(error))
             })
@@ -496,11 +496,11 @@ const GlassBeadGame = (): JSX.Element => {
         saveComment: (data: IComment): Promise<CreateOutput> => {
             return isWeco
                 ? axios.post(`${config.apiURL}/glass-bead-game-comment`, data)
-                : gbgService!.createComment(data)
+                : gbgServiceRef.current!.createComment(data)
         },
 
         getComments: (input: any): Promise<any> => {
-            return gbgService!.getComments(input)
+            return gbgServiceRef.current!.getComments(input)
         },
 
         // uploadBeadAudio:
@@ -792,7 +792,7 @@ const GlassBeadGame = (): JSX.Element => {
         e.preventDefault()
         if (allowedTo('comment') && newComment.length) {
             // save comment
-            gbgService!.createComment({ entryHash, comment: newComment }).then(() => {
+            gbgServiceRef.current!.createComment({ entryHash, comment: newComment }).then(() => {
                 // signal comment
                 const signal: Signal = {
                     gameHash: entryHash,
@@ -804,8 +804,8 @@ const GlassBeadGame = (): JSX.Element => {
                         },
                     },
                 }
-                gbgService!
-                    .notify(signal, holoPlayers)
+                gbgServiceRef
+                    .current!.notify(signal, holoPlayers)
                     .then(() => setNewComment(''))
                     .catch((error) => console.log('notify error: ', error))
             })
@@ -850,36 +850,32 @@ const GlassBeadGame = (): JSX.Element => {
         mediaRecorderRef.current.onstop = () => {
             const blob = new Blob(chunksRef.current, { type: 'audio/mpeg-3' }) // audio/webm;codecs=opus' })
             console.log('blob: ', blob)
-            // const formData = new FormData()
-            // formData.append('file', blob)
-            // backendShim
-            //     .uploadBeadAudio(formData)
-            //     .then((res) => {
-            //         chunksRef.current = []
-            //         const signalData = {
-            //             roomId: roomIdRef.current,
-            //             user: userRef.current,
-            //             beadUrl: res.data,
-            //             index: moveNumber,
-            //         }
-            //         // backendShim.socket.emit('outgoing-audio-bead', signalData)
-            //     })
-            //     .catch((error) => {
-            //         const { message } = error.response.data
-            //         switch (message) {
-            //             case 'File size too large':
-            //                 // todo: give user option to save bead locally before deleting (edge-case)
-            //                 chunksRef.current = []
-            //                 // setAlertMessage(`Error uploading audio. ${message}`)
-            //                 // setAlertModalOpen(true)
-            //                 break
-            //             default:
-            //                 chunksRef.current = []
-            //                 // setAlertMessage(`Unknown error uploading audio`)
-            //                 // setAlertModalOpen(true)
-            //                 break
-            //         }
-            //     })
+            // const file = new File([blob], 'newBead.mp3', { type: 'audio/mpeg-3' })
+            // console.log('file: ', file)
+            const reader = new FileReader()
+            reader.addEventListener('loadend', (e) => {
+                const array = e!.target!.result as ArrayBufferLike
+                const uint8Array = new Uint8Array(array)
+                console.log('uint8Array: ', uint8Array)
+                const signal: Signal = {
+                    gameHash: entryHash,
+                    message: {
+                        type: 'NewBead',
+                        content: {
+                            agentKey: myAgentPubKeyRef.current,
+                            audio: uint8Array,
+                            index: moveNumber,
+                        },
+                    },
+                }
+                gbgServiceRef
+                    .current!.notify(signal, holoPlayers)
+                    .then(() => {
+                        chunksRef.current = []
+                    })
+                    .catch((error) => console.log(error))
+            })
+            reader.readAsArrayBuffer(blob)
         }
         mediaRecorderRef.current.start()
     }
@@ -895,7 +891,7 @@ const GlassBeadGame = (): JSX.Element => {
                 },
             },
         }
-        gbgService!.notify(signal, holoPlayers).catch((error) => console.log(error))
+        gbgServiceRef.current!.notify(signal, holoPlayers).catch((error) => console.log(error))
     }
 
     function startGame(data) {
@@ -1042,7 +1038,7 @@ const GlassBeadGame = (): JSX.Element => {
                 },
             },
         }
-        gbgService!.notify(signal, holoPlayers).catch((error) => console.log(error))
+        gbgServiceRef.current!.notify(signal, holoPlayers).catch((error) => console.log(error))
     }
 
     function saveGame() {
@@ -1104,7 +1100,7 @@ const GlassBeadGame = (): JSX.Element => {
                 },
             },
         }
-        gbgService!.notify(signal, holoPlayers).catch((error) => console.log(error))
+        gbgServiceRef.current!.notify(signal, holoPlayers).catch((error) => console.log(error))
     }
 
     function signalNewBackground(type, url, startTime) {
@@ -1120,7 +1116,7 @@ const GlassBeadGame = (): JSX.Element => {
                 },
             },
         }
-        gbgService!.notify(signal, holoPlayers).catch((error) => console.log(error))
+        gbgServiceRef.current!.notify(signal, holoPlayers).catch((error) => console.log(error))
     }
 
     function signalNewTopic(e) {
@@ -1135,8 +1131,8 @@ const GlassBeadGame = (): JSX.Element => {
                 },
             },
         }
-        gbgService!
-            .notify(signal, holoPlayers)
+        gbgServiceRef
+            .current!.notify(signal, holoPlayers)
             .then(() => setTopicTextModalOpen(false))
             .catch((error) => console.log(error))
     }
@@ -1411,6 +1407,11 @@ const GlassBeadGame = (): JSX.Element => {
                 pushComment(`${agentKey} left the room`)
                 break
             }
+            case 'NewBead': {
+                const { agentKey, aduio, index } = content
+                console.log('content: ', content)
+                break
+            }
             default:
                 break
         }
@@ -1425,7 +1426,8 @@ const GlassBeadGame = (): JSX.Element => {
         )
         if (!cellData) throw new Error('No cell with glassbeadgame-role role id was found')
         const cellClient = new CellClient(holochainClient, cellData)
-        setGbgService(new GlassBeadGameService(cellClient))
+        // setGbgService(new GlassBeadGameService(cellClient))
+        gbgServiceRef.current = new GlassBeadGameService(cellClient)
         cellClient.addSignalHandler(signalHandler)
     }
 
@@ -1445,10 +1447,10 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     async function initialiseGame() {
-        const agentKey = gbgService!.myAgentPubKey
-        const { game } = await gbgService!.getGame(entryHash)
-        const playersArray = await gbgService!.getPlayers(entryHash)
-        const gameComments = await gbgService!.getComments(entryHash)
+        const agentKey = gbgServiceRef.current!.myAgentPubKey
+        const { game } = await gbgServiceRef.current!.getGame(entryHash)
+        const playersArray = await gbgServiceRef.current!.getPlayers(entryHash)
+        const gameComments = await gbgServiceRef.current!.getComments(entryHash)
         myAgentPubKeyRef.current = agentKey
         setGameData(game)
         setHoloPlayers(playersArray.map((p) => p[0]))
@@ -1461,7 +1463,7 @@ const GlassBeadGame = (): JSX.Element => {
         const playerInRoom = playersArray.find((p) => p[0] === agentKey)
         if (playerInRoom) joinGameHash.current = playerInRoom[1]
         else {
-            gbgService!.joinGame({ agent: agentKey, entryHash }).then((res) => {
+            gbgServiceRef.current!.joinGame({ agent: agentKey, entryHash }).then((res) => {
                 joinGameHash.current = res
                 setHoloPlayers((p) => [...p, agentKey])
             })
@@ -1473,8 +1475,8 @@ const GlassBeadGame = (): JSX.Element => {
                         content: agentKey,
                     },
                 }
-                gbgService!
-                    .notify(
+                gbgServiceRef
+                    .current!.notify(
                         signal,
                         playersArray.map((p: any) => p[0])
                     )
@@ -1485,8 +1487,8 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     async function leaveGame() {
-        if (gbgService && joinGameHash.current) {
-            const playersArray = await gbgService!.getPlayers(entryHash)
+        if (gbgServiceRef.current && joinGameHash.current) {
+            const playersArray = await gbgServiceRef.current!.getPlayers(entryHash)
             const otherPlayers = playersArray
                 .map((p) => p[0])
                 .filter((p) => p !== myAgentPubKeyRef.current)
@@ -1499,10 +1501,12 @@ const GlassBeadGame = (): JSX.Element => {
                     },
                 },
             }
-            gbgService!
-                .notify(signal, otherPlayers)
+            gbgServiceRef
+                .current!.notify(signal, otherPlayers)
                 .then(() => {
-                    gbgService!.leaveGame(joinGameHash.current).catch((error) => console.log(error))
+                    gbgServiceRef
+                        .current!.leaveGame(joinGameHash.current)
+                        .catch((error) => console.log(error))
                 })
                 .catch((error) => console.log(error))
         }
@@ -1513,7 +1517,7 @@ const GlassBeadGame = (): JSX.Element => {
     }, [])
 
     useEffect(() => {
-        if (gbgService) initialiseGame()
+        if (gbgServiceRef.current) initialiseGame()
 
         // listen for signals:
         // backendShim.socket.on('incoming-room-joined', (payload) => {
@@ -1765,7 +1769,7 @@ const GlassBeadGame = (): JSX.Element => {
         return () => {
             leaveGame()
         }
-    }, [gbgService])
+    }, [gbgServiceRef.current])
 
     useEffect(() => {
         const loadingAnimationDuration = 2000

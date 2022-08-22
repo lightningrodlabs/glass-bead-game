@@ -34,6 +34,10 @@ export type Message =
           type: 'LeaveGame'
           content: LeaveGame
       }
+    | {
+          type: 'NewBead'
+          content: NewBead
+      }
 
 export type Signal = {
     gameHash: EntryHashB64
@@ -73,6 +77,12 @@ export type StopGame = {
 
 export type LeaveGame = {
     agentKey: string
+}
+
+export type NewBead = {
+    agentKey: string
+    audio: any
+    index: number
 }
 
 export interface GameSettingsData {

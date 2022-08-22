@@ -51,6 +51,14 @@ pub struct LeaveGameSignal {
     agent_key: String
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct NewBeadSignal {
+    agent_key: String,
+    audio: Uint8Array, // Vec<u8>,
+    index: usize
+}
+
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
 #[serde(tag = "type", content = "content")]
 pub enum Message {
@@ -62,7 +70,8 @@ pub enum Message {
     NewBackground(NewBackgroundSignal),
     StartGame(StartGameSignal),
     StopGame(StopGameSignal),
-    LeaveGame(LeaveGameSignal)
+    LeaveGame(LeaveGameSignal),
+    NewBead(NewBeadSignal)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
