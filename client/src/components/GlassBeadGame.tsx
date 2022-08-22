@@ -63,8 +63,6 @@ import { ReactComponent as CurvedDNASVG } from '@svgs/curved-dna.svg'
 import { ReactComponent as CommentIconSVG } from '@svgs/comment-solid.svg'
 import { ReactComponent as CastaliaIconSVG } from '@svgs/castalia-logo.svg'
 
-// const gbgService:GlassBeadGameService = new GlassBeadGameService();
-
 const gameDefaults = {
     id: null,
     topic: null,
@@ -356,7 +354,7 @@ const GlassBeadGame = (): JSX.Element => {
     // const { postData, postDataLoading } = useContext(PostContext)
 
     const [gbgService, setGbgService] = useState<null | GlassBeadGameService>(null)
-    const [myAgentPubKey, setMyAgentPubKey] = useState('')
+    const myAgentPubKeyRef = useRef<any>()
     const joinGameHash = useRef<any>()
     const [holoPlayers, setHoloPlayers] = useState<any[]>([])
 
@@ -801,7 +799,7 @@ const GlassBeadGame = (): JSX.Element => {
                     message: {
                         type: 'NewComment',
                         content: {
-                            agentKey: myAgentPubKey,
+                            agentKey: myAgentPubKeyRef.current,
                             comment: newComment,
                         },
                     },
@@ -851,36 +849,37 @@ const GlassBeadGame = (): JSX.Element => {
         }
         mediaRecorderRef.current.onstop = () => {
             const blob = new Blob(chunksRef.current, { type: 'audio/mpeg-3' }) // audio/webm;codecs=opus' })
-            const formData = new FormData()
-            formData.append('file', blob)
-            backendShim
-                .uploadBeadAudio(formData)
-                .then((res) => {
-                    chunksRef.current = []
-                    const signalData = {
-                        roomId: roomIdRef.current,
-                        user: userRef.current,
-                        beadUrl: res.data,
-                        index: moveNumber,
-                    }
-                    // backendShim.socket.emit('outgoing-audio-bead', signalData)
-                })
-                .catch((error) => {
-                    const { message } = error.response.data
-                    switch (message) {
-                        case 'File size too large':
-                            // todo: give user option to save bead locally before deleting (edge-case)
-                            chunksRef.current = []
-                            // setAlertMessage(`Error uploading audio. ${message}`)
-                            // setAlertModalOpen(true)
-                            break
-                        default:
-                            chunksRef.current = []
-                            // setAlertMessage(`Unknown error uploading audio`)
-                            // setAlertModalOpen(true)
-                            break
-                    }
-                })
+            console.log('blob: ', blob)
+            // const formData = new FormData()
+            // formData.append('file', blob)
+            // backendShim
+            //     .uploadBeadAudio(formData)
+            //     .then((res) => {
+            //         chunksRef.current = []
+            //         const signalData = {
+            //             roomId: roomIdRef.current,
+            //             user: userRef.current,
+            //             beadUrl: res.data,
+            //             index: moveNumber,
+            //         }
+            //         // backendShim.socket.emit('outgoing-audio-bead', signalData)
+            //     })
+            //     .catch((error) => {
+            //         const { message } = error.response.data
+            //         switch (message) {
+            //             case 'File size too large':
+            //                 // todo: give user option to save bead locally before deleting (edge-case)
+            //                 chunksRef.current = []
+            //                 // setAlertMessage(`Error uploading audio. ${message}`)
+            //                 // setAlertModalOpen(true)
+            //                 break
+            //             default:
+            //                 chunksRef.current = []
+            //                 // setAlertMessage(`Unknown error uploading audio`)
+            //                 // setAlertModalOpen(true)
+            //                 break
+            //         }
+            //     })
         }
         mediaRecorderRef.current.start()
     }
@@ -891,7 +890,7 @@ const GlassBeadGame = (): JSX.Element => {
             message: {
                 type: 'StartGame',
                 content: {
-                    agentKey: myAgentPubKey,
+                    agentKey: myAgentPubKeyRef.current,
                     data: JSON.stringify(data),
                 },
             },
@@ -923,7 +922,7 @@ const GlassBeadGame = (): JSX.Element => {
     function startMove(moveNumber, turnNumber, player, data) {
         const { numberOfTurns, moveDuration, intervalDuration } = data
         // if your move, start audio recording
-        if (isYou(player.socketId)) startAudioRecording(moveNumber)
+        if (player === myAgentPubKeyRef.current) startAudioRecording(moveNumber)
         // calculate turn and game duration
         const turnDuration = data.players.length * (moveDuration + intervalDuration)
         const gameDuration = turnDuration * numberOfTurns - intervalDuration
@@ -957,12 +956,12 @@ const GlassBeadGame = (): JSX.Element => {
                 // end seconds timer
                 clearInterval(secondsTimerRef.current)
                 // if your move, stop audio recording
-                if (player === myAgentPubKey && mediaRecorderRef.current)
+                if (player === myAgentPubKeyRef.current && mediaRecorderRef.current)
                     mediaRecorderRef.current.stop()
                 // if more moves left
                 if (moveNumber < numberOfTurns * data.players.length) {
                     // calculate next player from previous players index
-                    const PPIndex = data.players.findIndex((p) => p.socketId === player.socketId)
+                    const PPIndex = data.players.findIndex((p) => p === player)
                     const endOfTurn = PPIndex + 1 === data.players.length
                     const nextPlayer = data.players[endOfTurn ? 0 : PPIndex + 1]
                     // if interval, start interval
@@ -1039,7 +1038,7 @@ const GlassBeadGame = (): JSX.Element => {
             message: {
                 type: 'StopGame',
                 content: {
-                    agentKey: myAgentPubKey,
+                    agentKey: myAgentPubKeyRef.current,
                 },
             },
         }
@@ -1100,7 +1099,7 @@ const GlassBeadGame = (): JSX.Element => {
             message: {
                 type: 'NewTopicImage',
                 content: {
-                    agentKey: myAgentPubKey,
+                    agentKey: myAgentPubKeyRef.current,
                     topicImageUrl: url,
                 },
             },
@@ -1114,7 +1113,7 @@ const GlassBeadGame = (): JSX.Element => {
             message: {
                 type: 'NewBackground',
                 content: {
-                    agentKey: myAgentPubKey,
+                    agentKey: myAgentPubKeyRef.current,
                     subType: type,
                     url,
                     startTime,
@@ -1131,7 +1130,7 @@ const GlassBeadGame = (): JSX.Element => {
             message: {
                 type: 'NewTopic',
                 content: {
-                    agentKey: myAgentPubKey,
+                    agentKey: myAgentPubKeyRef.current,
                     topic: newTopic,
                 },
             },
@@ -1450,10 +1449,14 @@ const GlassBeadGame = (): JSX.Element => {
         const { game } = await gbgService!.getGame(entryHash)
         const playersArray = await gbgService!.getPlayers(entryHash)
         const gameComments = await gbgService!.getComments(entryHash)
-        setMyAgentPubKey(agentKey)
+        myAgentPubKeyRef.current = agentKey
         setGameData(game)
         setHoloPlayers(playersArray.map((p) => p[0]))
         setComments(formatComments(gameComments))
+        // initialise audio streaming for moves
+        navigator.mediaDevices
+            .getUserMedia({ audio: true })
+            .then((audio) => (audioRef.current = audio))
         // if new to game, join game and notify other platers
         const playerInRoom = playersArray.find((p) => p[0] === agentKey)
         if (playerInRoom) joinGameHash.current = playerInRoom[1]
@@ -1486,13 +1489,13 @@ const GlassBeadGame = (): JSX.Element => {
             const playersArray = await gbgService!.getPlayers(entryHash)
             const otherPlayers = playersArray
                 .map((p) => p[0])
-                .filter((p) => p !== gbgService!.myAgentPubKey)
+                .filter((p) => p !== myAgentPubKeyRef.current)
             const signal: Signal = {
                 gameHash: entryHash,
                 message: {
                     type: 'LeaveGame',
                     content: {
-                        agentKey: gbgService!.myAgentPubKey,
+                        agentKey: myAgentPubKeyRef.current,
                     },
                 },
             }
@@ -2018,7 +2021,7 @@ const GlassBeadGame = (): JSX.Element => {
                             <Comment
                                 key={uuidv4()}
                                 comment={comment}
-                                myAgentPubKey={myAgentPubKey}
+                                myAgentPubKey={myAgentPubKeyRef.current}
                             />
                         ))}
                     </Scrollbars>
@@ -2062,7 +2065,11 @@ const GlassBeadGame = (): JSX.Element => {
                                     <ImageTitle
                                         type='user'
                                         imagePath=''
-                                        title={playerKey === myAgentPubKey ? 'You' : playerKey}
+                                        title={
+                                            playerKey === myAgentPubKeyRef.current
+                                                ? 'You'
+                                                : playerKey
+                                        }
                                         fontSize={largeScreen ? 16 : 10}
                                         imageSize={largeScreen ? 35 : 20}
                                         style={{ marginRight: largeScreen ? 10 : 5 }}
@@ -2150,7 +2157,7 @@ const GlassBeadGame = (): JSX.Element => {
                             close={() => setGameSettingsModalOpen(false)}
                             gameData={gameData}
                             // socketId={socketIdRef.current}
-                            agentKey={myAgentPubKey}
+                            agentKey={myAgentPubKeyRef.current}
                             players={holoPlayers}
                             setPlayers={setHoloPlayers}
                             signalStartGame={signalStartGame}
@@ -2242,7 +2249,9 @@ const GlassBeadGame = (): JSX.Element => {
                                         key={userKey}
                                         type='user'
                                         imagePath=''
-                                        title={userKey === myAgentPubKey ? 'You' : userKey}
+                                        title={
+                                            userKey === myAgentPubKeyRef.current ? 'You' : userKey
+                                        }
                                         fontSize={16}
                                         imageSize={40}
                                         style={{ marginBottom: 10 }}
