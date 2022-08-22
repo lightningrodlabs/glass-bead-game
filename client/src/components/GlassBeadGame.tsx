@@ -1,3 +1,4 @@
+/* eslint-disable prefer-destructuring */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-return-assign */
 /* eslint-disable no-param-reassign */
@@ -1403,6 +1404,14 @@ const GlassBeadGame = (): JSX.Element => {
                     mediaRecorderRef.current.stop()
                 break
             }
+            case 'LeaveGame': {
+                const { agentKey } = content
+                setHoloPlayers((p) => {
+                    return p.filter((key) => key !== agentKey)
+                })
+                pushComment(`${agentKey} left the room`)
+                break
+            }
             default:
                 break
         }
@@ -1447,7 +1456,8 @@ const GlassBeadGame = (): JSX.Element => {
         setComments(formatComments(gameComments))
         // if new to game, join game and notify other platers
         const playerInRoom = playersArray.find((p) => p[0] === agentKey)
-        if (!playerInRoom) {
+        if (playerInRoom) joinGameHash.current = playerInRoom[1]
+        else {
             gbgService!.joinGame({ agent: agentKey, entryHash }).then((res) => {
                 joinGameHash.current = res
                 setHoloPlayers((p) => [...p, agentKey])
@@ -1468,6 +1478,30 @@ const GlassBeadGame = (): JSX.Element => {
                     .then((res) => console.log('notify res: ', res))
                     .catch((error) => console.log('notify error: ', error))
             }
+        }
+    }
+
+    async function leaveGame() {
+        if (gbgService && joinGameHash.current) {
+            const playersArray = await gbgService!.getPlayers(entryHash)
+            const otherPlayers = playersArray
+                .map((p) => p[0])
+                .filter((p) => p !== gbgService!.myAgentPubKey)
+            const signal: Signal = {
+                gameHash: entryHash,
+                message: {
+                    type: 'LeaveGame',
+                    content: {
+                        agentKey: gbgService!.myAgentPubKey,
+                    },
+                },
+            }
+            gbgService!
+                .notify(signal, otherPlayers)
+                .then(() => {
+                    gbgService!.leaveGame(joinGameHash.current).catch((error) => console.log(error))
+                })
+                .catch((error) => console.log(error))
         }
     }
 
@@ -1726,16 +1760,7 @@ const GlassBeadGame = (): JSX.Element => {
         // })
 
         return () => {
-            if (gbgService && joinGameHash.current) {
-                console.log('leaveGame hash: ', joinGameHash.current)
-                gbgService
-                    .leaveGame(joinGameHash.current)
-                    .then((response) => {
-                        console.log('leaveGame response: ', response)
-                    })
-                    .catch((error) => console.log(error))
-            }
-            // if(socketRef.current) socketRef.current.disconnect()
+            leaveGame()
         }
     }, [gbgService])
 

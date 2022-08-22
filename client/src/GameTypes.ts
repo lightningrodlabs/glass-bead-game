@@ -30,6 +30,10 @@ export type Message =
           type: 'StopGame'
           content: StopGame
       }
+    | {
+          type: 'LeaveGame'
+          content: LeaveGame
+      }
 
 export type Signal = {
     gameHash: EntryHashB64
@@ -64,6 +68,10 @@ export type StartGame = {
 }
 
 export type StopGame = {
+    agentKey: string
+}
+
+export type LeaveGame = {
     agentKey: string
 }
 
