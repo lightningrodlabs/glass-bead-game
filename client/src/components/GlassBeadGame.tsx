@@ -1033,12 +1033,16 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function signalStopGame() {
-        const data = {
-            roomId: roomIdRef.current,
-            userSignaling: userRef.current,
-            gameId: gameData.id,
+        const signal: Signal = {
+            gameHash: entryHash,
+            message: {
+                type: 'StopGame',
+                content: {
+                    agentKey: myAgentPubKey,
+                },
+            },
         }
-        // backendShim.socket.emit('outgoing-stop-game', data)
+        gbgService!.notify(signal, holoPlayers).catch((error) => console.log(error))
     }
 
     function saveGame() {
@@ -1377,6 +1381,26 @@ const GlassBeadGame = (): JSX.Element => {
                 liveBeadIndexRef.current = 1
                 startGame(parsedData)
                 pushComment(`${agentKey} started the game`)
+                break
+            }
+            case 'StopGame': {
+                const { agentKey } = content
+                if (largeScreen) {
+                    setShowComments(true)
+                    updateShowVideos(true)
+                }
+                pushComment(`${agentKey} stopped the game`)
+                setGameInProgress(false)
+                clearInterval(secondsTimerRef.current)
+                d3.selectAll(`.${styles.playerState}`).text('')
+                d3.select(`#game-arc`).remove()
+                d3.select(`#turn-arc`).remove()
+                d3.select(`#move-arc`).remove()
+                d3.select('#timer-seconds').text('')
+                addPlayButtonToCenterBead()
+                setTurn(0)
+                if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording')
+                    mediaRecorderRef.current.stop()
                 break
             }
             default:

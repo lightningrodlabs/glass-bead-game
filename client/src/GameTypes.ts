@@ -26,6 +26,10 @@ export type Message =
           type: 'StartGame'
           content: StartGame
       }
+    | {
+          type: 'StopGame'
+          content: StopGame
+      }
 
 export type Signal = {
     gameHash: EntryHashB64
@@ -57,6 +61,10 @@ export type NewBackground = {
 export type StartGame = {
     agentKey: string
     data: string
+}
+
+export type StopGame = {
+    agentKey: string
 }
 
 export interface GameSettingsData {
