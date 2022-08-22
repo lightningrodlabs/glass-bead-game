@@ -1357,6 +1357,7 @@ const GlassBeadGame = (): JSX.Element => {
             case 'StartGame': {
                 const { agentKey, data } = content
                 const parsedData = JSON.parse(data)
+                setGameSettingsModalOpen(false)
                 setGameData(parsedData)
                 setHoloPlayers(parsedData.players)
                 setGameInProgress(true)
