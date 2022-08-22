@@ -136,7 +136,7 @@ const Video = (props) => {
 }
 
 const Comment = (props) => {
-    const { comment } = props
+    const { comment, myAgentPubKey } = props
     const { user, text, createdAt } = comment
     if (user)
         return (
@@ -144,7 +144,7 @@ const Comment = (props) => {
                 <FlagImage type='user' size={40} imagePath={user.flagImagePath} />
                 <Column className={styles.textWrapper}>
                     <Row className={styles.header}>
-                        <h1>{user.name}</h1>
+                        <h1>{user.name === myAgentPubKey ? 'You' : user.name}</h1>
                         <p title={dateCreated(createdAt)}>{timeSinceCreated(createdAt)}</p>
                     </Row>
                     <Markdown text={text} />
@@ -906,7 +906,7 @@ const GlassBeadGame = (): JSX.Element => {
         d3.select('#timer-move-state').text('Intro')
         d3.select('#timer-seconds').text(data.introDuration)
         const firstPlayer = data.players[0]
-        d3.select(`#player-${firstPlayer.socketId}`).text('(up next)')
+        d3.select(`#player-${firstPlayer}`).text('(up next)')
         startArc('move', data.introDuration, colors.yellow)
         let timeLeft = data.introDuration
         secondsTimerRef.current = setInterval(() => {
@@ -946,7 +946,7 @@ const GlassBeadGame = (): JSX.Element => {
         d3.select('#timer-move-state').text('Move')
         d3.select('#timer-seconds').text(moveDuration)
         d3.selectAll(`.${styles.playerState}`).text('')
-        d3.select(`#player-${player.socketId}`).text('(recording)')
+        d3.select(`#player-${player}`).text('(recording)')
         // start seconds timer
         let timeLeft = moveDuration
         secondsTimerRef.current = setInterval(() => {
@@ -956,7 +956,7 @@ const GlassBeadGame = (): JSX.Element => {
                 // end seconds timer
                 clearInterval(secondsTimerRef.current)
                 // if your move, stop audio recording
-                if (isYou(player.socketId) && mediaRecorderRef.current)
+                if (player === myAgentPubKey && mediaRecorderRef.current)
                     mediaRecorderRef.current.stop()
                 // if more moves left
                 if (moveNumber < numberOfTurns * data.players.length) {
@@ -984,7 +984,7 @@ const GlassBeadGame = (): JSX.Element => {
         d3.select('#timer-move-state').text('Interval')
         d3.select('#timer-seconds').text(intervalDuration)
         d3.selectAll(`.${styles.playerState}`).text('')
-        d3.select(`#player-${nextPlayer.socketId}`).text('(up next)')
+        d3.select(`#player-${nextPlayer}`).text('(up next)')
         // start seconds timer
         let timeLeft = intervalDuration
         secondsTimerRef.current = setInterval(() => {
@@ -1965,7 +1965,11 @@ const GlassBeadGame = (): JSX.Element => {
                 >
                     <Scrollbars className={styles.comments} autoScrollToBottom>
                         {comments.map((comment) => (
-                            <Comment comment={comment} key={uuidv4()} />
+                            <Comment
+                                key={uuidv4()}
+                                comment={comment}
+                                myAgentPubKey={myAgentPubKey}
+                            />
                         ))}
                     </Scrollbars>
                     <form className={styles.commentInput} onSubmit={createComment}>
@@ -2002,21 +2006,18 @@ const GlassBeadGame = (): JSX.Element => {
                                 onClick={signalStopGame}
                             />
                             <p>{`Turn ${turn} / ${gameData.numberOfTurns}`}</p>
-                            {players.map((player, index) => (
-                                <Row centerY key={player.socketId} className={styles.player}>
+                            {holoPlayers.map((playerKey, index) => (
+                                <Row centerY key={playerKey} className={styles.player}>
                                     <div className={styles.position}>{index + 1}</div>
                                     <ImageTitle
                                         type='user'
-                                        imagePath={player.flagImagePath}
-                                        title={isYou(player.socketId) ? 'You' : player.name}
+                                        imagePath=''
+                                        title={playerKey === myAgentPubKey ? 'You' : playerKey}
                                         fontSize={largeScreen ? 16 : 10}
                                         imageSize={largeScreen ? 35 : 20}
                                         style={{ marginRight: largeScreen ? 10 : 5 }}
                                     />
-                                    <p
-                                        id={`player-${player.socketId}`}
-                                        className={styles.playerState}
-                                    />
+                                    <p id={`player-${playerKey}`} className={styles.playerState} />
                                 </Row>
                             ))}
                         </Column>
@@ -2186,12 +2187,12 @@ const GlassBeadGame = (): JSX.Element => {
                             </Column> */}
                             <Column className={styles.peopleInRoom}>
                                 <p style={{ marginBottom: 10 }}>{peopleInRoomText()}</p>
-                                {holoPlayers.map((user) => (
+                                {holoPlayers.map((userKey) => (
                                     <ImageTitle
-                                        key={user}
+                                        key={userKey}
                                         type='user'
                                         imagePath=''
-                                        title={user}
+                                        title={userKey === myAgentPubKey ? 'You' : userKey}
                                         fontSize={16}
                                         imageSize={40}
                                         style={{ marginBottom: 10 }}
