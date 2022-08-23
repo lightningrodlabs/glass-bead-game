@@ -55,7 +55,8 @@ pub struct LeaveGameSignal {
 #[serde(rename_all = "camelCase")]
 pub struct NewBeadSignal {
     agent_key: String,
-    audio: Uint8Array, // Vec<u8>,
+    #[serde(with = "serde_bytes")]
+    audio: Vec<u8>,
     index: usize
 }
 
