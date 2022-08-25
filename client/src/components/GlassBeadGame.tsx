@@ -848,15 +848,11 @@ const GlassBeadGame = (): JSX.Element => {
             chunksRef.current.push(e.data)
         }
         mediaRecorderRef.current.onstop = () => {
-            const blob = new Blob(chunksRef.current, { type: 'audio/mpeg-3' }) // audio/webm;codecs=opus' })
-            console.log('blob: ', blob)
-            // const file = new File([blob], 'newBead.mp3', { type: 'audio/mpeg-3' })
-            // console.log('file: ', file)
+            const blob = new Blob(chunksRef.current, { type: 'audio/mpeg-3' })
             const reader = new FileReader()
-            reader.addEventListener('loadend', (e) => {
+            reader.addEventListener('loadend', async (e) => {
                 const array = e!.target!.result as ArrayBufferLike
                 const uint8Array = new Uint8Array(array)
-                console.log('uint8Array: ', uint8Array)
                 const signal: Signal = {
                     gameHash: entryHash,
                     message: {
@@ -868,11 +864,13 @@ const GlassBeadGame = (): JSX.Element => {
                         },
                     },
                 }
+                const playersArray = await gbgServiceRef.current!.getPlayers(entryHash)
                 gbgServiceRef
-                    .current!.notify(signal, holoPlayers)
-                    .then(() => {
-                        chunksRef.current = []
-                    })
+                    .current!.notify(
+                        signal,
+                        playersArray.map((p) => p[0])
+                    )
+                    .then(() => (chunksRef.current = []))
                     .catch((error) => console.log(error))
             })
             reader.readAsArrayBuffer(blob)
@@ -1304,6 +1302,21 @@ const GlassBeadGame = (): JSX.Element => {
         }
     }
 
+    function formatComments(holoComments) {
+        return holoComments.map((item) => {
+            return {
+                user: {
+                    id: 1,
+                    name: item.agent,
+                    handle: 'testHandle',
+                    flagImagePath: '',
+                },
+                text: item.comment,
+                createAt: new Date(item.timestamp).toISOString(),
+            }
+        })
+    }
+
     function signalHandler(signal) {
         const { type, content } = signal.data.payload.message
         switch (type) {
@@ -1408,8 +1421,25 @@ const GlassBeadGame = (): JSX.Element => {
                 break
             }
             case 'NewBead': {
-                const { agentKey, aduio, index } = content
-                console.log('content: ', content)
+                const { agentKey, audio, index } = content
+                const arrayBuffer = audio.buffer.slice(
+                    audio.byteOffset,
+                    audio.byteLength + audio.byteOffset
+                )
+                const audioBlob = new Blob([arrayBuffer], { type: 'audio/mpeg-3' })
+                setBeads((previousBeads) => [
+                    ...previousBeads,
+                    {
+                        user: {
+                            id: agentKey,
+                            handle: 'test',
+                            flagImagePath: '',
+                        },
+                        index,
+                        beadUrl: URL.createObjectURL(audioBlob),
+                    },
+                ])
+                addEventListenersToBead(index)
                 break
             }
             default:
@@ -1426,24 +1456,8 @@ const GlassBeadGame = (): JSX.Element => {
         )
         if (!cellData) throw new Error('No cell with glassbeadgame-role role id was found')
         const cellClient = new CellClient(holochainClient, cellData)
-        // setGbgService(new GlassBeadGameService(cellClient))
         gbgServiceRef.current = new GlassBeadGameService(cellClient)
         cellClient.addSignalHandler(signalHandler)
-    }
-
-    function formatComments(holoComments) {
-        return holoComments.map((item) => {
-            return {
-                user: {
-                    id: 1,
-                    name: item.agent,
-                    handle: 'testHandle',
-                    flagImagePath: '',
-                },
-                text: item.comment,
-                createAt: new Date(item.timestamp).toISOString(),
-            }
-        })
     }
 
     async function initialiseGame() {
