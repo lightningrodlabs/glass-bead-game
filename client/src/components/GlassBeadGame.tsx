@@ -849,6 +849,7 @@ const GlassBeadGame = (): JSX.Element => {
         }
         mediaRecorderRef.current.onstop = () => {
             const blob = new Blob(chunksRef.current, { type: 'audio/mpeg-3' })
+            chunksRef.current = []
             const reader = new FileReader()
             reader.addEventListener('loadend', async (e) => {
                 const array = e!.target!.result as ArrayBufferLike
@@ -870,7 +871,16 @@ const GlassBeadGame = (): JSX.Element => {
                         signal,
                         playersArray.map((p) => p[0])
                     )
-                    .then(() => (chunksRef.current = []))
+                    .then(() => {
+                        gbgServiceRef.current!.createBead({
+                            entryHash,
+                            bead: {
+                                agentKey: myAgentPubKeyRef.current,
+                                audio: uint8Array,
+                                index: moveNumber,
+                            },
+                        })
+                    })
                     .catch((error) => console.log(error))
             })
             reader.readAsArrayBuffer(blob)
@@ -1432,6 +1442,7 @@ const GlassBeadGame = (): JSX.Element => {
                     {
                         user: {
                             id: agentKey,
+                            name: agentKey === myAgentPubKeyRef.current ? 'You' : agentKey,
                             handle: 'test',
                             flagImagePath: '',
                         },
@@ -1465,10 +1476,36 @@ const GlassBeadGame = (): JSX.Element => {
         const { game } = await gbgServiceRef.current!.getGame(entryHash)
         const playersArray = await gbgServiceRef.current!.getPlayers(entryHash)
         const gameComments = await gbgServiceRef.current!.getComments(entryHash)
+        const gameBeads = await gbgServiceRef.current!.getBeads(entryHash)
         myAgentPubKeyRef.current = agentKey
         setGameData(game)
         setHoloPlayers(playersArray.map((p) => p[0]))
         setComments(formatComments(gameComments))
+        if (gameBeads.length) {
+            setGameData((d) => {
+                return { ...d, locked: true }
+            })
+            setBeads(
+                gameBeads.map((b) => {
+                    const { agentKey: key, audio, index } = b.bead
+                    const arrayBuffer = audio.buffer.slice(
+                        audio.byteOffset,
+                        audio.byteLength + audio.byteOffset
+                    )
+                    const audioBlob = new Blob([arrayBuffer], { type: 'audio/mpeg-3' })
+                    return {
+                        user: {
+                            id: key,
+                            name: key === myAgentPubKeyRef.current ? 'You' : key,
+                            handle: 'test',
+                            flagImagePath: '',
+                        },
+                        index,
+                        beadUrl: URL.createObjectURL(audioBlob),
+                    }
+                })
+            )
+        }
         // initialise audio streaming for moves
         navigator.mediaDevices
             .getUserMedia({ audio: true })

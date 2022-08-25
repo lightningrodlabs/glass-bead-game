@@ -142,18 +142,6 @@ export interface GameOutput {
     author: AgentPubKeyB64
 }
 
-// export interface IComment {
-//     id: number
-//     text: string
-//     createdAt: Date
-//     updatedAt: Date
-//     user: {
-//         handle: string
-//         name: string
-//         flagImagePath: string
-//     }
-// }
-
 export interface NewCommentData {
     gameId: number
     userId: number
@@ -174,16 +162,10 @@ export interface CommentOutput {
 }
 
 export interface Bead {
-    id: number
+    entryHash: EntryHashB64
+    agentKey: string
+    audio: any
     index: number
-    beadUrl: string
-    createdAt: Date
-    updatedAt: Date
-    user: {
-        handle: string
-        name: string
-        flagImagePath: string
-    }
 }
 
 export interface BeadInput {

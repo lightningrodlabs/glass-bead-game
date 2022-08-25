@@ -25,8 +25,10 @@ pub struct Game {
 #[derive(Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Bead {
-    pub content : String,
-    pub index: usize,
+    agent_key: String,
+    #[serde(with = "serde_bytes")]
+    audio: Vec<u8>,
+    index: usize
 }
 
 #[hdk_entry_helper]
