@@ -2181,7 +2181,7 @@ const GlassBeadGame = (): JSX.Element => {
                                         }
                                     />
                                     {/* )} */}
-                                    {beads.length > 0 && (
+                                    {/* {beads.length > 0 && (
                                         <Button
                                             text='Save game'
                                             color='blue'
@@ -2189,7 +2189,7 @@ const GlassBeadGame = (): JSX.Element => {
                                             style={{ marginBottom: 10 }}
                                             onClick={() => allowedTo('save-game') && saveGame()}
                                         />
-                                    )}
+                                    )} */}
                                 </>
                             )}
                             <Button
