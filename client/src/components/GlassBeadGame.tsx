@@ -109,7 +109,7 @@ const Video = (props) => {
                 <ImageTitle
                     type='user'
                     imagePath={user.flagImagePath}
-                    title={id === 'your-video' ? 'You' : user.name}
+                    title={id === 'your-video' ? 'You' : id}
                 />
             </div>
             {id === 'your-video' ? (
@@ -215,7 +215,7 @@ const GameSettingsModal = (props) => {
                 introDuration: introDuration.value,
                 intervalDuration: intervalDuration.value,
                 outroDuration: outroDuration.value,
-                players,
+                players: players.map((p) => p.key),
             })
             close()
         }
@@ -280,8 +280,8 @@ const GameSettingsModal = (props) => {
                     </Column>
                     <Column style={{ marginBottom: 20 }}>
                         <h2 style={{ margin: 0, lineHeight: '20px' }}>Player order</h2>
-                        {players.map((playerKey, i) => (
-                            <Row style={{ marginTop: 10 }} key={playerKey}>
+                        {players.map((player, i) => (
+                            <Row style={{ marginTop: 10 }} key={player.key}>
                                 <div className={styles.position}>{i + 1}</div>
                                 <div className={styles.positionControls}>
                                     {i > 0 && (
@@ -304,7 +304,7 @@ const GameSettingsModal = (props) => {
                                 <ImageTitle
                                     type='user'
                                     imagePath=''
-                                    title={playerKey === agentKey ? 'You' : playerKey}
+                                    title={player.key === agentKey ? 'You' : player.key}
                                     fontSize={16}
                                     imageSize={35}
                                 />
@@ -429,12 +429,14 @@ const GlassBeadGame = (): JSX.Element => {
     const iceConfig = {
         // iceTransportPolicy: 'relay',
         iceServers: [
-            { urls: `stun:${config.turnServerUrl}` },
-            {
-                urls: `turn:${config.turnServerUrl}`,
-                username: config.turnServerUsername,
-                credential: config.turnServerPassword,
-            },
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
+            // { urls: `stun:${config.turnServerUrl}` },
+            // {
+            //     urls: `turn:${config.turnServerUrl}`,
+            //     username: config.turnServerUsername,
+            //     credential: config.turnServerPassword,
+            // },
         ],
     }
     const totalUsersStreaming = videosRef.current.length + (userIsStreaming ? 1 : 0)
@@ -634,12 +636,18 @@ const GlassBeadGame = (): JSX.Element => {
             setUserIsStreaming(false)
             setAudioTrackEnabled(true)
             setVideoTrackEnabled(true)
-            const data = {
-                roomId: roomIdRef.current,
-                socketId: socketIdRef.current,
-                userData: userRef.current,
+            const signal: Signal = {
+                gameHash: entryHash,
+                message: {
+                    type: 'StreamDisconnected',
+                    content: {
+                        agentKey: myAgentPubKeyRef.current,
+                    },
+                },
             }
-            // backendShim.socket.emit('outgoing-stream-disconnected', data)
+            gbgServiceRef
+                .current!.notify(signal, holoPlayers)
+                .catch((error) => console.log('notify error: ', error))
             if (!videosRef.current.length) {
                 updateShowVideos(false)
                 updateMobileTab('game')
@@ -659,10 +667,10 @@ const GlassBeadGame = (): JSX.Element => {
                     videoRef.current = document.getElementById('your-video')
                     videoRef.current.srcObject = stream
                     const newPlayer = {
-                        id: accountData.id,
-                        name: accountData.name,
-                        flagImagePath: accountData.flagImagePath,
-                        socketId: socketIdRef.current,
+                        id: myAgentPubKeyRef.current,
+                        name: '',
+                        flagImagePath: '',
+                        key: myAgentPubKeyRef.current,
                     }
                     setPlayers((previousPlayers) => [...previousPlayers, newPlayer])
                     setLoadingStream(false)
@@ -683,18 +691,18 @@ const GlassBeadGame = (): JSX.Element => {
                             videoRef.current = document.getElementById('your-video')
                             videoRef.current.srcObject = stream
                             const newPlayer = {
-                                id: accountData.id,
-                                name: accountData.name,
-                                flagImagePath: accountData.flagImagePath,
-                                socketId: socketIdRef.current,
+                                id: myAgentPubKeyRef.current,
+                                name: '',
+                                flagImagePath: '',
+                                key: myAgentPubKeyRef.current,
                             }
                             setPlayers((previousPlayers) => [...previousPlayers, newPlayer])
                             setLoadingStream(false)
                             openVideoWall()
                         })
                         .catch(() => {
-                            // setAlertMessage('Unable to connect media devices')
-                            // setAlertModalOpen(true)
+                            setAlertMessage('Unable to connect media devices')
+                            setAlertModalOpen(true)
                             setLoadingStream(false)
                         })
                 })
@@ -708,22 +716,27 @@ const GlassBeadGame = (): JSX.Element => {
     // todo: set up general createPeer function
     // function createPeer(isInitiator) {}
 
-    function refreshStream(socketId, user) {
-        // singal refresh request
-        // backendShim.socket.emit('outgoing-refresh-request', {
-        //     userToSignal: socketId,
-        //     userSignaling: {
-        //         socketId: socketRef.current.id,
-        //         userData: userRef.current,
-        //     },
-        // })
+    function refreshStream(userKey, user) {
+        // signal refresh request
+        const sig: Signal = {
+            gameHash: entryHash,
+            message: {
+                type: 'RefreshRequest',
+                content: {
+                    agentKey: myAgentPubKeyRef.current,
+                },
+            },
+        }
+        gbgServiceRef
+            .current!.notify(sig, [userKey])
+            .catch((error) => console.log('notify error: ', error))
         // destory old peer connection
-        const peerObject = peersRef.current.find((p) => p.socketId === socketId)
+        const peerObject = peersRef.current.find((p) => p.key === userKey)
         if (peerObject) {
             peerObject.peer.destroy()
-            peersRef.current = peersRef.current.filter((p) => p.socketId !== socketId)
-            videosRef.current = videosRef.current.filter((v) => v.socketId !== socketId)
-            setPlayers((ps) => [...ps.filter((p) => p.socketId !== socketId)])
+            peersRef.current = peersRef.current.filter((p) => p.key !== userKey)
+            videosRef.current = videosRef.current.filter((v) => v.key !== userKey)
+            setPlayers((ps) => [...ps.filter((p) => p.key !== userKey)])
         }
         // create new peer connection
         const peer = new Peer({
@@ -732,39 +745,40 @@ const GlassBeadGame = (): JSX.Element => {
             stream: streamRef.current,
         })
         peer.on('signal', (data) => {
-            // backendShim.socket.emit('outgoing-signal-request', {
-            //     userToSignal: socketId,
-            //     userSignaling: {
-            //         socketId: socketRef.current.id,
-            //         userData: userRef.current,
-            //     },
-            //     signal: data,
-            // })
+            const signal: Signal = {
+                gameHash: entryHash,
+                message: {
+                    type: 'NewSignalRequest',
+                    content: {
+                        agentKey: myAgentPubKeyRef.current,
+                        signal: JSON.stringify(data),
+                    },
+                },
+            }
+            gbgServiceRef
+                .current!.notify(signal, [userKey])
+                .catch((error) => console.log('notify error: ', error))
         })
         peer.on('stream', (stream) => {
             videosRef.current.push({
-                socketId,
-                userData: user,
+                key: userKey,
+                userData: {},
                 peer,
                 audioOnly: !stream.getVideoTracks().length,
             })
-            pushComment(`${user.name}'s video connected`)
-            addStreamToVideo(socketId, stream)
+            pushComment(`${userKey}'s video connected`)
+            addStreamToVideo(userKey, stream)
             const newPlayer = {
-                id: user.id,
-                name: user.name,
-                flagImagePath: user.flagImagePath,
-                socketId,
+                id: userKey,
+                name: '',
+                flagImagePath: '',
+                key: userKey,
             }
             setPlayers((previousPlayers) => [...previousPlayers, newPlayer])
         })
         peer.on('close', () => peer.destroy())
-        peer.on('error', (error) => console.log(error))
-        peersRef.current.push({
-            socketId,
-            userData: user,
-            peer,
-        })
+        peer.on('error', (error) => console.log('error 2: ', error))
+        peersRef.current.push({ key: userKey, userData: {}, peer })
     }
 
     function toggleAudioTrack() {
@@ -1453,6 +1467,92 @@ const GlassBeadGame = (): JSX.Element => {
                 addEventListenersToBead(index)
                 break
             }
+            case 'NewSignalRequest': {
+                const { agentKey } = content
+                const parsedSignal = JSON.parse(content.signal)
+                // search for peer in peers array
+                const existingPeer = peersRef.current.find((p) => p.key === agentKey)
+                // if peer exists, pass signal to peer
+                if (existingPeer) {
+                    existingPeer.peer.signal(parsedSignal)
+                } else {
+                    // otherwise, create new peer connection (with stream if running)
+                    const peer = new Peer({
+                        initiator: false,
+                        stream: streamRef.current,
+                        config: iceConfig,
+                    })
+                    peer.on('signal', (data) => {
+                        const sig: Signal = {
+                            gameHash: entryHash,
+                            message: {
+                                type: 'NewSignalResponse',
+                                content: {
+                                    agentKey: myAgentPubKeyRef.current,
+                                    signal: JSON.stringify(data),
+                                },
+                            },
+                        }
+                        gbgServiceRef
+                            .current!.notify(sig, [agentKey])
+                            .catch((error) => console.log('notify error: ', error))
+                    })
+                    peer.on('stream', (stream) => {
+                        videosRef.current.push({
+                            key: agentKey,
+                            userData: {},
+                            peer,
+                            audioOnly: !stream.getVideoTracks().length,
+                        })
+                        pushComment(`${agentKey}'s video connected`)
+                        addStreamToVideo(agentKey, stream)
+                        const newPlayer = {
+                            id: agentKey,
+                            name: '',
+                            flagImagePath: '',
+                            key: agentKey,
+                        }
+                        setPlayers((previousPlayers) => [...previousPlayers, newPlayer])
+                    })
+                    peer.on('close', () => peer.destroy())
+                    peer.on('error', (error) => console.log('error 2: ', error))
+                    peer.signal(parsedSignal)
+                    peersRef.current.push({ key: agentKey, userData: {}, peer })
+                }
+                break
+            }
+            case 'NewSignalResponse': {
+                const { agentKey } = content
+                const parsedSignal = JSON.parse(content.signal)
+                const peerObject = peersRef.current.find((p) => p.key === agentKey)
+                if (peerObject) {
+                    if (peerObject.peer.readable) peerObject.peer.signal(parsedSignal)
+                    else {
+                        peerObject.peer.destroy()
+                        peersRef.current = peersRef.current.filter((p) => p.key !== agentKey)
+                    }
+                } else console.log('no peer!')
+                break
+            }
+            case 'RefreshRequest': {
+                const { agentKey } = content
+                const peerObject = peersRef.current.find((p) => p.key === agentKey)
+                if (peerObject) {
+                    peerObject.peer.destroy()
+                    peersRef.current = peersRef.current.filter((p) => p.key !== agentKey)
+                    videosRef.current = videosRef.current.filter((v) => v.key !== agentKey)
+                    setPlayers((ps) => [...ps.filter((p) => p.key !== agentKey)])
+                }
+                break
+            }
+            case 'StreamDisconnected': {
+                const { agentKey } = content
+                videosRef.current = videosRef.current.filter((v) => v.key !== agentKey)
+                if (!videosRef.current.length && !streamRef.current) updateShowVideos(false)
+                setPlayers((ps) => [...ps.filter((p) => p.key !== agentKey)])
+                pushComment(`${agentKey}'s stream disconnected`)
+                break
+            }
             default:
                 break
         }
@@ -1506,10 +1606,63 @@ const GlassBeadGame = (): JSX.Element => {
                 })
             )
         }
-        // initialise audio streaming for moves
-        navigator.mediaDevices
-            .getUserMedia({ audio: true })
-            .then((audio) => (audioRef.current = audio))
+        // connect to peers
+        playersArray
+            .map((p) => p[0])
+            .filter((p) => p !== agentKey)
+            .forEach((playerKey) => {
+                // remove old peer if present
+                const peerObject = peersRef.current.find((p) => p.key === playerKey)
+                if (peerObject) {
+                    peerObject.peer.destroy()
+                    peersRef.current = peersRef.current.filter((p) => p.key !== playerKey)
+                    videosRef.current = videosRef.current.filter((v) => v.key !== playerKey)
+                }
+                // create peer connection
+                const peer = new Peer({
+                    initiator: true,
+                    config: iceConfig,
+                })
+                peer.on('signal', (data) => {
+                    const signal: Signal = {
+                        gameHash: entryHash,
+                        message: {
+                            type: 'NewSignalRequest',
+                            content: {
+                                agentKey,
+                                signal: JSON.stringify(data),
+                            },
+                        },
+                    }
+                    gbgServiceRef
+                        .current!.notify(signal, [playerKey])
+                        .catch((error) => console.log('notify error: ', error))
+                })
+                peer.on('stream', (stream) => {
+                    videosRef.current.push({
+                        key: playerKey,
+                        userData: {},
+                        peer,
+                        audioOnly: !stream.getVideoTracks().length,
+                    })
+                    pushComment(`${playerKey}'s video connected`)
+                    addStreamToVideo(playerKey, stream)
+                    const newPlayer = {
+                        id: playerKey,
+                        name: '',
+                        flagImagePath: '',
+                        key: playerKey,
+                    }
+                    setPlayers((previousPlayers) => [...previousPlayers, newPlayer])
+                })
+                peer.on('close', () => peer.destroy())
+                peer.on('error', (error) => console.log(error))
+                peersRef.current.push({
+                    key: playerKey,
+                    userData: {},
+                    peer,
+                })
+            })
         // if new to game, join game and notify other platers
         const playerInRoom = playersArray.find((p) => p[0] === agentKey)
         if (playerInRoom) joinGameHash.current = playerInRoom[1]
@@ -2211,10 +2364,9 @@ const GlassBeadGame = (): JSX.Element => {
                         <GameSettingsModal
                             close={() => setGameSettingsModalOpen(false)}
                             gameData={gameData}
-                            // socketId={socketIdRef.current}
                             agentKey={myAgentPubKeyRef.current}
-                            players={holoPlayers}
-                            setPlayers={setHoloPlayers}
+                            players={players}
+                            setPlayers={setPlayers}
                             signalStartGame={signalStartGame}
                         />
                     )}
@@ -2251,7 +2403,7 @@ const GlassBeadGame = (): JSX.Element => {
                     </Column>
                     {largeScreen && (
                         <Column className={styles.people}>
-                            {/* <Button
+                            <Button
                                 text={`${userIsStreaming ? 'Stop' : 'Start'} streaming`}
                                 color={userIsStreaming ? 'red' : 'aqua'}
                                 style={{ marginBottom: 10, alignSelf: 'flex-start' }}
@@ -2285,10 +2437,10 @@ const GlassBeadGame = (): JSX.Element => {
                                         )}
                                         {videosRef.current.map((user) => (
                                             <ImageTitle
-                                                key={user.socketId}
+                                                key={user.key}
                                                 type='user'
                                                 imagePath={user.userData.flagImagePath}
-                                                title={user.userData.name}
+                                                title={user.key}
                                                 fontSize={16}
                                                 imageSize={40}
                                                 style={{ marginBottom: 10 }}
@@ -2296,7 +2448,7 @@ const GlassBeadGame = (): JSX.Element => {
                                         ))}
                                     </Column>
                                 )}
-                            </Column> */}
+                            </Column>
                             <Column className={styles.peopleInRoom}>
                                 <p style={{ marginBottom: 10 }}>{peopleInRoomText()}</p>
                                 {holoPlayers.map((userKey) => (
@@ -2357,8 +2509,8 @@ const GlassBeadGame = (): JSX.Element => {
                     {videosRef.current.map((v) => {
                         return (
                             <Video
-                                key={v.socketId}
-                                id={v.socketId}
+                                key={v.key}
+                                id={v.key}
                                 user={v.userData}
                                 size={findVideoSize()}
                                 audioOnly={v.audioOnly}

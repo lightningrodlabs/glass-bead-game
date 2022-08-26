@@ -38,6 +38,26 @@ export type Message =
           type: 'NewBead'
           content: NewBead
       }
+    | {
+          type: 'NewSignalRequest'
+          content: NewSignalRequest
+      }
+    | {
+          type: 'NewSignalResponse'
+          content: NewSignalResponse
+      }
+    | {
+          type: 'RefreshRequest'
+          content: RefreshRequest
+      }
+    | {
+          type: 'StreamDisconnected'
+          content: StreamDisconnected
+      }
+// | {
+//       type: 'NewGame'
+//       content: NewGame
+//   }
 
 export type Signal = {
     gameHash: EntryHashB64
@@ -84,6 +104,28 @@ export type NewBead = {
     audio: any
     index: number
 }
+
+export type NewSignalRequest = {
+    agentKey: string
+    signal: string
+}
+
+export type NewSignalResponse = {
+    agentKey: string
+    signal: string
+}
+
+export type RefreshRequest = {
+    agentKey: string
+}
+
+export type StreamDisconnected = {
+    agentKey: string
+}
+
+// export type NewGame = {
+//     game: any
+// }
 
 export interface GameSettingsData {
     topic: string

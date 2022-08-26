@@ -2,6 +2,13 @@ use holo_hash::{AgentPubKeyB64, EntryHashB64};
 
 use crate::game::*;
 
+// #[derive(Serialize, Deserialize, Debug)]
+// #[serde(rename_all = "camelCase")]
+// pub struct NewGameSignal {
+//     // agent_key: String,
+//     game: Game,
+// }
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct CommentSignal {
@@ -60,10 +67,36 @@ pub struct NewBeadSignal {
     index: usize
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SignalRequest {
+    agent_key: String,
+    signal: String
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SignalResponse {
+    agent_key: String,
+    signal: String
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct RefreshRequestSignal {
+    agent_key: String
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StreamDisconnectedSignal {
+    agent_key: String
+}
+
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
 #[serde(tag = "type", content = "content")]
 pub enum Message {
-    NewGame(GameOutput),
+    // NewGame(NewGameSignal),
     NewPlayer(AgentPubKeyB64),
     NewComment(CommentSignal),
     NewTopic(NewTopicSignal),
@@ -72,7 +105,11 @@ pub enum Message {
     StartGame(StartGameSignal),
     StopGame(StopGameSignal),
     LeaveGame(LeaveGameSignal),
-    NewBead(NewBeadSignal)
+    NewBead(NewBeadSignal),
+    NewSignalRequest(SignalRequest),
+    NewSignalResponse(SignalResponse),
+    RefreshRequest(RefreshRequestSignal),
+    StreamDisconnected(StreamDisconnectedSignal)
 }
 
 #[derive(Serialize, Deserialize, Debug)]

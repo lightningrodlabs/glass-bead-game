@@ -10,8 +10,9 @@ import Button from '@components/Button'
 import Modal from '@components/Modal'
 import Input from '@components/Input'
 import ProgressBarSteps from '@components/ProgressBarSteps'
-import LoadingWheel from '@components/LoadingWheel'
+// import LoadingWheel from '@components/LoadingWheel'
 import SuccessMessage from '@components/SuccessMessage'
+// import { Signal } from '@src/GameTypes'
 import Scrollbars from '../Scrollbars'
 
 const CreateGameModal = (props: {
@@ -111,6 +112,19 @@ const CreateGameModal = (props: {
                     setLoading(false)
                     setSaved(true)
                     setGames([...games, { game: gameData, entryHash: res.entryHash }])
+                    // const signal: Signal = {
+                    //     gameHash: '',
+                    //     message: {
+                    //         type: 'NewGame',
+                    //         content: { game: gameData },
+                    //     },
+                    // }
+                    // const players = await gbgService.getPlayers('')
+                    // console.log('players: ', players)
+                    // gbgService.notify(
+                    //     signal,
+                    //     players.map((p) => p[0])
+                    // )
                     setTimeout(() => close(), 1000)
                 })
                 .catch((error) => console.log(error))
