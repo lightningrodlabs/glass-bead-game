@@ -9,8 +9,8 @@ crate-type = ["cdylib", "rlib"]
 name = "glassbeadgame"
 
 [dependencies]
-hdk = {version = "0.0.142", features = ["encoding"]}
+hdk = {version = "0.0.152", features = ["encoding"]}
 serde = "1.0"
 derive_more = "0"
-chrono = "=0.4.6"
+chrono = { version = "=0.4.22", default-features = false, features = ["clock", "std", "oldtime", "serde"], optional = true }
 glassbeadgame_core = { path = "../glassbeadgame_core" }

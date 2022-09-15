@@ -130,15 +130,21 @@ test("attestations basic tests", async (t) => {
     t.equals(comments[0].headerHash,comment1.headerHash)
     t.equals(comments[0].comment,"comment1")
 
-    let bead1 = {content: "bead", index: 1}
-    let create_bead1:any = await alice_gbg.callZome({
-      zome_name: "glassbeadgame",
-      fn_name:"create_bead",
-      payload: { 
-        entryHash: game_output.entryHash,
-        bead: bead1
-      }}
-    );
+    let bead1 = {content: "bead", agentKey:aliceAgentKey, audio: [], index: 1}
+    let create_bead1:any 
+    try {
+      create_bead1 = await alice_gbg.callZome({
+        zome_name: "glassbeadgame",
+        fn_name:"create_bead",
+        payload: { 
+          entryHash: game_output.entryHash,
+          bead: bead1
+        }}
+      );
+    } catch (e) {
+      console.log("error", e)
+    }
+
     let beads: Array<any> = await alice_gbg.callZome({
       zome_name: "glassbeadgame",
       fn_name: "get_beads",
@@ -148,7 +154,9 @@ test("attestations basic tests", async (t) => {
     console.log("beads", beads)
     t.equals(beads[0].entryHash,create_bead1.entryHash)
     t.equals(beads[0].headerHash,create_bead1.headerHash)
-    t.deepEquals(beads[0].bead, bead1)
+
+    t.deepEquals(beads[0].bead.agentKey, aliceAgentKey)
+    t.deepEquals(beads[0].bead.index, 1)
 
   })
 })
