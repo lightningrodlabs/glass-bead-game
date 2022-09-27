@@ -169,7 +169,7 @@ test("gbg basic tests", async (t) => {
     }
     );
 
-    let updatedGames :Array<any>  = await alice_gbg.callZome({
+    let updatedGames: Array<any>  = await alice_gbg.callZome({
       zome_name: "glassbeadgame",
       fn_name:"get_games",
     }
