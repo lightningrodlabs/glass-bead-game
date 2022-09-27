@@ -168,7 +168,7 @@ fn get_games_inner(base: EntryHash) -> ExternResult<Vec<GameOutput>> {
 
     let get_input = links
         .into_iter()
-        .map(|link| GetInput::new(link.target.into(), GetOptions::default()))
+        .map(|link| GetLinksInput::new(link.target.into(), GetOptions::default()))
         .collect();
 
     let game_elements = HDK.with(|hdk| hdk.borrow().get_links_details(get_input))?;
