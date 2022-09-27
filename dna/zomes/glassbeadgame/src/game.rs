@@ -1,6 +1,6 @@
 pub use hdk::prelude::*;
 use hdk::prelude::{holo_hash::{EntryHashB64, ActionHashB64, AgentPubKeyB64}};
-use glassbeadgame_core::{Game, Bead, Comment, EntryTypes, LinkTypes};
+use glassbeadgame_core::{Game, Bead, Comment, EntryTypes, LinkTypes, GameSettings};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -13,6 +13,7 @@ pub struct JoinGameInput {
 #[serde(rename_all = "camelCase")]
 pub struct CreateOutput {
     pub action_hash: ActionHashB64,
+    pub settings_action_hash: ActionHashB64,
     pub entry_hash: EntryHashB64
 }
 
@@ -21,8 +22,15 @@ pub struct CreateOutput {
 pub struct GameOutput {
     pub action_hash: ActionHashB64,
     pub entry_hash: EntryHashB64,
-    pub game: Game,
+    pub settings: GameSettings,
     pub author: AgentPubKeyB64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+struct UpdateGameInput {
+    game_entry_hash: EntryHash,
+    game: Game
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -68,7 +76,27 @@ fn get_game_path(_game: &Game) -> ExternResult<Path> {
 }
 
 #[hdk_extern]
-pub fn create_game(game: Game) -> ExternResult<CreateOutput> {
+pub fn create_game(settings: GameSettings) -> ExternResult<CreateOutput> {
+
+    let settings_action_hash = create_entry(EntryTypes::GameSettings(settings.clone()))?;
+    let game = Game {
+        id: settings_action_hash,
+    };
+    let action_hash = create_entry(EntryTypes::Game(game.clone()))?;
+    let hash: EntryHash = hash_entry(&game)?;
+    let path = get_game_path(&game)?;
+    create_link(path.path_entry_hash()?, hash.clone(), LinkTypes::Game, ())?;
+    create_link(hash.into()?, settings_action_hash.into(), LinkTypes::Settings, ())?;
+
+    Ok(CreateOutput{
+        action_hash: action_hash.into(),
+        settings_action_hash: settings_action_hash.into(),
+        entry_hash: hash.into()
+    })
+}
+
+#[hdk_extern]
+pub fn update_game(input: UpdateGameInput) -> ExternResult<CreateOutput> {
 
     let action_hash = create_entry(EntryTypes::Game(game.clone()))?;
     let hash: EntryHash = hash_entry(&game)?;
@@ -80,6 +108,7 @@ pub fn create_game(game: Game) -> ExternResult<CreateOutput> {
         entry_hash: hash.into()
     })
 }
+
 
 #[hdk_extern]
 pub fn join_game(input: JoinGameInput) -> ExternResult<ActionHashB64> {
@@ -126,7 +155,7 @@ fn game_from_details(details: Details) -> ExternResult<Option<GameOutput>> {
             Ok(Some(GameOutput {
                 entry_hash: hash.into(),
                 action_hash: action.as_hash().clone().into(),
-                game, 
+                settings, 
                 author: action.action().author().clone().into(),
             }))
         }
@@ -142,7 +171,7 @@ fn get_games_inner(base: EntryHash) -> ExternResult<Vec<GameOutput>> {
         .map(|link| GetInput::new(link.target.into(), GetOptions::default()))
         .collect();
 
-    let game_elements = HDK.with(|hdk| hdk.borrow().get_details(get_input))?;
+    let game_elements = HDK.with(|hdk| hdk.borrow().get_links_details(get_input))?;
 
     let games: Vec<GameOutput> = game_elements
         .into_iter()

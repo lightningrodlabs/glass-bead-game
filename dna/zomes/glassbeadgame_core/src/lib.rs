@@ -1,11 +1,17 @@
 use hdi::prelude::*;
-
 /// entry definition
 /// 
 #[hdk_entry_helper]
 #[serde(rename_all = "camelCase")]
 #[derive(Clone)]
 pub struct Game {
+    id: ActionHash,
+}
+
+#[hdk_entry_helper]
+#[serde(rename_all = "camelCase")]
+#[derive(Clone)]
+pub struct GameSettings {
     pub topic : String,
     pub topic_group: String,
     pub topic_image_url: String,
@@ -44,6 +50,8 @@ pub enum EntryTypes {
     #[entry_def(required_validations = 5)]
     Game(Game),
     #[entry_def(required_validations = 5)]
+    GameSettings(GameSettings),
+    #[entry_def(required_validations = 5)]
     Bead(Bead), 
     #[entry_def(required_validations = 5)]
     Comment(Comment), 
@@ -53,6 +61,7 @@ pub enum EntryTypes {
 pub enum LinkTypes {
     Comment,
     Game,
+    Settings,
     Player,
     Bead,
 }
