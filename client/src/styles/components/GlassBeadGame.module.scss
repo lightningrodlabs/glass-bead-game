@@ -455,8 +455,8 @@ $transitionSpeed: 1s;
             // sizing
             // 1 - 2
             &.xl {
-                $width: $fullWidth / 3 + px;
-                $height: $fullHeight / 3 + px;
+                $width: calc($fullWidth / 3) + px;
+                $height: calc($fullHeight / 3) + px;
                 &.hidden { margin-right: - $width }
                 width: $width;
                 .videoWrapper {
@@ -470,8 +470,8 @@ $transitionSpeed: 1s;
             }
             // 3
             &.lg {
-                $width: $fullWidth / 4 + px;
-                $height: $fullHeight / 4 + px;
+                $width: calc($fullWidth / 4) + px;
+                $height: calc($fullHeight / 4) + px;
                 &.hidden { margin-right: - $width }
                 width: $width;
                 .videoWrapper {
@@ -485,8 +485,8 @@ $transitionSpeed: 1s;
             }
             // 4
             &.md {
-                $width: $fullWidth / 5 + px;
-                $height: $fullHeight / 5 + px;
+                $width: calc($fullWidth / 5) + px;
+                $height: calc($fullHeight / 5) + px;
                 &.hidden { margin-right: - $width }
                 width: $width;
                 .videoWrapper {
@@ -500,8 +500,8 @@ $transitionSpeed: 1s;
             }
             // 5 +
             &.sm {
-                $width: $fullWidth / 6 + px;
-                $height: $fullHeight / 6 + px;
+                $width: calc($fullWidth / 6) + px;
+                $height: calc($fullHeight / 6) + px;
                 &.hidden { margin-right: - $width }
                 width: $width;
                 .videoWrapper {
