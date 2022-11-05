@@ -46,13 +46,13 @@ body {
     > .os-scrollbar-vertical, > .os-scrollbar-horizontal {
         .os-scrollbar-track {
             //width: $scrollBarWidth;
-            border-radius: $scrollBarWidth / 2;
+            border-radius: calc($scrollBarWidth / 2);
             background-color: transparent;
             padding-bottom: 5px;
             transition: background-color 0.3s;
         }
         .os-scrollbar-handle {
-            border-radius: $scrollBarWidth / 2;
+            border-radius: calc($scrollBarWidth / 2);
             background-color: transparent;
             transition: background-color 0.3s;
         }
