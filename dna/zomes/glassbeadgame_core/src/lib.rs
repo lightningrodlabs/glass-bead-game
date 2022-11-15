@@ -5,7 +5,7 @@ use hdi::prelude::*;
 #[serde(rename_all = "camelCase")]
 #[derive(Clone)]
 pub struct Game {
-    id: ActionHash,
+    pub id: ActionHash,
 }
 
 #[hdk_entry_helper]
@@ -31,10 +31,10 @@ pub struct GameSettings {
 #[derive(Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Bead {
-    agent_key: String,
+    pub agent_key: String,
     #[serde(with = "serde_bytes")]
-    audio: Vec<u8>,
-    index: usize
+    pub audio: Vec<u8>,
+    pub index: usize
 }
 
 #[hdk_entry_helper]

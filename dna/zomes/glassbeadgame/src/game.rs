@@ -11,10 +11,23 @@ pub struct JoinGameInput {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateOutput {
+pub struct CreateGameOutput {
     pub action_hash: ActionHashB64,
     pub settings_action_hash: ActionHashB64,
     pub entry_hash: EntryHashB64
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateOutput {
+    pub action_hash: ActionHashB64,
+    pub entry_hash: EntryHashB64
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateOutput {
+    pub settings_action_hash: ActionHashB64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -28,9 +41,9 @@ pub struct GameOutput {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-struct UpdateGameInput {
-    game_entry_hash: EntryHash,
-    game: Game
+pub struct UpdateGameInput {
+    pub game_entry_hash: EntryHash,
+    pub game: GameSettings
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -76,19 +89,19 @@ fn get_game_path(_game: &Game) -> ExternResult<Path> {
 }
 
 #[hdk_extern]
-pub fn create_game(settings: GameSettings) -> ExternResult<CreateOutput> {
+pub fn create_game(settings: GameSettings) -> ExternResult<CreateGameOutput> {
 
     let settings_action_hash = create_entry(EntryTypes::GameSettings(settings.clone()))?;
     let game = Game {
-        id: settings_action_hash,
+        id: settings_action_hash.clone(),
     };
     let action_hash = create_entry(EntryTypes::Game(game.clone()))?;
     let hash: EntryHash = hash_entry(&game)?;
     let path = get_game_path(&game)?;
     create_link(path.path_entry_hash()?, hash.clone(), LinkTypes::Game, ())?;
-    create_link(hash.into()?, settings_action_hash.into(), LinkTypes::Settings, ())?;
+    create_link(hash.clone(), settings_action_hash.clone(), LinkTypes::Settings, ())?;
 
-    Ok(CreateOutput{
+    Ok(CreateGameOutput{
         action_hash: action_hash.into(),
         settings_action_hash: settings_action_hash.into(),
         entry_hash: hash.into()
@@ -96,16 +109,14 @@ pub fn create_game(settings: GameSettings) -> ExternResult<CreateOutput> {
 }
 
 #[hdk_extern]
-pub fn update_game(input: UpdateGameInput) -> ExternResult<CreateOutput> {
+pub fn update_game(input: UpdateGameInput) -> ExternResult<UpdateOutput> {
+    let settings_action_hash = create_entry(EntryTypes::GameSettings(input.game.clone()))?;
+    let hash: EntryHash = hash_entry(input.game)?;
 
-    let action_hash = create_entry(EntryTypes::Game(input.game.clone()))?;
-    let hash: EntryHash = hash_entry(&input.game)?;
-    let path = get_game_path(&input.game)?;
-    create_link(path.path_entry_hash()?, hash.clone(), LinkTypes::Game, ())?;
+    create_link(input.game_entry_hash, hash.clone(), LinkTypes::Settings, ())?;
 
-    Ok(CreateOutput{
-        action_hash: action_hash.into(),
-        entry_hash: hash.into()
+    Ok(UpdateOutput{
+        settings_action_hash: settings_action_hash.into(),
     })
 }
 
@@ -166,18 +177,37 @@ fn game_from_details(details: Details) -> ExternResult<Option<GameOutput>> {
 fn get_games_inner(base: EntryHash) -> ExternResult<Vec<GameOutput>> {
     let links = get_links(base, LinkTypes::Game, None)?;
 
-    let get_input = links
-        .into_iter()
-        .map(|link| GetLinksInput::new(link.target.into(), LinkTypes::Settings, GetOptions::default()))
-        .collect();
+    let mut get_input = vec![];
+    for link in links {
+        get_input.push(GetLinksInput::new(link.target.into(), LinkTypes::Settings.try_into()?, None))
+    }
 
-    let game_elements = HDK.with(|hdk| hdk.borrow().get_links_details(get_input))?;
+    let all_settings = HDK.with(|hdk| hdk.borrow().get_link_details(get_input))?;
 
-    let games: Vec<GameOutput> = game_elements
-        .into_iter()
-        .filter_map(|me| me)
-        .filter_map(|details| game_from_details(details).ok()?)
-        .collect();
+    let mut games: Vec<GameOutput> = vec![];
+    for link_details in all_settings {
+        // find the most recent settings that was linked to the game
+        let mut latest_action: Option<Action> = None;
+        for (action,..) in link_details.into_inner() {
+            match latest_action {
+                Some(ref a) => if a.timestamp() < action.action().timestamp() {latest_action = Some(action.action().clone())}
+                None => latest_action = Some(action.action().clone())
+            }
+        }
+        // go and get the settings
+        if let Some(action) = latest_action {
+            match action {
+                Action::CreateLink(create_link )=> {
+                    if let Some(details) = get_details(create_link.target_address, GetOptions::default())? {
+                        if let Some(game) = game_from_details(details)? {
+                            games.push(game)
+                        }
+                    }
+                }
+                _ => ()
+            }
+        }
+    }
     Ok(games)
 }
 
