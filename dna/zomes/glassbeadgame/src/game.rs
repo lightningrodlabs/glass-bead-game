@@ -98,9 +98,9 @@ pub fn create_game(settings: GameSettings) -> ExternResult<CreateOutput> {
 #[hdk_extern]
 pub fn update_game(input: UpdateGameInput) -> ExternResult<CreateOutput> {
 
-    let action_hash = create_entry(EntryTypes::Game(game.clone()))?;
-    let hash: EntryHash = hash_entry(&game)?;
-    let path = get_game_path(&game)?;
+    let action_hash = create_entry(EntryTypes::Game(input.game.clone()))?;
+    let hash: EntryHash = hash_entry(&input.game)?;
+    let path = get_game_path(&input.game)?;
     create_link(path.path_entry_hash()?, hash.clone(), LinkTypes::Game, ())?;
 
     Ok(CreateOutput{
@@ -149,8 +149,8 @@ pub fn get_games(_: ()) -> ExternResult<Vec<GameOutput>> {
 fn game_from_details(details: Details) -> ExternResult<Option<GameOutput>> {
     match details {
         Details::Entry(EntryDetails { entry, actions, .. }) => {
-            let game: Game = entry.try_into()?;
-            let hash = hash_entry(&game)?;
+            let settings: GameSettings = entry.try_into()?;
+            let hash = hash_entry(&settings)?;
             let action = actions[0].clone();
             Ok(Some(GameOutput {
                 entry_hash: hash.into(),
@@ -168,7 +168,7 @@ fn get_games_inner(base: EntryHash) -> ExternResult<Vec<GameOutput>> {
 
     let get_input = links
         .into_iter()
-        .map(|link| GetLinksInput::new(link.target.into(), GetOptions::default()))
+        .map(|link| GetLinksInput::new(link.target.into(), LinkTypes::Settings, GetOptions::default()))
         .collect();
 
     let game_elements = HDK.with(|hdk| hdk.borrow().get_links_details(get_input))?;
