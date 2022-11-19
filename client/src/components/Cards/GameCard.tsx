@@ -11,10 +11,10 @@ const GameCard = (props: { data: any }): JSX.Element => {
     return (
         <Column className={styles.wrapper}>
             <Row style={{ marginBottom: 20 }}>
-                {data.game.topicImageUrl && <img src={data.game.topicImageUrl} alt='' />}
+                {data.settings.topicImageUrl && <img src={data.settings.topicImageUrl} alt='' />}
                 <Column>
-                    <h1>{data.game.topic}</h1>
-                    <p>{data.game.description}</p>
+                    <h1>{data.settings.topic}</h1>
+                    <p>{data.settings.description}</p>
                 </Column>
             </Row>
             <Button

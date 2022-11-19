@@ -33,10 +33,8 @@ pub struct UpdateOutput {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct GameOutput {
-    pub action_hash: ActionHashB64,
     pub entry_hash: EntryHashB64,
     pub settings: GameSettings,
-    pub author: AgentPubKeyB64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -90,7 +88,6 @@ fn get_game_path(_game: &Game) -> ExternResult<Path> {
 
 #[hdk_extern]
 pub fn create_game(settings: GameSettings) -> ExternResult<CreateGameOutput> {
-
     let settings_action_hash = create_entry(EntryTypes::GameSettings(settings.clone()))?;
     let game = Game {
         id: settings_action_hash.clone(),
@@ -151,23 +148,18 @@ pub fn leave_game(input: ActionHashB64) -> ExternResult<ActionHashB64> {
 
 #[hdk_extern]
 pub fn get_games(_: ()) -> ExternResult<Vec<GameOutput>> {
-
     let path = Path::from("games".to_string());
-
     get_games_inner(path.path_entry_hash()?)
 }
 
 fn game_from_details(details: Details) -> ExternResult<Option<GameOutput>> {
     match details {
-        Details::Entry(EntryDetails { entry, actions, .. }) => {
-            let settings: GameSettings = entry.try_into()?;
+        Details::Record(RecordDetails { record, .. }) => {
+            let settings: GameSettings = record.try_into()?;
             let hash = hash_entry(&settings)?;
-            let action = actions[0].clone();
             Ok(Some(GameOutput {
                 entry_hash: hash.into(),
-                action_hash: action.as_hash().clone().into(),
-                settings, 
-                author: action.action().author().clone().into(),
+                settings,
             }))
         }
         _ => Ok(None),
@@ -198,9 +190,10 @@ fn get_games_inner(base: EntryHash) -> ExternResult<Vec<GameOutput>> {
         if let Some(action) = latest_action {
             match action {
                 Action::CreateLink(create_link )=> {
-                    if let Some(details) = get_details(create_link.target_address, GetOptions::default())? {
+                    let action_hash: ActionHash = create_link.target_address.into();
+                    if let Some(details) = get_details(action_hash, GetOptions::default())? {
                         if let Some(game) = game_from_details(details)? {
-                            games.push(game)
+                            games.push(game);
                         }
                     }
                 }
