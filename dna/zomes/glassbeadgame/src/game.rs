@@ -89,13 +89,13 @@ fn get_game_path(_game: &Game) -> ExternResult<Path> {
 #[hdk_extern]
 pub fn create_game(settings: GameSettings) -> ExternResult<CreateGameOutput> {
     let settings_action_hash = create_entry(EntryTypes::GameSettings(settings.clone()))?;
-    let game = Game {
-        id: settings_action_hash.clone(),
-    };
+    let game = Game { id: settings_action_hash.clone() };
     let action_hash = create_entry(EntryTypes::Game(game.clone()))?;
     let hash: EntryHash = hash_entry(&game)?;
     let path = get_game_path(&game)?;
+    // link games path to game
     create_link(path.path_entry_hash()?, hash.clone(), LinkTypes::Game, ())?;
+    // link game to settings
     create_link(hash.clone(), settings_action_hash.clone(), LinkTypes::Settings, ())?;
 
     Ok(CreateGameOutput{
@@ -149,16 +149,23 @@ pub fn leave_game(input: ActionHashB64) -> ExternResult<ActionHashB64> {
 #[hdk_extern]
 pub fn get_games(_: ()) -> ExternResult<Vec<GameOutput>> {
     let path = Path::from("games".to_string());
-    get_games_inner(path.path_entry_hash()?)
+    // get links to games
+    let game_links = get_links(path.path_entry_hash()?, LinkTypes::Game, None)?;
+    // get links to settings for each game
+    let mut inputs = vec![];
+    for link in game_links {
+        inputs.push(GetLinksInput::new(link.target.into(), LinkTypes::Settings.try_into()?, None))
+    }
+
+    get_latest_settings(inputs)
 }
 
-fn game_from_details(details: Details) -> ExternResult<Option<GameOutput>> {
+fn game_from_details(details: Details, game_entry_hash: EntryHashB64) -> ExternResult<Option<GameOutput>> {
     match details {
         Details::Record(RecordDetails { record, .. }) => {
             let settings: GameSettings = record.try_into()?;
-            let hash = hash_entry(&settings)?;
             Ok(Some(GameOutput {
-                entry_hash: hash.into(),
+                entry_hash: game_entry_hash.into(),
                 settings,
             }))
         }
@@ -166,33 +173,27 @@ fn game_from_details(details: Details) -> ExternResult<Option<GameOutput>> {
     }
 } 
 
-fn get_games_inner(base: EntryHash) -> ExternResult<Vec<GameOutput>> {
-    let links = get_links(base, LinkTypes::Game, None)?;
-
-    let mut get_input = vec![];
-    for link in links {
-        get_input.push(GetLinksInput::new(link.target.into(), LinkTypes::Settings.try_into()?, None))
-    }
-
-    let all_settings = HDK.with(|hdk| hdk.borrow().get_link_details(get_input))?;
-
+fn get_latest_settings(inputs: Vec<GetLinksInput>) -> ExternResult<Vec<GameOutput>> {
+    let all_settings = HDK.with(|hdk| hdk.borrow().get_link_details(inputs))?;
     let mut games: Vec<GameOutput> = vec![];
+
     for link_details in all_settings {
-        // find the most recent settings that was linked to the game
+        // find the most recent linked settings
         let mut latest_action: Option<Action> = None;
         for (action,..) in link_details.into_inner() {
             match latest_action {
-                Some(ref a) => if a.timestamp() < action.action().timestamp() {latest_action = Some(action.action().clone())}
+                Some(ref a) => if a.timestamp() < action.action().timestamp() { latest_action = Some(action.action().clone()) }
                 None => latest_action = Some(action.action().clone())
             }
         }
-        // go and get the settings
+        // get the settings data
         if let Some(action) = latest_action {
             match action {
                 Action::CreateLink(create_link )=> {
-                    let action_hash: ActionHash = create_link.target_address.into();
-                    if let Some(details) = get_details(action_hash, GetOptions::default())? {
-                        if let Some(game) = game_from_details(details)? {
+                    let settings_action_hash: ActionHash = create_link.target_address.clone().into();
+                    let game_entry_hash: EntryHash = create_link.base_address.clone().into();
+                    if let Some(details) = get_details(settings_action_hash.clone(), GetOptions::default())? {
+                        if let Some(game) = game_from_details(details, game_entry_hash.into())? {
                             games.push(game);
                         }
                     }
@@ -201,17 +202,17 @@ fn get_games_inner(base: EntryHash) -> ExternResult<Vec<GameOutput>> {
             }
         }
     }
+
     Ok(games)
 }
 
 #[hdk_extern]
 fn get_game(game_entry_hash: EntryHashB64) -> ExternResult<GameOutput> {
-    let entry_hash: EntryHash = game_entry_hash.into();
-    let maybe_output = match get_details(entry_hash,GetOptions::default())? {
-        Some(details) => game_from_details(details)?,
-        None => None,
-    };
-    Ok(maybe_output.ok_or(wasm_error!(WasmErrorInner::Guest("Game not found".into())))?)
+    let inputs = vec![GetLinksInput::new(game_entry_hash.into(), LinkTypes::Settings.try_into()?, None)];
+    let games = get_latest_settings(inputs).unwrap();
+    let game: Option<GameOutput> = Some(games[0].clone());
+
+    Ok(game.ok_or(wasm_error!(WasmErrorInner::Guest("Game not found".into())))?)
 }
 
 #[hdk_extern]
