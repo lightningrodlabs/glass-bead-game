@@ -868,34 +868,27 @@ const GlassBeadGame = (): JSX.Element => {
             reader.addEventListener('loadend', async (e) => {
                 const array = e!.target!.result as ArrayBufferLike
                 const uint8Array = new Uint8Array(array)
+                const bead = {
+                    agentKey: myAgentPubKeyRef.current,
+                    audio: uint8Array,
+                    index: moveNumber,
+                }
                 const signal: Signal = {
                     gameHash: entryHash,
                     message: {
                         type: 'NewBead',
-                        content: {
-                            agentKey: myAgentPubKeyRef.current,
-                            audio: uint8Array,
-                            index: moveNumber,
-                        },
+                        content: bead,
                     },
                 }
                 const playersArray = await gbgServiceRef.current!.getPlayers(entryHash)
-                gbgServiceRef
-                    .current!.notify(
-                        signal,
-                        playersArray.map((p) => p[0])
-                    )
-                    .then(() => {
-                        gbgServiceRef.current!.createBead({
-                            entryHash,
-                            bead: {
-                                agentKey: myAgentPubKeyRef.current,
-                                audio: uint8Array,
-                                index: moveNumber,
-                            },
-                        })
-                    })
-                    .catch((error) => console.log(error))
+                gbgServiceRef.current!.createBead({ entryHash, bead }).then(() => {
+                    gbgServiceRef
+                        .current!.notify(
+                            signal,
+                            playersArray.map((p) => p[0])
+                        )
+                        .catch((error) => console.log(error))
+                })
             })
             reader.readAsArrayBuffer(blob)
         }
