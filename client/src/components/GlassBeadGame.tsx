@@ -1105,7 +1105,7 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function signalNewTopicImage(url) {
-        const newSettings = { ...gameData, topicImageUrl: url }
+        const newSettings = { ...gameData, topicImageUrl: url, topicGroup: '' }
         gbgServiceRef.current!.updateGame({ entryHash, newSettings }).then(() => {
             const signal: Signal = {
                 gameHash: entryHash,
