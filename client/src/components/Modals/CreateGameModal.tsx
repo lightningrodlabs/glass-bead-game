@@ -98,7 +98,7 @@ const CreateGameModal = (props: {
                               .imagePath,
                 description: descriptionForm.description.value,
                 backgroundImage: '',
-                backgroundVideoUrl: '',
+                backgroundVideo: '',
                 backgroundVideoStartTime: 0,
                 numberOfTurns: numberOfTurns.value,
                 moveDuration: moveDuration.value,
@@ -111,7 +111,7 @@ const CreateGameModal = (props: {
                 .then((res) => {
                     setLoading(false)
                     setSaved(true)
-                    setGames([...games, { game: gameData, entryHash: res.entryHash }])
+                    setGames([...games, { settings: gameData, entryHash: res.entryHash }])
                     // const signal: Signal = {
                     //     gameHash: '',
                     //     message: {

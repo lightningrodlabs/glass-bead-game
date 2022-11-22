@@ -868,34 +868,27 @@ const GlassBeadGame = (): JSX.Element => {
             reader.addEventListener('loadend', async (e) => {
                 const array = e!.target!.result as ArrayBufferLike
                 const uint8Array = new Uint8Array(array)
+                const bead = {
+                    agentKey: myAgentPubKeyRef.current,
+                    audio: uint8Array,
+                    index: moveNumber,
+                }
                 const signal: Signal = {
                     gameHash: entryHash,
                     message: {
                         type: 'NewBead',
-                        content: {
-                            agentKey: myAgentPubKeyRef.current,
-                            audio: uint8Array,
-                            index: moveNumber,
-                        },
+                        content: bead,
                     },
                 }
                 const playersArray = await gbgServiceRef.current!.getPlayers(entryHash)
-                gbgServiceRef
-                    .current!.notify(
-                        signal,
-                        playersArray.map((p) => p[0])
-                    )
-                    .then(() => {
-                        gbgServiceRef.current!.createBead({
-                            entryHash,
-                            bead: {
-                                agentKey: myAgentPubKeyRef.current,
-                                audio: uint8Array,
-                                index: moveNumber,
-                            },
-                        })
-                    })
-                    .catch((error) => console.log(error))
+                gbgServiceRef.current!.createBead({ entryHash, bead }).then(() => {
+                    gbgServiceRef
+                        .current!.notify(
+                            signal,
+                            playersArray.map((p) => p[0])
+                        )
+                        .catch((error) => console.log(error))
+                })
             })
             reader.readAsArrayBuffer(blob)
         }
@@ -1112,51 +1105,65 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function signalNewTopicImage(url) {
-        const signal: Signal = {
-            gameHash: entryHash,
-            message: {
-                type: 'NewTopicImage',
-                content: {
-                    agentKey: myAgentPubKeyRef.current,
-                    topicImageUrl: url,
+        const newSettings = { ...gameData, topicImageUrl: url }
+        gbgServiceRef.current!.updateGame({ entryHash, newSettings }).then(() => {
+            const signal: Signal = {
+                gameHash: entryHash,
+                message: {
+                    type: 'NewTopicImage',
+                    content: {
+                        agentKey: myAgentPubKeyRef.current,
+                        topicImageUrl: url,
+                    },
                 },
-            },
-        }
-        gbgServiceRef.current!.notify(signal, holoPlayers).catch((error) => console.log(error))
+            }
+            gbgServiceRef.current!.notify(signal, holoPlayers).catch((error) => console.log(error))
+        })
     }
 
     function signalNewBackground(type, url, startTime) {
-        const signal: Signal = {
-            gameHash: entryHash,
-            message: {
-                type: 'NewBackground',
-                content: {
-                    agentKey: myAgentPubKeyRef.current,
-                    subType: type,
-                    url,
-                    startTime,
-                },
-            },
+        const newSettings = {
+            ...gameData,
+            backgroundImage: type === 'image' ? url : '',
+            backgroundVideo: type === 'video' ? url : '',
+            backgroundVideoStartTime: startTime,
         }
-        gbgServiceRef.current!.notify(signal, holoPlayers).catch((error) => console.log(error))
+        gbgServiceRef.current!.updateGame({ entryHash, newSettings }).then(() => {
+            const signal: Signal = {
+                gameHash: entryHash,
+                message: {
+                    type: 'NewBackground',
+                    content: {
+                        agentKey: myAgentPubKeyRef.current,
+                        subType: type,
+                        url,
+                        startTime,
+                    },
+                },
+            }
+            gbgServiceRef.current!.notify(signal, holoPlayers).catch((error) => console.log(error))
+        })
     }
 
     function signalNewTopic(e) {
         e.preventDefault()
-        const signal: Signal = {
-            gameHash: entryHash,
-            message: {
-                type: 'NewTopic',
-                content: {
-                    agentKey: myAgentPubKeyRef.current,
-                    topic: newTopic,
+        const newSettings = { ...gameData, topic: newTopic, topicGroup: '' }
+        gbgServiceRef.current!.updateGame({ entryHash, newSettings }).then(() => {
+            const signal: Signal = {
+                gameHash: entryHash,
+                message: {
+                    type: 'NewTopic',
+                    content: {
+                        agentKey: myAgentPubKeyRef.current,
+                        topic: newTopic,
+                    },
                 },
-            },
-        }
-        gbgServiceRef
-            .current!.notify(signal, holoPlayers)
-            .then(() => setTopicTextModalOpen(false))
-            .catch((error) => console.log(error))
+            }
+            gbgServiceRef
+                .current!.notify(signal, holoPlayers)
+                .then(() => setTopicTextModalOpen(false))
+                .catch((error) => console.log(error))
+        })
     }
 
     // // const history = useHistory()
@@ -1383,8 +1390,8 @@ const GlassBeadGame = (): JSX.Element => {
                 setGameData((data) => {
                     return {
                         ...data,
-                        backgroundImage: subType === 'image' ? url : null,
-                        backgroundVideo: subType === 'video' ? url : null,
+                        backgroundImage: subType === 'image' ? url : '',
+                        backgroundVideo: subType === 'video' ? url : '',
                         backgroundVideoStartTime: startTime,
                     }
                 })
@@ -1573,7 +1580,7 @@ const GlassBeadGame = (): JSX.Element => {
 
     async function initialiseGame() {
         const agentKey = gbgServiceRef.current!.myAgentPubKey
-        const { game } = await gbgServiceRef.current!.getGame(entryHash)
+        const { settings: game } = await gbgServiceRef.current!.getGame(entryHash)
         const playersArray = await gbgServiceRef.current!.getPlayers(entryHash)
         const gameComments = await gbgServiceRef.current!.getComments(entryHash)
         const gameBeads = await gbgServiceRef.current!.getBeads(entryHash)

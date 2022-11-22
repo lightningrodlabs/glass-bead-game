@@ -1,17 +1,23 @@
 use hdi::prelude::*;
-
 /// entry definition
 /// 
 #[hdk_entry_helper]
 #[serde(rename_all = "camelCase")]
 #[derive(Clone)]
 pub struct Game {
+    pub id: ActionHash,
+}
+
+#[hdk_entry_helper]
+#[serde(rename_all = "camelCase")]
+#[derive(Clone)]
+pub struct GameSettings {
     pub topic : String,
     pub topic_group: String,
     pub topic_image_url: String,
     pub description: String,
     pub background_image: String,
-    pub background_video_url: String,
+    pub background_video: String,
     pub background_video_start_time: usize,
     pub locked: bool,
     pub intro_duration: usize,
@@ -25,10 +31,10 @@ pub struct Game {
 #[derive(Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Bead {
-    agent_key: String,
+    pub agent_key: String,
     #[serde(with = "serde_bytes")]
-    audio: Vec<u8>,
-    index: usize
+    pub audio: Vec<u8>,
+    pub index: usize
 }
 
 #[hdk_entry_helper]
@@ -44,6 +50,8 @@ pub enum EntryTypes {
     #[entry_def(required_validations = 5)]
     Game(Game),
     #[entry_def(required_validations = 5)]
+    GameSettings(GameSettings),
+    #[entry_def(required_validations = 5)]
     Bead(Bead), 
     #[entry_def(required_validations = 5)]
     Comment(Comment), 
@@ -53,6 +61,7 @@ pub enum EntryTypes {
 pub enum LinkTypes {
     Comment,
     Game,
+    Settings,
     Player,
     Bead,
 }
