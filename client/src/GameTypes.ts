@@ -133,7 +133,7 @@ export interface GameSettingsData {
     topicImageUrl: string
     description: string
     backgroundImage: string
-    backgroundVideoUrl: string
+    backgroundVideo: string
     backgroundVideoStartTime: number
     locked: boolean
     introDuration: number

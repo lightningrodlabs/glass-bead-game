@@ -1124,8 +1124,8 @@ const GlassBeadGame = (): JSX.Element => {
     function signalNewBackground(type, url, startTime) {
         const newSettings = {
             ...gameData,
-            backgroundImage: type === 'image' ? url : null,
-            backgroundVideo: type === 'video' ? url : null,
+            backgroundImage: type === 'image' ? url : '',
+            backgroundVideo: type === 'video' ? url : '',
             backgroundVideoStartTime: startTime,
         }
         gbgServiceRef.current!.updateGame({ entryHash, newSettings }).then(() => {
@@ -1390,8 +1390,8 @@ const GlassBeadGame = (): JSX.Element => {
                 setGameData((data) => {
                     return {
                         ...data,
-                        backgroundImage: subType === 'image' ? url : null,
-                        backgroundVideo: subType === 'video' ? url : null,
+                        backgroundImage: subType === 'image' ? url : '',
+                        backgroundVideo: subType === 'video' ? url : '',
                         backgroundVideoStartTime: startTime,
                     }
                 })

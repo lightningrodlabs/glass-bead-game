@@ -98,7 +98,7 @@ const CreateGameModal = (props: {
                               .imagePath,
                 description: descriptionForm.description.value,
                 backgroundImage: '',
-                backgroundVideoUrl: '',
+                backgroundVideo: '',
                 backgroundVideoStartTime: 0,
                 numberOfTurns: numberOfTurns.value,
                 moveDuration: moveDuration.value,

@@ -17,7 +17,7 @@ pub struct GameSettings {
     pub topic_image_url: String,
     pub description: String,
     pub background_image: String,
-    pub background_video_url: String,
+    pub background_video: String,
     pub background_video_start_time: usize,
     pub locked: bool,
     pub intro_duration: usize,
