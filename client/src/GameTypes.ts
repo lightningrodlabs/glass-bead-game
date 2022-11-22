@@ -177,11 +177,20 @@ export interface CreateOutput {
     entryHash: EntryHashB64
 }
 
-export interface GameOutput {
-    headerHash: ActionHashB64
+export interface CreateGameOutput {
+    actionHash: ActionHashB64
     entryHash: EntryHashB64
-    game: GameSettingsData
-    author: AgentPubKeyB64
+}
+
+export interface GameOutput {
+    entryHash: EntryHashB64
+    settings: GameSettingsData
+    // author: AgentPubKeyB64
+}
+
+export interface UpdateGameInput {
+    entryHash: EntryHashB64
+    newSettings: GameSettingsData
 }
 
 export interface NewCommentData {

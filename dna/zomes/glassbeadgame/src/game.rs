@@ -40,8 +40,8 @@ pub struct GameOutput {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateGameInput {
-    pub game_entry_hash: EntryHash,
-    pub game: GameSettings
+    pub entry_hash: EntryHashB64,
+    pub new_settings: GameSettings
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -107,16 +107,13 @@ pub fn create_game(settings: GameSettings) -> ExternResult<CreateGameOutput> {
 
 #[hdk_extern]
 pub fn update_game(input: UpdateGameInput) -> ExternResult<UpdateOutput> {
-    let settings_action_hash = create_entry(EntryTypes::GameSettings(input.game.clone()))?;
-    let hash: EntryHash = hash_entry(input.game)?;
-
-    create_link(input.game_entry_hash, hash.clone(), LinkTypes::Settings, ())?;
+    let settings_action_hash = create_entry(EntryTypes::GameSettings(input.new_settings.clone()))?;
+    create_link(input.entry_hash, settings_action_hash.clone(), LinkTypes::Settings, ())?;
 
     Ok(UpdateOutput{
         settings_action_hash: settings_action_hash.into(),
     })
 }
-
 
 #[hdk_extern]
 pub fn join_game(input: JoinGameInput) -> ExternResult<ActionHashB64> {
@@ -151,7 +148,7 @@ pub fn get_games(_: ()) -> ExternResult<Vec<GameOutput>> {
     let path = Path::from("games".to_string());
     // get links to games
     let game_links = get_links(path.path_entry_hash()?, LinkTypes::Game, None)?;
-    // get links to settings for each game
+    // gather settings inputs for each game
     let mut inputs = vec![];
     for link in game_links {
         inputs.push(GetLinksInput::new(link.target.into(), LinkTypes::Settings.try_into()?, None))
@@ -245,7 +242,8 @@ fn comment_from_details(details: Details) -> ExternResult<Option<CommentOutput>>
         }
         _ => Ok(None),
     }
-} 
+}
+
 fn get_comments_inner(base: EntryHash) -> ExternResult<Vec<CommentOutput>> {
     let links = get_links(base, LinkTypes::Comment, None)?;
 
@@ -269,7 +267,6 @@ pub fn get_comments(entry_hash: EntryHashB64) -> ExternResult<Vec<CommentOutput>
 
     get_comments_inner(entry_hash.into())
 }
-
 
 #[hdk_extern]
 pub fn create_bead(input: BeadInput) -> ExternResult<CreateOutput> {
@@ -300,7 +297,8 @@ fn bead_from_details(details: Details) -> ExternResult<Option<BeadOutput>> {
         }
         _ => Ok(None),
     }
-} 
+}
+
 fn get_beads_inner(base: EntryHash) -> ExternResult<Vec<BeadOutput>> {
     let links = get_links(base, LinkTypes::Bead, None)?;
 
