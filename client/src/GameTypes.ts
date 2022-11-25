@@ -1,6 +1,12 @@
 import { Timestamp } from '@holochain/client'
 import { EntryHashB64, AgentPubKeyB64, ActionHashB64 } from '@holochain-open-dev/core-types'
 
+export type Player = {
+    agent: string
+    name: string
+    image: string
+}
+
 export type Message =
     | {
           type: 'NewPlayer'
@@ -122,10 +128,6 @@ export type RefreshRequest = {
 export type StreamDisconnected = {
     agentKey: string
 }
-
-// export type NewGame = {
-//     game: any
-// }
 
 export interface GameSettingsData {
     topic: string

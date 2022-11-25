@@ -16,7 +16,7 @@ import SuccessMessage from '@components/SuccessMessage'
 import Scrollbars from '../Scrollbars'
 
 const CreateGameModal = (props: {
-    gbgService: null | GlassBeadGameService
+    gbgService: GlassBeadGameService
     games: any[]
     setGames: (games: any[]) => void
     close: () => void
@@ -85,7 +85,7 @@ const CreateGameModal = (props: {
     }
 
     function createGame() {
-        if (gbgService && allValid(settingsForm, setSettingsForm)) {
+        if (allValid(settingsForm, setSettingsForm)) {
             setLoading(true)
             const gameData = {
                 locked: false,
