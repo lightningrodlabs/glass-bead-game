@@ -4,6 +4,7 @@ import { CellClient } from '@holochain-open-dev/cell-client'
 import { EntryHashB64, AgentPubKeyB64, ActionHashB64 } from '@holochain-open-dev/core-types'
 import { serializeHash } from '@holochain-open-dev/utils'
 import {
+    Player,
     GameOutput,
     GameSettingsData,
     Signal,
@@ -22,6 +23,14 @@ export default class GlassBeadGameService {
 
     get myAgentPubKey(): AgentPubKeyB64 {
         return serializeHash(this.cellClient.cell.cell_id[1])
+    }
+
+    async savePlayerDetails(player: Player): Promise<ActionHashB64> {
+        return this.callZome('save_player_details', player)
+    }
+
+    async getPlayerDetails(agent: string): Promise<Player> {
+        return this.callZome('get_player_details', agent)
     }
 
     async createGame(game: GameSettingsData): Promise<CreateGameOutput> {
