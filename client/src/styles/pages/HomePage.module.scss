@@ -9,11 +9,36 @@
         height: 120px;
         border-radius: 50%;
         background-color: white;
-        margin-bottom: 40px;
+        margin-bottom: 30px;
 
         > svg {
             width: 80px;
             height: 80px;
+        }
+    }
+
+    .playerName {
+        font-size: 20px;
+        color: white;
+        margin-right: 15px;
+    }
+
+    .editPlayerDetailsButton {
+        all: unset;
+        cursor: pointer;
+        width: 30px;
+        height: 30px;
+
+        > svg {
+            width: inherit;
+            height: inherit;
+            color: white;
+            opacity: 0.5;
+            transition: all 0.2s;
+
+            &:hover {
+                opacity: 0.8;
+            }
         }
     }
 
