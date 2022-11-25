@@ -1,6 +1,6 @@
 pub use hdk::prelude::*;
 use hdk::prelude::{holo_hash::{EntryHashB64, ActionHashB64, AgentPubKeyB64}};
-use glassbeadgame_core::{Game, Bead, Comment, EntryTypes, LinkTypes, GameSettings};
+use glassbeadgame_core::{Player, Game, Bead, Comment, EntryTypes, LinkTypes, GameSettings};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -78,6 +78,60 @@ pub struct BeadOutput {
     pub timestamp: Timestamp,
 }
 
+#[hdk_extern]
+pub fn save_player_details(player: Player) -> ExternResult<ActionHashB64> {
+    // create player entry
+    let action_hash = create_entry(EntryTypes::Player(player.clone()))?;
+    // link to agent
+    create_link(AnyLinkableHash::from(AgentPubKey::from(player.agent)), action_hash.clone(), LinkTypes::Player, ())?;
+
+    Ok(action_hash.into())
+}
+
+fn player_from_details(details: Details) -> ExternResult<Option<Player>> {
+    match details {
+        Details::Record(RecordDetails { record, .. }) => {
+            let player: Player = record.try_into()?;
+            Ok(Some(player.clone()))
+        }
+        _ => Ok(None),
+    }
+} 
+
+#[hdk_extern]
+pub fn get_player_details(agent: AgentPubKey) -> ExternResult<Option<Player>> {
+    let links = vec![GetLinksInput::new(agent.into(), LinkTypes::Player.try_into()?, None)];
+    let link_details = HDK.with(|hdk| hdk.borrow().get_link_details(links))?;
+    let mut player: Option<Player> = None;
+
+    for link_detail in link_details {
+        // find the latest action
+        let mut latest_action: Option<Action> = None;
+        for (action,..) in link_detail.into_inner() {
+            match latest_action {
+                Some(ref a) => if a.timestamp() < action.action().timestamp() { latest_action = Some(action.action().clone()) }
+                None => latest_action = Some(action.action().clone())
+            }
+        }
+        // get player details from latest action
+        if let Some(action) = latest_action {
+            match action {
+                Action::CreateLink(create_link )=> {
+                    let action_hash: ActionHash = create_link.target_address.clone().into();
+                    if let Some(details) = get_details(action_hash.clone(), GetOptions::default())? {
+                        if let Some(player_data) = player_from_details(details)? {
+                            player = Some(player_data);
+                        }
+                    }
+                }
+                _ => ()
+            }
+        }
+    }
+
+    Ok(player)
+}
+
 fn get_game_path(_game: &Game) -> ExternResult<Path> {
     let path = Path::from("games".to_string());
     let typed_path = path.clone().into_typed(ScopedLinkType::try_from(LinkTypes::Game)?);
@@ -126,6 +180,8 @@ pub fn join_game(input: JoinGameInput) -> ExternResult<ActionHashB64> {
 pub fn get_players(game_hash: EntryHashB64) -> ExternResult<Vec<(AgentPubKeyB64, ActionHashB64)>> {
     let hash : EntryHash = game_hash.into();
     let links = get_links(AnyLinkableHash::from(hash), LinkTypes::Player, None)?;
+
+    // todo: needs to grab latest player details as well
 
     let mut agents: Vec<(AgentPubKeyB64, ActionHashB64)> = vec![];
     for link in links {

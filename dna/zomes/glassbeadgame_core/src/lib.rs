@@ -1,4 +1,5 @@
 use hdi::prelude::*;
+use hdk::prelude::{holo_hash::{AgentPubKeyB64}};
 /// entry definition
 /// 
 #[hdk_entry_helper]
@@ -30,11 +31,10 @@ pub struct GameSettings {
 #[hdk_entry_helper]
 #[derive(Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Bead {
-    pub agent_key: String,
-    #[serde(with = "serde_bytes")]
-    pub audio: Vec<u8>,
-    pub index: usize
+pub struct Player {
+    pub agent: AgentPubKeyB64,
+    pub name: String,
+    pub image: String,
 }
 
 #[hdk_entry_helper]
@@ -42,6 +42,16 @@ pub struct Bead {
 #[serde(rename_all = "camelCase")]
 pub struct Comment {
     pub comment : String,
+}
+
+#[hdk_entry_helper]
+#[derive(Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Bead {
+    pub agent_key: String,
+    #[serde(with = "serde_bytes")]
+    pub audio: Vec<u8>,
+    pub index: usize
 }
 
 #[hdk_entry_defs]
@@ -52,16 +62,18 @@ pub enum EntryTypes {
     #[entry_def(required_validations = 5)]
     GameSettings(GameSettings),
     #[entry_def(required_validations = 5)]
-    Bead(Bead), 
+    Player(Player),
     #[entry_def(required_validations = 5)]
-    Comment(Comment), 
+    Comment(Comment),
+    #[entry_def(required_validations = 5)]
+    Bead(Bead), 
 }
 
 #[hdk_link_types]
 pub enum LinkTypes {
-    Comment,
     Game,
     Settings,
     Player,
+    Comment,
     Bead,
 }
