@@ -1359,7 +1359,7 @@ const GlassBeadGame = (): JSX.Element => {
             case 'NewTopic': {
                 const { agentKey, topic } = content
                 setGameData((data) => {
-                    return { ...data, topic, topicGroup: null }
+                    return { ...data, topic, topicGroup: '' }
                 })
                 // pushComment(`${agentKey} updated the topic`)
                 break

@@ -26,12 +26,6 @@ pub struct CreateOutput {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct UpdateOutput {
-    pub settings_action_hash: ActionHashB64,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
 pub struct GameOutput {
     pub entry_hash: EntryHashB64,
     pub settings: GameSettings,
@@ -168,13 +162,11 @@ pub fn create_game(settings: GameSettings) -> ExternResult<CreateGameOutput> {
 }
 
 #[hdk_extern]
-pub fn update_game(input: UpdateGameInput) -> ExternResult<UpdateOutput> {
+pub fn update_game(input: UpdateGameInput) -> ExternResult<ActionHashB64> {
     let settings_action_hash = create_entry(EntryTypes::GameSettings(input.new_settings.clone()))?;
     create_link(input.entry_hash, settings_action_hash.clone(), LinkTypes::Settings, ())?;
 
-    Ok(UpdateOutput{
-        settings_action_hash: settings_action_hash.into(),
-    })
+    Ok(settings_action_hash.into())
 }
 
 #[hdk_extern]
