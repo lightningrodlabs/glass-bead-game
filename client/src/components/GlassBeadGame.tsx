@@ -215,7 +215,7 @@ const GameSettingsModal = (props) => {
                 introDuration: introDuration.value,
                 intervalDuration: intervalDuration.value,
                 outroDuration: outroDuration.value,
-                players: players.map((p) => p.key),
+                players,
             })
             close()
         }
@@ -370,8 +370,6 @@ const GlassBeadGame = (): JSX.Element => {
     const roomIdRef = useRef<number>()
     const socketRef = useRef<any>(null)
     const socketIdRef = useRef('')
-    const userRef = useRef<any>({})
-    const usersRef = useRef<any>([])
     const peersRef = useRef<any[]>([])
     const videosRef = useRef<any[]>([])
     const secondsTimerRef = useRef<any>(null)
@@ -894,7 +892,7 @@ const GlassBeadGame = (): JSX.Element => {
         d3.select('#timer-move-state').text('Intro')
         d3.select('#timer-seconds').text(data.introDuration)
         const firstPlayer = data.players[0]
-        d3.select(`#player-${firstPlayer}`).text('(up next)')
+        d3.select(`#player-${firstPlayer.agentKey}`).text('(up next)')
         startArc('move', data.introDuration, colors.yellow)
         let timeLeft = data.introDuration
         secondsTimerRef.current = setInterval(() => {
@@ -934,7 +932,7 @@ const GlassBeadGame = (): JSX.Element => {
         d3.select('#timer-move-state').text('Move')
         d3.select('#timer-seconds').text(moveDuration)
         d3.selectAll(`.${styles.playerState}`).text('')
-        d3.select(`#player-${player}`).text('(recording)')
+        d3.select(`#player-${player.agentKey}`).text('(recording)')
         // start seconds timer
         let timeLeft = moveDuration
         secondsTimerRef.current = setInterval(() => {
@@ -972,7 +970,7 @@ const GlassBeadGame = (): JSX.Element => {
         d3.select('#timer-move-state').text('Interval')
         d3.select('#timer-seconds').text(intervalDuration)
         d3.selectAll(`.${styles.playerState}`).text('')
-        d3.select(`#player-${nextPlayer}`).text('(up next)')
+        d3.select(`#player-${nextPlayer.agentKey}`).text('(up next)')
         // start seconds timer
         let timeLeft = intervalDuration
         secondsTimerRef.current = setInterval(() => {
@@ -1041,7 +1039,7 @@ const GlassBeadGame = (): JSX.Element => {
     function saveGame() {
         const signalData = {
             roomId: roomIdRef.current,
-            userSignaling: userRef.current,
+            userSignaling: playerRef.current,
             gameData,
         }
         // backendShim.socket.emit('outgoing-save-game', signalData)
@@ -2163,7 +2161,7 @@ const GlassBeadGame = (): JSX.Element => {
                                         {userIsStreaming && (
                                             <ImageTitle
                                                 type='user'
-                                                imagePath={userRef.current.flagImagePath}
+                                                imagePath={playerRef.current.image}
                                                 title='You'
                                                 fontSize={16}
                                                 imageSize={40}
