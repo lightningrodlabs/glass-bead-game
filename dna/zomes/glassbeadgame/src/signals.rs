@@ -1,5 +1,5 @@
 use holo_hash::{AgentPubKeyB64, EntryHashB64};
-
+use glassbeadgame_core::{Player};
 use crate::game::*;
 
 // #[derive(Serialize, Deserialize, Debug)]
@@ -12,28 +12,28 @@ use crate::game::*;
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct CommentSignal {
-    agent_key: String,
-    comment: String,
+    player: Player,
+    text: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct NewTopicSignal {
-    agent_key: String,
+    agent_key: AgentPubKeyB64,
     topic: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct NewTopicImageSignal {
-    agent_key: String,
+    agent_key: AgentPubKeyB64,
     topic_image_url: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct NewBackgroundSignal {
-    agent_key: String,
+    agent_key: AgentPubKeyB64,
     sub_type: String,
     url: String,
     start_time: usize
@@ -42,26 +42,26 @@ pub struct NewBackgroundSignal {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StartGameSignal {
-    agent_key: String,
+    agent_key: AgentPubKeyB64,
     data: String
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StopGameSignal {
-    agent_key: String
+    agent_key: AgentPubKeyB64
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct LeaveGameSignal {
-    agent_key: String
+    agent_key: AgentPubKeyB64
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct NewBeadSignal {
-    agent_key: String,
+    agent_key: AgentPubKeyB64,
     #[serde(with = "serde_bytes")]
     audio: Vec<u8>,
     index: usize
@@ -70,34 +70,34 @@ pub struct NewBeadSignal {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SignalRequest {
-    agent_key: String,
+    agent_key: AgentPubKeyB64,
     signal: String
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SignalResponse {
-    agent_key: String,
+    agent_key: AgentPubKeyB64,
     signal: String
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct RefreshRequestSignal {
-    agent_key: String
+    agent_key: AgentPubKeyB64
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamDisconnectedSignal {
-    agent_key: String
+    agent_key: AgentPubKeyB64
 }
 
 #[derive(Serialize, Deserialize, SerializedBytes, Debug)]
 #[serde(tag = "type", content = "content")]
 pub enum Message {
     // NewGame(NewGameSignal),
-    NewPlayer(AgentPubKeyB64),
+    NewPlayer(Player),
     NewComment(CommentSignal),
     NewTopic(NewTopicSignal),
     NewTopicImage(NewTopicImageSignal),
