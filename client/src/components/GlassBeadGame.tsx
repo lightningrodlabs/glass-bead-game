@@ -158,7 +158,7 @@ const Comment = (props) => {
 }
 
 const GameSettingsModal = (props) => {
-    const { close, gameData, agentKey, players, setPlayers, signalStartGame } = props
+    const { close, gameData, player, players, setPlayers, signalStartGame } = props
 
     const [formData, setFormData] = useState({
         introDuration: {
@@ -198,9 +198,9 @@ const GameSettingsModal = (props) => {
 
     function updatePlayerPosition(from, to) {
         const newPlayers = [...players]
-        const player = newPlayers[from]
+        const p = newPlayers[from]
         newPlayers.splice(from, 1)
-        newPlayers.splice(to, 0, player)
+        newPlayers.splice(to, 0, p)
         setPlayers(newPlayers)
     }
 
@@ -280,8 +280,8 @@ const GameSettingsModal = (props) => {
                     </Column>
                     <Column style={{ marginBottom: 20 }}>
                         <h2 style={{ margin: 0, lineHeight: '20px' }}>Player order</h2>
-                        {players.map((player, i) => (
-                            <Row style={{ marginTop: 10 }} key={player.key}>
+                        {players.map((p, i) => (
+                            <Row style={{ marginTop: 10 }} key={p.agentKey}>
                                 <div className={styles.position}>{i + 1}</div>
                                 <div className={styles.positionControls}>
                                     {i > 0 && (
@@ -303,8 +303,8 @@ const GameSettingsModal = (props) => {
                                 </div>
                                 <ImageTitle
                                     type='user'
-                                    imagePath=''
-                                    title={player.key === agentKey ? 'You' : player.key}
+                                    imagePath={p.image}
+                                    title={p.agentKey === player.agentKey ? 'You' : p.name}
                                     fontSize={16}
                                     imageSize={35}
                                 />
@@ -654,13 +654,7 @@ const GlassBeadGame = (): JSX.Element => {
                     peersRef.current.forEach((p) => p.peer.addStream(stream))
                     videoRef.current = document.getElementById('your-video')
                     videoRef.current.srcObject = stream
-                    const newPlayer = {
-                        id: myAgentPubKeyRef.current,
-                        name: '',
-                        flagImagePath: '',
-                        key: myAgentPubKeyRef.current,
-                    }
-                    setPlayers((previousPlayers) => [...previousPlayers, newPlayer])
+                    setPlayers((previousPlayers) => [...previousPlayers, playerRef.current])
                     setLoadingStream(false)
                     openVideoWall()
                 })
@@ -678,13 +672,7 @@ const GlassBeadGame = (): JSX.Element => {
                             peersRef.current.forEach((p) => p.peer.addStream(stream))
                             videoRef.current = document.getElementById('your-video')
                             videoRef.current.srcObject = stream
-                            const newPlayer = {
-                                id: myAgentPubKeyRef.current,
-                                name: '',
-                                flagImagePath: '',
-                                key: myAgentPubKeyRef.current,
-                            }
-                            setPlayers((previousPlayers) => [...previousPlayers, newPlayer])
+                            setPlayers((previousPlayers) => [...previousPlayers, playerRef.current])
                             setLoadingStream(false)
                             openVideoWall()
                         })
@@ -2111,7 +2099,7 @@ const GlassBeadGame = (): JSX.Element => {
                         <GameSettingsModal
                             close={() => setGameSettingsModalOpen(false)}
                             gameData={gameData}
-                            agentKey={myAgentPubKeyRef.current}
+                            player={playerRef.current}
                             players={players}
                             setPlayers={setPlayers}
                             signalStartGame={signalStartGame}
@@ -2246,7 +2234,7 @@ const GlassBeadGame = (): JSX.Element => {
                     {userIsStreaming && (
                         <Video
                             id='your-video'
-                            user={userRef.current}
+                            user={playerRef.current}
                             size={findVideoSize()}
                             audioEnabled={audioTrackEnabled}
                             videoEnabled={videoTrackEnabled}
