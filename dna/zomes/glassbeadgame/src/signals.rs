@@ -70,14 +70,14 @@ pub struct NewBeadSignal {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SignalRequest {
-    agent_key: AgentPubKeyB64,
+    player: Player,
     signal: String
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SignalResponse {
-    agent_key: AgentPubKeyB64,
+    player: Player,
     signal: String
 }
 

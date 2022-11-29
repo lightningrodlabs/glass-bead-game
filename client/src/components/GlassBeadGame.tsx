@@ -108,8 +108,8 @@ const Video = (props) => {
             <div className={styles.videoUser}>
                 <ImageTitle
                     type='user'
-                    imagePath={user.flagImagePath}
-                    title={id === 'your-video' ? 'You' : id}
+                    imagePath={user.image}
+                    title={id === 'your-video' ? 'You' : user.name}
                 />
             </div>
             {id === 'your-video' ? (
@@ -136,15 +136,15 @@ const Video = (props) => {
 
 const Comment = (props) => {
     const { comment, myAgentPubKey } = props
-    const { user, text, createdAt } = comment
-    if (user)
+    const { player, text, timestamp } = comment
+    if (player)
         return (
             <Row className={styles.userComment}>
-                <FlagImage type='user' size={40} imagePath={user.flagImagePath} />
+                <FlagImage type='user' size={40} imagePath={player.image} />
                 <Column className={styles.textWrapper}>
                     <Row className={styles.header}>
-                        <h1>{user.name === myAgentPubKey ? 'You' : user.name}</h1>
-                        <p title={dateCreated(createdAt)}>{timeSinceCreated(createdAt)}</p>
+                        <h1>{player.agentKey === myAgentPubKey ? 'You' : player.name}</h1>
+                        <p title={dateCreated(timestamp)}>{timeSinceCreated(timestamp)}</p>
                     </Row>
                     <Markdown text={text} />
                 </Column>
@@ -330,32 +330,14 @@ const GlassBeadGame = (): JSX.Element => {
     const history = useHistory()
     const location = useLocation()
     const entryHash = location.pathname.split('/')[2]
-
-    // TODO: this should hook into a function that checks if there is a WeCo context and if not then it is false
     const loggedIn = true
-    const accountData = {
-        id: 1,
-        handle: 'james',
-        name: 'James',
-        flagImagePath: '',
-    }
-    const accountDataLoading = false
     const postData = {
         id: 1,
     }
-    const postDataLoading = false
-    // const {
-    //     loggedIn,
-    //     accountData,
-    //     accountDataLoading,
-    //     setAlertModalOpen,
-    //     setAlertMessage,
-    // } = useContext(AccountContext)
-    // const { postData, postDataLoading } = useContext(PostContext)
-
     const gbgServiceRef = useRef<any>()
     const myAgentPubKeyRef = useRef<any>()
     const joinGameHash = useRef<any>()
+    const playerRef = useRef<any>({ agentKey: '', name: '', image: '' })
     const [holoPlayers, setHoloPlayers] = useState<any[]>([])
 
     const [gameData, setGameData] = useState<any>(gameDefaults)
@@ -464,7 +446,10 @@ const GlassBeadGame = (): JSX.Element => {
         joinGame: (): Promise<any> => {
             return new Promise((resolve, reject) => {
                 gbgServiceRef
-                    .current!.joinGame({ agent: gbgServiceRef.current!.myAgentPubKey, entryHash })
+                    .current!.joinGame({
+                        agentKey: gbgServiceRef.current!.myAgentPubKey,
+                        entryHash,
+                    })
                     .then((response) => resolve(response))
                     .catch((error) => console.log(error))
             })
@@ -646,7 +631,10 @@ const GlassBeadGame = (): JSX.Element => {
                 },
             }
             gbgServiceRef
-                .current!.notify(signal, holoPlayers)
+                .current!.notify(
+                    signal,
+                    holoPlayers.map((p) => p.agentKey)
+                )
                 .catch((error) => console.log('notify error: ', error))
             if (!videosRef.current.length) {
                 updateShowVideos(false)
@@ -716,7 +704,7 @@ const GlassBeadGame = (): JSX.Element => {
     // todo: set up general createPeer function
     // function createPeer(isInitiator) {}
 
-    function refreshStream(userKey, user) {
+    function refreshStream(agentKey, player) {
         // signal refresh request
         const sig: Signal = {
             gameHash: entryHash,
@@ -728,15 +716,15 @@ const GlassBeadGame = (): JSX.Element => {
             },
         }
         gbgServiceRef
-            .current!.notify(sig, [userKey])
+            .current!.notify(sig, [agentKey])
             .catch((error) => console.log('notify error: ', error))
         // destory old peer connection
-        const peerObject = peersRef.current.find((p) => p.key === userKey)
+        const peerObject = peersRef.current.find((p) => p.player.agentKey === agentKey)
         if (peerObject) {
             peerObject.peer.destroy()
-            peersRef.current = peersRef.current.filter((p) => p.key !== userKey)
-            videosRef.current = videosRef.current.filter((v) => v.key !== userKey)
-            setPlayers((ps) => [...ps.filter((p) => p.key !== userKey)])
+            peersRef.current = peersRef.current.filter((p) => p.player.agentKey !== agentKey)
+            videosRef.current = videosRef.current.filter((v) => v.player.agentKey !== agentKey)
+            setPlayers((ps) => [...ps.filter((p) => p.agentKey !== agentKey)])
         }
         // create new peer connection
         const peer = new Peer({
@@ -750,35 +738,28 @@ const GlassBeadGame = (): JSX.Element => {
                 message: {
                     type: 'NewSignalRequest',
                     content: {
-                        agentKey: myAgentPubKeyRef.current,
+                        player: playerRef.current,
                         signal: JSON.stringify(data),
                     },
                 },
             }
             gbgServiceRef
-                .current!.notify(signal, [userKey])
+                .current!.notify(signal, [agentKey])
                 .catch((error) => console.log('notify error: ', error))
         })
         peer.on('stream', (stream) => {
             videosRef.current.push({
-                key: userKey,
-                userData: {},
+                player,
                 peer,
                 audioOnly: !stream.getVideoTracks().length,
             })
-            pushComment(`${userKey}'s video connected`)
-            addStreamToVideo(userKey, stream)
-            const newPlayer = {
-                id: userKey,
-                name: '',
-                flagImagePath: '',
-                key: userKey,
-            }
-            setPlayers((previousPlayers) => [...previousPlayers, newPlayer])
+            pushComment(`${agentKey}'s video connected`)
+            addStreamToVideo(agentKey, stream)
+            setPlayers((previousPlayers) => [...previousPlayers, player])
         })
         peer.on('close', () => peer.destroy())
         peer.on('error', (error) => console.log('error 2: ', error))
-        peersRef.current.push({ key: userKey, userData: {}, peer })
+        peersRef.current.push({ player, peer })
     }
 
     function toggleAudioTrack() {
@@ -806,20 +787,23 @@ const GlassBeadGame = (): JSX.Element => {
         e.preventDefault()
         if (allowedTo('comment') && newComment.length) {
             // save comment
-            gbgServiceRef.current!.createComment({ entryHash, comment: newComment }).then(() => {
+            gbgServiceRef.current!.createComment({ entryHash, text: newComment }).then(() => {
                 // signal comment
                 const signal: Signal = {
                     gameHash: entryHash,
                     message: {
                         type: 'NewComment',
                         content: {
-                            agentKey: myAgentPubKeyRef.current,
-                            comment: newComment,
+                            player: playerRef.current,
+                            text: newComment,
                         },
                     },
                 }
                 gbgServiceRef
-                    .current!.notify(signal, holoPlayers)
+                    .current!.notify(
+                        signal,
+                        holoPlayers.map((p) => p.agentKey)
+                    )
                     .then(() => setNewComment(''))
                     .catch((error) => console.log('notify error: ', error))
             })
@@ -827,7 +811,7 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function pushComment(comment) {
-        setComments((c) => [...c, comment.user ? comment : { text: comment }])
+        setComments((c) => [...c, comment.player ? comment : { text: comment }])
     }
 
     function startArc(
@@ -885,7 +869,7 @@ const GlassBeadGame = (): JSX.Element => {
                     gbgServiceRef
                         .current!.notify(
                             signal,
-                            playersArray.map((p) => p[0])
+                            playersArray.map((p) => p.agentKey)
                         )
                         .catch((error) => console.log(error))
                 })
@@ -906,7 +890,12 @@ const GlassBeadGame = (): JSX.Element => {
                 },
             },
         }
-        gbgServiceRef.current!.notify(signal, holoPlayers).catch((error) => console.log(error))
+        gbgServiceRef
+            .current!.notify(
+                signal,
+                holoPlayers.map((p) => p.agentKey)
+            )
+            .catch((error) => console.log(error))
     }
 
     function startGame(data) {
@@ -1053,7 +1042,12 @@ const GlassBeadGame = (): JSX.Element => {
                 },
             },
         }
-        gbgServiceRef.current!.notify(signal, holoPlayers).catch((error) => console.log(error))
+        gbgServiceRef
+            .current!.notify(
+                signal,
+                holoPlayers.map((p) => p.agentKey)
+            )
+            .catch((error) => console.log(error))
     }
 
     function saveGame() {
@@ -1117,7 +1111,12 @@ const GlassBeadGame = (): JSX.Element => {
                     },
                 },
             }
-            gbgServiceRef.current!.notify(signal, holoPlayers).catch((error) => console.log(error))
+            gbgServiceRef
+                .current!.notify(
+                    signal,
+                    holoPlayers.map((p) => p.agentKey)
+                )
+                .catch((error) => console.log(error))
         })
     }
 
@@ -1141,7 +1140,12 @@ const GlassBeadGame = (): JSX.Element => {
                     },
                 },
             }
-            gbgServiceRef.current!.notify(signal, holoPlayers).catch((error) => console.log(error))
+            gbgServiceRef
+                .current!.notify(
+                    signal,
+                    holoPlayers.map((p) => p.agentKey)
+                )
+                .catch((error) => console.log(error))
         })
     }
 
@@ -1160,7 +1164,10 @@ const GlassBeadGame = (): JSX.Element => {
                 },
             }
             gbgServiceRef
-                .current!.notify(signal, holoPlayers)
+                .current!.notify(
+                    signal,
+                    holoPlayers.map((p) => p.agentKey)
+                )
                 .then(() => setTopicTextModalOpen(false))
                 .catch((error) => console.log(error))
         })
@@ -1333,37 +1340,17 @@ const GlassBeadGame = (): JSX.Element => {
         }
     }
 
-    function formatComments(holoComments) {
-        return holoComments.map((item) => {
-            return {
-                user: {
-                    id: 1,
-                    name: item.agent,
-                    handle: 'testHandle',
-                    flagImagePath: '',
-                },
-                text: item.comment,
-                createAt: new Date(item.timestamp).toISOString(),
-            }
-        })
-    }
-
     function signalHandler(signal) {
         const { type, content } = signal.data.payload.message
         switch (type) {
-            case 'NewPlayer':
+            case 'NewPlayer': {
                 setHoloPlayers((p) => [...p, content])
                 break
+            }
             case 'NewComment': {
-                const { agentKey, comment } = content
                 const commentData = {
-                    user: {
-                        id: 1,
-                        name: agentKey,
-                        handle: 'testHandle',
-                        flagImagePath: '',
-                    },
-                    text: comment,
+                    player: content.player,
+                    text: content.text,
                     createdAt: new Date().toISOString(),
                 }
                 setComments((c) => [...c, commentData])
@@ -1420,7 +1407,7 @@ const GlassBeadGame = (): JSX.Element => {
                     .remove()
                 liveBeadIndexRef.current = 1
                 startGame(parsedData)
-                pushComment(`${agentKey} started the game`)
+                // pushComment(`${agentKey} started the game`)
                 break
             }
             case 'StopGame': {
@@ -1445,8 +1432,8 @@ const GlassBeadGame = (): JSX.Element => {
             }
             case 'LeaveGame': {
                 const { agentKey } = content
-                setHoloPlayers((p) => {
-                    return p.filter((key) => key !== agentKey)
+                setHoloPlayers((ps) => {
+                    return ps.filter((p) => p.agentKey !== agentKey)
                 })
                 pushComment(`${agentKey} left the room`)
                 break
@@ -1462,6 +1449,7 @@ const GlassBeadGame = (): JSX.Element => {
                     ...previousBeads,
                     {
                         user: {
+                            // todo: fix
                             id: agentKey,
                             name: agentKey === myAgentPubKeyRef.current ? 'You' : agentKey,
                             handle: 'test',
@@ -1475,14 +1463,15 @@ const GlassBeadGame = (): JSX.Element => {
                 break
             }
             case 'NewSignalRequest': {
-                const { agentKey } = content
+                const { player } = content
                 const parsedSignal = JSON.parse(content.signal)
                 // search for peer in peers array
-                const existingPeer = peersRef.current.find((p) => p.key === agentKey)
+                const existingPeer = peersRef.current.find(
+                    (p) => p.player.agentKey === player.agentKey
+                )
                 // if peer exists, pass signal to peer
-                if (existingPeer) {
-                    existingPeer.peer.signal(parsedSignal)
-                } else {
+                if (existingPeer) existingPeer.peer.signal(parsedSignal)
+                else {
                     // otherwise, create new peer connection (with stream if running)
                     const peer = new Peer({
                         initiator: false,
@@ -1490,74 +1479,75 @@ const GlassBeadGame = (): JSX.Element => {
                         config: iceConfig,
                     })
                     peer.on('signal', (data) => {
-                        const sig: Signal = {
+                        const signalResponse: Signal = {
                             gameHash: entryHash,
                             message: {
                                 type: 'NewSignalResponse',
                                 content: {
-                                    agentKey: myAgentPubKeyRef.current,
+                                    player: playerRef.current,
                                     signal: JSON.stringify(data),
                                 },
                             },
                         }
                         gbgServiceRef
-                            .current!.notify(sig, [agentKey])
+                            .current!.notify(signalResponse, [player.agentKey])
                             .catch((error) => console.log('notify error: ', error))
                     })
                     peer.on('stream', (stream) => {
                         videosRef.current.push({
-                            key: agentKey,
-                            userData: {},
+                            player,
                             peer,
                             audioOnly: !stream.getVideoTracks().length,
                         })
-                        pushComment(`${agentKey}'s video connected`)
-                        addStreamToVideo(agentKey, stream)
-                        const newPlayer = {
-                            id: agentKey,
-                            name: '',
-                            flagImagePath: '',
-                            key: agentKey,
-                        }
-                        setPlayers((previousPlayers) => [...previousPlayers, newPlayer])
+                        pushComment(`${player.agentKey}'s video connected`)
+                        addStreamToVideo(player.agentKey, stream)
+                        setPlayers((previousPlayers) => [...previousPlayers, player])
                     })
                     peer.on('close', () => peer.destroy())
                     peer.on('error', (error) => console.log('error 2: ', error))
                     peer.signal(parsedSignal)
-                    peersRef.current.push({ key: agentKey, userData: {}, peer })
+                    peersRef.current.push({ player, peer })
                 }
                 break
             }
             case 'NewSignalResponse': {
-                const { agentKey } = content
+                const { player } = content
                 const parsedSignal = JSON.parse(content.signal)
-                const peerObject = peersRef.current.find((p) => p.key === agentKey)
+                const peerObject = peersRef.current.find(
+                    (p) => p.player.agentKey === player.agentKey
+                )
                 if (peerObject) {
                     if (peerObject.peer.readable) peerObject.peer.signal(parsedSignal)
                     else {
                         peerObject.peer.destroy()
-                        peersRef.current = peersRef.current.filter((p) => p.key !== agentKey)
+                        peersRef.current = peersRef.current.filter(
+                            (p) => p.player.agentKey !== player.agentKey
+                        )
                     }
                 } else console.log('no peer!')
                 break
             }
             case 'RefreshRequest': {
                 const { agentKey } = content
-                const peerObject = peersRef.current.find((p) => p.key === agentKey)
+                const peerObject = peersRef.current.find((p) => p.player.agentKey === agentKey)
                 if (peerObject) {
                     peerObject.peer.destroy()
-                    peersRef.current = peersRef.current.filter((p) => p.key !== agentKey)
-                    videosRef.current = videosRef.current.filter((v) => v.key !== agentKey)
-                    setPlayers((ps) => [...ps.filter((p) => p.key !== agentKey)])
+                    peersRef.current = peersRef.current.filter(
+                        (p) => p.player.agentKey !== agentKey
+                    )
+                    videosRef.current = videosRef.current.filter(
+                        (v) => v.player.agentKey !== agentKey
+                    )
+                    setPlayers((ps) => [...ps.filter((p) => p.agentKey !== agentKey)])
                 }
                 break
             }
             case 'StreamDisconnected': {
                 const { agentKey } = content
-                videosRef.current = videosRef.current.filter((v) => v.key !== agentKey)
+                videosRef.current = videosRef.current.filter((v) => v.player.agentKey !== agentKey)
                 if (!videosRef.current.length && !streamRef.current) updateShowVideos(false)
-                setPlayers((ps) => [...ps.filter((p) => p.key !== agentKey)])
-                pushComment(`${agentKey}'s stream disconnected`)
+                setPlayers((ps) => [...ps.filter((p) => p.agentKey !== agentKey)])
+                // pushComment(`${agentKey}'s stream disconnected`)
                 break
             }
             default:
@@ -1579,15 +1569,16 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     async function initialiseGame() {
-        const agentKey = gbgServiceRef.current!.myAgentPubKey
+        myAgentPubKeyRef.current = await gbgServiceRef.current!.myAgentPubKey
+        playerRef.current = await gbgServiceRef.current!.getPlayerDetails(myAgentPubKeyRef.current)
         const { settings: game } = await gbgServiceRef.current!.getGame(entryHash)
         const playersArray = await gbgServiceRef.current!.getPlayers(entryHash)
         const gameComments = await gbgServiceRef.current!.getComments(entryHash)
         const gameBeads = await gbgServiceRef.current!.getBeads(entryHash)
-        myAgentPubKeyRef.current = agentKey
         setGameData(game)
-        setHoloPlayers(playersArray.map((p) => p[0]))
-        setComments(formatComments(gameComments))
+        setHoloPlayers(playersArray)
+        setComments(gameComments)
+        // handle beads
         if (gameBeads.length) {
             setGameData((d) => {
                 return { ...d, locked: true }
@@ -1615,15 +1606,20 @@ const GlassBeadGame = (): JSX.Element => {
         }
         // connect to peers
         playersArray
-            .map((p) => p[0])
-            .filter((p) => p !== agentKey)
-            .forEach((playerKey) => {
+            .filter((p) => p.agentKey !== myAgentPubKeyRef.current)
+            .forEach((player) => {
                 // remove old peer if present
-                const peerObject = peersRef.current.find((p) => p.key === playerKey)
+                const peerObject = peersRef.current.find(
+                    (p) => p.player.agentKey === player.agentKey
+                )
                 if (peerObject) {
                     peerObject.peer.destroy()
-                    peersRef.current = peersRef.current.filter((p) => p.key !== playerKey)
-                    videosRef.current = videosRef.current.filter((v) => v.key !== playerKey)
+                    peersRef.current = peersRef.current.filter(
+                        (p) => p.player.agentKey !== player.agentKey
+                    )
+                    videosRef.current = videosRef.current.filter(
+                        (v) => v.player.agentKey !== player.agentKey
+                    )
                 }
                 // create peer connection
                 const peer = new Peer({
@@ -1636,73 +1632,62 @@ const GlassBeadGame = (): JSX.Element => {
                         message: {
                             type: 'NewSignalRequest',
                             content: {
-                                agentKey,
+                                player: playerRef.current,
                                 signal: JSON.stringify(data),
                             },
                         },
                     }
                     gbgServiceRef
-                        .current!.notify(signal, [playerKey])
+                        .current!.notify(signal, [player.agentKey])
                         .catch((error) => console.log('notify error: ', error))
                 })
                 peer.on('stream', (stream) => {
                     videosRef.current.push({
-                        key: playerKey,
-                        userData: {},
+                        player,
                         peer,
                         audioOnly: !stream.getVideoTracks().length,
                     })
-                    pushComment(`${playerKey}'s video connected`)
-                    addStreamToVideo(playerKey, stream)
-                    const newPlayer = {
-                        id: playerKey,
-                        name: '',
-                        flagImagePath: '',
-                        key: playerKey,
-                    }
-                    setPlayers((previousPlayers) => [...previousPlayers, newPlayer])
+                    pushComment(`${player.name}'s video connected`)
+                    addStreamToVideo(player.agentKey, stream)
+                    setPlayers((previousPlayers) => [...previousPlayers, player])
                 })
                 peer.on('close', () => peer.destroy())
                 peer.on('error', (error) => console.log(error))
-                peersRef.current.push({
-                    key: playerKey,
-                    userData: {},
-                    peer,
-                })
+                peersRef.current.push({ player, peer })
             })
         // if new to game, join game and notify other platers
-        const playerInRoom = playersArray.find((p) => p[0] === agentKey)
+        const playerInRoom = playersArray.find((p) => p.agentKey === myAgentPubKeyRef.current)
         if (playerInRoom) joinGameHash.current = playerInRoom[1]
         else {
-            gbgServiceRef.current!.joinGame({ agent: agentKey, entryHash }).then((res) => {
-                joinGameHash.current = res
-                setHoloPlayers((p) => [...p, agentKey])
-            })
-            if (playersArray.length > 0) {
-                const signal: Signal = {
-                    gameHash: entryHash,
-                    message: {
-                        type: 'NewPlayer',
-                        content: agentKey,
-                    },
-                }
-                gbgServiceRef
-                    .current!.notify(
-                        signal,
-                        playersArray.map((p: any) => p[0])
-                    )
-                    .then((res) => console.log('notify res: ', res))
-                    .catch((error) => console.log('notify error: ', error))
+            gbgServiceRef
+                .current!.joinGame({ agentKey: myAgentPubKeyRef.current, entryHash })
+                .then((res) => {
+                    joinGameHash.current = res
+                    setHoloPlayers((p) => [...p, playerRef.current])
+                })
+        }
+        if (playersArray.length > 0) {
+            const signal: Signal = {
+                gameHash: entryHash,
+                message: {
+                    type: 'NewPlayer',
+                    content: playerRef.current,
+                },
             }
+            gbgServiceRef
+                .current!.notify(
+                    signal,
+                    playersArray.map((p: any) => p.agentKey)
+                )
+                .then((res) => console.log('notify res: ', res))
+                .catch((error) => console.log('notify error: ', error))
         }
     }
 
     async function leaveGame() {
         if (gbgServiceRef.current && joinGameHash.current) {
             const playersArray = await gbgServiceRef.current!.getPlayers(entryHash)
-            const otherPlayers = playersArray
-                .map((p) => p[0])
-                .filter((p) => p !== myAgentPubKeyRef.current)
+            const otherPlayers = playersArray.filter((p) => p.agentKey !== myAgentPubKeyRef.current)
             const signal: Signal = {
                 gameHash: entryHash,
                 message: {
@@ -1729,254 +1714,6 @@ const GlassBeadGame = (): JSX.Element => {
 
     useEffect(() => {
         if (gbgServiceRef.current) initialiseGame()
-
-        // listen for signals:
-        // backendShim.socket.on('incoming-room-joined', (payload) => {
-        //     const { socketId, usersInRoom } = payload
-        //     socketIdRef.current = socketId
-        //     // userRef.current.socketId = socketId
-        //     usersRef.current = [...usersInRoom, { socketId, userData: userRef.current }]
-        //     pushComment(`You joined the room`)
-        //     usersInRoom.forEach((user) => {
-        //         // remove old peer if present
-        //         const peerObject = peersRef.current.find(
-        //             (p) => p.socketId === user.socketId
-        //         )
-        //         if (peerObject) {
-        //             peerObject.peer.destroy()
-        //             peersRef.current = peersRef.current.filter(
-        //                 (p) => p.socketId !== user.socketId
-        //             )
-        //             videosRef.current = videosRef.current.filter(
-        //                 (v) => v.socketId !== user.socketId
-        //             )
-        //         }
-        //         // create peer connection
-        //         const peer = new Peer({
-        //             initiator: true,
-        //             config: iceConfig,
-        //         })
-        //         peer.on('signal', (data) => {
-        //             backendShim.socket.emit('outgoing-signal-request', {
-        //                 userToSignal: user.socketId,
-        //                 userSignaling: {
-        //                     socketId: socketRef.current.id,
-        //                     userData: userRef.current,
-        //                 },
-        //                 signal: data,
-        //             })
-        //         })
-        //         // peer.on('connect', () => console.log('connect 1'))
-        //         peer.on('stream', (stream) => {
-        //             videosRef.current.push({
-        //                 socketId: user.socketId,
-        //                 userData: user.userData,
-        //                 peer,
-        //                 audioOnly: !stream.getVideoTracks().length,
-        //             })
-        //             pushComment(`${user.userData.name}'s video connected`)
-        //             addStreamToVideo(user.socketId, stream)
-        //             const newPlayer = {
-        //                 id: user.userData.id,
-        //                 name: user.userData.name,
-        //                 flagImagePath: user.userData.flagImagePath,
-        //                 socketId: user.socketId,
-        //             }
-        //             setPlayers((previousPlayers) => [...previousPlayers, newPlayer])
-        //         })
-        //         peer.on('close', () => peer.destroy())
-        //         peer.on('error', (error) => console.log(error))
-        //         peersRef.current.push({
-        //             socketId: user.socketId,
-        //             userData: user.userData,
-        //             peer,
-        //         })
-        //     })
-        // })
-        // // signal returned from peer
-        // backendShim.socket.on('incoming-signal', (payload) => {
-        //     const peerObject = peersRef.current.find((p) => p.socketId === payload.id)
-        //     if (peerObject) {
-        //         if (peerObject.peer.readable) peerObject.peer.signal(payload.signal)
-        //         else {
-        //             peerObject.peer.destroy()
-        //             peersRef.current = peersRef.current.filter(
-        //                 (p) => p.socketId !== payload.id
-        //             )
-        //         }
-        //     } else console.log('no peer!')
-        // })
-        // // signal request from peer
-        // backendShim.socket.on('incoming-signal-request', (payload) => {
-        //     const { signal, userSignaling } = payload
-        //     const { socketId, userData } = userSignaling
-        //     // search for peer in peers array
-        //     const existingPeer = peersRef.current.find((p) => p.socketId === socketId)
-        //     // if peer exists, pass signal to peer
-        //     if (existingPeer) {
-        //         existingPeer.peer.signal(signal)
-        //     } else {
-        //         // otherwise, create new peer connection (with stream if running)
-        //         const peer = new Peer({
-        //             initiator: false,
-        //             stream: streamRef.current,
-        //             config: iceConfig,
-        //         })
-        //         peer.on('signal', (data) => {
-        //             backendShim.socket.emit('outgoing-signal', {
-        //                 userToSignal: socketId,
-        //                 signal: data,
-        //             })
-        //         })
-        //         peer.on('connect', () => console.log('connect 2'))
-        //         peer.on('stream', (stream) => {
-        //             videosRef.current.push({
-        //                 socketId,
-        //                 userData,
-        //                 peer,
-        //                 audioOnly: !stream.getVideoTracks().length,
-        //             })
-        //             pushComment(`${userData.name}'s video connected`)
-        //             addStreamToVideo(socketId, stream)
-        //             const newPlayer = {
-        //                 id: userData.id,
-        //                 name: userData.name,
-        //                 flagImagePath: userData.flagImagePath,
-        //                 socketId,
-        //             }
-        //             setPlayers((previousPlayers) => [...previousPlayers, newPlayer])
-        //         })
-        //         peer.on('close', () => peer.destroy())
-        //         peer.on('error', (error) => console.log('error 2: ', error))
-        //         peer.signal(signal)
-        //         peersRef.current.push({ socketId, userData, peer })
-        //     }
-        // })
-        // // user joined room
-        // backendShim.socket.on('incoming-user-joined', (user) => {
-        //     usersRef.current.push(user)
-        //     pushComment(`${user.userData.name} joined the room`)
-        // })
-        // // user left room
-        // backendShim.socket.on('incoming-user-left', (user) => {
-        //     const { socketId, userData } = user
-        //     const peerObject = peersRef.current.find((p) => p.socketId === socketId)
-        //     if (peerObject) {
-        //         peerObject.peer.destroy()
-        //         peersRef.current = peersRef.current.filter((p) => p.socketId !== socketId)
-        //     }
-        //     usersRef.current = usersRef.current.filter((u) => u.socketId !== socketId)
-        //     peersRef.current = peersRef.current.filter((p) => p.socketId !== socketId)
-        //     videosRef.current = videosRef.current.filter((v) => v.socketId !== socketId)
-        //     setPlayers((ps) => [...ps.filter((p) => p.socketId !== socketId)])
-        //     pushComment(`${userData.name} left the room`)
-        // })
-        // // comment recieved
-        // backendShim.socket.on('incoming-comment', (data) => {
-        //     pushComment(data)
-        // })
-        // // start game signal recieved
-        // backendShim.socket.on('incoming-start-game', (data) => {
-        //     setGameSettingsModalOpen(false)
-        //     setGameInProgress(true)
-        //     setBeads([])
-        //     d3.select('#play-button')
-        //         .classed('transitioning', true)
-        //         .transition()
-        //         .duration(1000)
-        //         .style('opacity', 0)
-        //         .remove()
-        //     d3.select('#pause-button')
-        //         .classed('transitioning', true)
-        //         .transition()
-        //         .duration(1000)
-        //         .style('opacity', 0)
-        //         .remove()
-        //     liveBeadIndexRef.current = 1
-        //     pushComment(`${data.userSignaling.name} started the game`)
-        //     startGame(data.gameData)
-        // })
-        // // stop game signal recieved
-        // backendShim.socket.on('incoming-stop-game', (data) => {
-        //     if (largeScreen) {
-        //         setShowComments(true)
-        //         updateShowVideos(true)
-        //     }
-        //     pushComment(`${data.userSignaling.name} stopped the game`)
-        //     setGameInProgress(false)
-        //     clearInterval(secondsTimerRef.current)
-        //     d3.selectAll(`.${styles.playerState}`).text('')
-        //     d3.select(`#game-arc`).remove()
-        //     d3.select(`#turn-arc`).remove()
-        //     d3.select(`#move-arc`).remove()
-        //     d3.select('#timer-seconds').text('')
-        //     addPlayButtonToCenterBead()
-        //     setTurn(0)
-        //     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording')
-        //         mediaRecorderRef.current.stop()
-        // })
-        // // save game signal recieved
-        // backendShim.socket.on('incoming-save-game', (data) => {
-        //     pushComment(`${data.userSignaling.name} saved the game`)
-        //     setGameData({ ...data.gameData, locked: true })
-        // })
-        // // audio bead recieved
-        // backendShim.socket.on('incoming-audio-bead', (data) => {
-        //     setBeads((previousBeads) => [...previousBeads, data])
-        //     addEventListenersToBead(data.index)
-        // })
-        // // peer refresh request
-        // backendShim.socket.on('incoming-refresh-request', (data) => {
-        //     const { id } = data
-        //     const peerObject = peersRef.current.find((p) => p.socketId === id)
-        //     if (peerObject) {
-        //         peerObject.peer.destroy()
-        //         peersRef.current = peersRef.current.filter((p) => p.socketId !== id)
-        //         videosRef.current = videosRef.current.filter((v) => v.socketId !== id)
-        //         setPlayers((ps) => [...ps.filter((p) => p.socketId !== id)])
-        //     }
-        // })
-        // // new background
-        // backendShim.socket.on('incoming-new-background', (data) => {
-        //     const { type, url, startTime, userSignaling } = data
-        //     if (type === 'image') {
-        //         setGameData({
-        //             ...data.gameData,
-        //             backgroundImage: url,
-        //             backgroundVideo: null,
-        //             backgroundVideoStartTime: null,
-        //         })
-        //     } else {
-        //         setGameData({
-        //             ...data.gameData,
-        //             backgroundImage: null,
-        //             backgroundVideo: url,
-        //             backgroundVideoStartTime: startTime,
-        //         })
-        //     }
-        //     pushComment(`${userSignaling.name} added a new background`)
-        // })
-        // // new topic text
-        // backendShim.socket.on('incoming-new-topic-text', (data) => {
-        //     const { userSignaling, newTopicText } = data
-        //     setGameData({ ...data.gameData, topic: newTopicText, topicGroup: null })
-        //     pushComment(`${userSignaling.name} updated the topic`)
-        // })
-        // // new topic image
-        // backendShim.socket.on('incoming-new-topic-image', (data) => {
-        //     const { userSignaling, url } = data
-        //     setGameData({ ...data.gameData, topicImage: url })
-        //     pushComment(`${userSignaling.name} added a new topic image`)
-        // })
-        // // stream disconnected
-        // backendShim.socket.on('incoming-stream-disconnected', (data) => {
-        //     const { socketId, userData } = data
-        //     videosRef.current = videosRef.current.filter((v) => v.socketId !== socketId)
-        //     if (!videosRef.current.length && !streamRef.current) updateShowVideos(false)
-        //     setPlayers((ps) => [...ps.filter((p) => p.socketId !== socketId)])
-        //     pushComment(`${userData.name}'s stream disconnected`)
-        // })
-
         return () => {
             leaveGame()
         }
@@ -2274,22 +2011,25 @@ const GlassBeadGame = (): JSX.Element => {
                                 onClick={signalStopGame}
                             />
                             <p>{`Turn ${turn} / ${gameData.numberOfTurns}`}</p>
-                            {holoPlayers.map((playerKey, index) => (
-                                <Row centerY key={playerKey} className={styles.player}>
+                            {holoPlayers.map((player, index) => (
+                                <Row centerY key={player.agentKey} className={styles.player}>
                                     <div className={styles.position}>{index + 1}</div>
                                     <ImageTitle
                                         type='user'
                                         imagePath=''
                                         title={
-                                            playerKey === myAgentPubKeyRef.current
+                                            player.agentKey === myAgentPubKeyRef.current
                                                 ? 'You'
-                                                : playerKey
+                                                : player.name
                                         }
                                         fontSize={largeScreen ? 16 : 10}
                                         imageSize={largeScreen ? 35 : 20}
                                         style={{ marginRight: largeScreen ? 10 : 5 }}
                                     />
-                                    <p id={`player-${playerKey}`} className={styles.playerState} />
+                                    <p
+                                        id={`player-${player.agentKey}`}
+                                        className={styles.playerState}
+                                    />
                                 </Row>
                             ))}
                         </Column>
@@ -2442,12 +2182,12 @@ const GlassBeadGame = (): JSX.Element => {
                                                 style={{ marginBottom: 10 }}
                                             />
                                         )}
-                                        {videosRef.current.map((user) => (
+                                        {videosRef.current.map((v) => (
                                             <ImageTitle
-                                                key={user.key}
+                                                key={v.player.agentKey}
                                                 type='user'
-                                                imagePath={user.userData.flagImagePath}
-                                                title={user.key}
+                                                imagePath={v.player.image}
+                                                title={v.player.name}
                                                 fontSize={16}
                                                 imageSize={40}
                                                 style={{ marginBottom: 10 }}
@@ -2458,13 +2198,15 @@ const GlassBeadGame = (): JSX.Element => {
                             </Column>
                             <Column className={styles.peopleInRoom}>
                                 <p style={{ marginBottom: 10 }}>{peopleInRoomText()}</p>
-                                {holoPlayers.map((userKey) => (
+                                {holoPlayers.map((player) => (
                                     <ImageTitle
-                                        key={userKey}
+                                        key={player.agentKey}
                                         type='user'
-                                        imagePath=''
+                                        imagePath={player.image}
                                         title={
-                                            userKey === myAgentPubKeyRef.current ? 'You' : userKey
+                                            player.agentKey === myAgentPubKeyRef.current
+                                                ? 'You'
+                                                : player.name
                                         }
                                         fontSize={16}
                                         imageSize={40}
@@ -2516,9 +2258,9 @@ const GlassBeadGame = (): JSX.Element => {
                     {videosRef.current.map((v) => {
                         return (
                             <Video
-                                key={v.key}
-                                id={v.key}
-                                user={v.userData}
+                                key={v.player.agentKey}
+                                id={v.player.agentKey}
+                                user={v.player}
                                 size={findVideoSize()}
                                 audioOnly={v.audioOnly}
                                 refreshStream={refreshStream}

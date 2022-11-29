@@ -112,12 +112,12 @@ export type NewBead = {
 }
 
 export type NewSignalRequest = {
-    agentKey: string
+    player: Player
     signal: string
 }
 
 export type NewSignalResponse = {
-    agentKey: string
+    player: Player
     signal: string
 }
 
