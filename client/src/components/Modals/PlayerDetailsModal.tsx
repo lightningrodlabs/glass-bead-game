@@ -49,7 +49,7 @@ const PlayerDetailsModal = (props: {
             <Button
                 text='Save details'
                 color='blue'
-                disabled={!name || (player && player.name === name)}
+                disabled={!name}
                 loading={loading}
                 onClick={saveDetails}
             />
