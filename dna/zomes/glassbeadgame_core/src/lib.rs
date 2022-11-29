@@ -32,7 +32,7 @@ pub struct GameSettings {
 #[derive(Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Player {
-    pub agent: AgentPubKeyB64,
+    pub agent_key: AgentPubKeyB64,
     pub name: String,
     pub image: String,
 }
@@ -41,7 +41,7 @@ pub struct Player {
 #[derive(Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Comment {
-    pub comment : String,
+    pub text : String,
 }
 
 #[hdk_entry_helper]

@@ -5,7 +5,7 @@ use glassbeadgame_core::{Player, Game, Bead, Comment, EntryTypes, LinkTypes, Gam
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct JoinGameInput {
-    pub agent: AgentPubKeyB64,
+    pub agent_key: AgentPubKeyB64,
     pub entry_hash: EntryHashB64
 }
 
@@ -48,7 +48,7 @@ pub struct UpdateGameInput {
 #[serde(rename_all = "camelCase")]
 pub struct CommentInput {
     pub entry_hash: EntryHashB64,
-    pub comment: String,
+    pub text: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -56,9 +56,17 @@ pub struct CommentInput {
 pub struct CommentOutput {
     pub action_hash: ActionHashB64,
     pub entry_hash: EntryHashB64,
-    pub agent: AgentPubKeyB64,
-    pub comment: String,
+    pub agent_key: AgentPubKeyB64,
+    pub text: String,
     pub timestamp: Timestamp,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct CommentWithPlayer {
+    player: Player,
+    text: String,
+    timestamp: Timestamp,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -73,7 +81,7 @@ pub struct BeadInput {
 pub struct BeadOutput {
     pub action_hash: ActionHashB64,
     pub entry_hash: EntryHashB64,
-    pub agent: AgentPubKeyB64,
+    pub agent_key: AgentPubKeyB64,
     pub bead: Bead,
     pub timestamp: Timestamp,
 }
@@ -83,7 +91,7 @@ pub fn save_player_details(player: Player) -> ExternResult<ActionHashB64> {
     // create player entry
     let action_hash = create_entry(EntryTypes::Player(player.clone()))?;
     // link to agent
-    create_link(AnyLinkableHash::from(AgentPubKey::from(player.agent)), action_hash.clone(), LinkTypes::Player, ())?;
+    create_link(AnyLinkableHash::from(AgentPubKey::from(player.agent_key)), action_hash.clone(), LinkTypes::Player, ())?;
 
     Ok(action_hash.into())
 }
@@ -99,8 +107,8 @@ fn player_from_details(details: Details) -> ExternResult<Option<Player>> {
 } 
 
 #[hdk_extern]
-pub fn get_player_details(agent: AgentPubKey) -> ExternResult<Option<Player>> {
-    let links = vec![GetLinksInput::new(agent.into(), LinkTypes::Player.try_into()?, None)];
+pub fn get_player_details(agent_key: AgentPubKey) -> ExternResult<Option<Player>> {
+    let links = vec![GetLinksInput::new(agent_key.into(), LinkTypes::Player.try_into()?, None)];
     let link_details = HDK.with(|hdk| hdk.borrow().get_link_details(links))?;
     let mut player: Option<Player> = None;
 
@@ -172,25 +180,24 @@ pub fn update_game(input: UpdateGameInput) -> ExternResult<UpdateOutput> {
 #[hdk_extern]
 pub fn join_game(input: JoinGameInput) -> ExternResult<ActionHashB64> {
     let entry_hash: EntryHash = input.entry_hash.into();
-    let action_hash  = create_link(AnyLinkableHash::from(entry_hash),AnyLinkableHash::from(AgentPubKey::from(input.agent)), LinkTypes::Player, ())?;
+    let action_hash  = create_link(AnyLinkableHash::from(entry_hash),AnyLinkableHash::from(AgentPubKey::from(input.agent_key)), LinkTypes::Player, ())?;
     Ok(action_hash.into())
 }
 
 #[hdk_extern]
-pub fn get_players(game_hash: EntryHashB64) -> ExternResult<Vec<(AgentPubKeyB64, ActionHashB64)>> {
+pub fn get_players(game_hash: EntryHashB64) -> ExternResult<Vec<Player>> {
     let hash : EntryHash = game_hash.into();
     let links = get_links(AnyLinkableHash::from(hash), LinkTypes::Player, None)?;
-
-    // todo: needs to grab latest player details as well
-
-    let mut agents: Vec<(AgentPubKeyB64, ActionHashB64)> = vec![];
+    let mut players: Vec<Player> = vec![];
     for link in links {
         let agent: EntryHash = EntryHash::try_from(link.target)?; // gotta go through an agent hash because can't get there direct yet!
-        let agent: AgentPubKey = AgentPubKey::try_from(agent)?;
-        let agentpubkey: AgentPubKey = AgentPubKey::try_from(agent)?;
-        agents.push((agentpubkey.into(), link.create_link_hash.into()));
-    }     
-    Ok(agents)
+        let agent_key: AgentPubKey = AgentPubKey::try_from(agent)?;
+        if let Some(player) = get_player_details(agent_key.clone().into())? {
+            players.push(player);
+        }
+    }
+
+    Ok(players)
 }
 
 #[hdk_extern]
@@ -210,7 +217,7 @@ pub fn get_games(_: ()) -> ExternResult<Vec<GameOutput>> {
         inputs.push(GetLinksInput::new(link.target.into(), LinkTypes::Settings.try_into()?, None))
     }
 
-    get_latest_settings(inputs)
+    get_latest_game_settings(inputs)
 }
 
 fn game_from_details(details: Details, game_entry_hash: EntryHashB64) -> ExternResult<Option<GameOutput>> {
@@ -226,7 +233,7 @@ fn game_from_details(details: Details, game_entry_hash: EntryHashB64) -> ExternR
     }
 } 
 
-fn get_latest_settings(inputs: Vec<GetLinksInput>) -> ExternResult<Vec<GameOutput>> {
+fn get_latest_game_settings(inputs: Vec<GetLinksInput>) -> ExternResult<Vec<GameOutput>> {
     let all_settings = HDK.with(|hdk| hdk.borrow().get_link_details(inputs))?;
     let mut games: Vec<GameOutput> = vec![];
 
@@ -262,7 +269,7 @@ fn get_latest_settings(inputs: Vec<GetLinksInput>) -> ExternResult<Vec<GameOutpu
 #[hdk_extern]
 fn get_game(game_entry_hash: EntryHashB64) -> ExternResult<GameOutput> {
     let inputs = vec![GetLinksInput::new(game_entry_hash.into(), LinkTypes::Settings.try_into()?, None)];
-    let games = get_latest_settings(inputs).unwrap();
+    let games = get_latest_game_settings(inputs).unwrap();
     let game: Option<GameOutput> = Some(games[0].clone());
 
     Ok(game.ok_or(wasm_error!(WasmErrorInner::Guest("Game not found".into())))?)
@@ -270,7 +277,7 @@ fn get_game(game_entry_hash: EntryHashB64) -> ExternResult<GameOutput> {
 
 #[hdk_extern]
 pub fn create_comment(input: CommentInput) -> ExternResult<CreateOutput> {
-    let comment = Comment{comment: input.comment};
+    let comment = Comment{text: input.text};
     let action_hash = create_entry(EntryTypes::Comment(comment.clone()))?;
     let hash: EntryHash = hash_entry(&comment)?;
     let entry_hash: EntryHash = input.entry_hash.into();
@@ -291,8 +298,8 @@ fn comment_from_details(details: Details) -> ExternResult<Option<CommentOutput>>
             Ok(Some(CommentOutput {
                 entry_hash: hash.into(),
                 action_hash: action.as_hash().clone().into(),
-                comment: comment.comment, 
-                agent: action.action().author().clone().into(),
+                text: comment.text,
+                agent_key: action.action().author().clone().into(),
                 timestamp: action.action().timestamp(),
             }))
         }
@@ -300,7 +307,7 @@ fn comment_from_details(details: Details) -> ExternResult<Option<CommentOutput>>
     }
 }
 
-fn get_comments_inner(base: EntryHash) -> ExternResult<Vec<CommentOutput>> {
+fn get_comments_inner(base: EntryHash) -> ExternResult<Vec<CommentWithPlayer>> {
     let links = get_links(base, LinkTypes::Comment, None)?;
 
     let get_input = links
@@ -308,19 +315,27 @@ fn get_comments_inner(base: EntryHash) -> ExternResult<Vec<CommentOutput>> {
         .map(|link| GetInput::new(link.target.into(), GetOptions::default()))
         .collect();
 
-    let game_elements = HDK.with(|hdk| hdk.borrow().get_details(get_input))?;
+    let comment_elements = HDK.with(|hdk| hdk.borrow().get_details(get_input))?;
 
-    let games: Vec<CommentOutput> = game_elements
+    let comments_with_details: Vec<CommentOutput> = comment_elements
         .into_iter()
         .filter_map(|me| me)
         .filter_map(|details| comment_from_details(details).ok()?)
         .collect();
-    Ok(games)
+
+    let mut comments: Vec<CommentWithPlayer> = vec![];
+    for comment in comments_with_details.clone() {
+        if let Some(player) = get_player_details(comment.clone().agent_key.into())? {
+            let comment_with_player = CommentWithPlayer { player, text: comment.text, timestamp: comment.timestamp };
+            comments.push(comment_with_player);
+        }
+    }
+
+    Ok(comments)
 }
 
 #[hdk_extern]
-pub fn get_comments(entry_hash: EntryHashB64) -> ExternResult<Vec<CommentOutput>> {
-
+pub fn get_comments(entry_hash: EntryHashB64) -> ExternResult<Vec<CommentWithPlayer>> {
     get_comments_inner(entry_hash.into())
 }
 
@@ -347,7 +362,7 @@ fn bead_from_details(details: Details) -> ExternResult<Option<BeadOutput>> {
                 entry_hash: hash.into(),
                 action_hash: action.as_hash().clone().into(),
                 bead, 
-                agent: action.action().author().clone().into(),
+                agent_key: action.action().author().clone().into(),
                 timestamp: action.action().timestamp(),
             }))
         }
