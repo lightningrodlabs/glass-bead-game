@@ -850,6 +850,7 @@ const GlassBeadGame = (): JSX.Element => {
                         content: bead,
                     },
                 }
+                // todo: use players ref
                 const playersArray = await gbgServiceRef.current!.getPlayers(entryHash)
                 gbgServiceRef.current!.createBead({ entryHash, bead }).then(() => {
                     gbgServiceRef
@@ -908,7 +909,7 @@ const GlassBeadGame = (): JSX.Element => {
     function startMove(moveNumber, turnNumber, player, data) {
         const { numberOfTurns, moveDuration, intervalDuration } = data
         // if your move, start audio recording
-        if (player === myAgentPubKeyRef.current) startAudioRecording(moveNumber)
+        if (player.agentKey === myAgentPubKeyRef.current) startAudioRecording(moveNumber)
         // calculate turn and game duration
         const turnDuration = data.players.length * (moveDuration + intervalDuration)
         const gameDuration = turnDuration * numberOfTurns - intervalDuration
@@ -2002,7 +2003,7 @@ const GlassBeadGame = (): JSX.Element => {
                                     <div className={styles.position}>{index + 1}</div>
                                     <ImageTitle
                                         type='user'
-                                        imagePath=''
+                                        imagePath={player.image}
                                         title={
                                             player.agentKey === myAgentPubKeyRef.current
                                                 ? 'You'
