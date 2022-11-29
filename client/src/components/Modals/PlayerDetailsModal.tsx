@@ -19,7 +19,7 @@ const PlayerDetailsModal = (props: {
     function saveDetails() {
         setLoading(true)
         gbgService
-            .savePlayerDetails({ agent: gbgService.myAgentPubKey, name, image })
+            .savePlayerDetails({ agentKey: gbgService.myAgentPubKey, name, image })
             .then(() => {
                 setPlayer({ name, image })
                 close()

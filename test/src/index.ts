@@ -83,7 +83,7 @@ test("gbg basic tests", async (t) => {
       fn_name:"join_game",
       payload: {
         entryHash: game_output.entryHash,
-        agent: aliceAgentKey
+        agentKey: aliceAgentKey
       }}
     );
     t.ok(join_actionHash)

@@ -29,8 +29,8 @@ export default class GlassBeadGameService {
         return this.callZome('save_player_details', player)
     }
 
-    async getPlayerDetails(agent: string): Promise<Player> {
-        return this.callZome('get_player_details', agent)
+    async getPlayerDetails(agentKey: string): Promise<Player> {
+        return this.callZome('get_player_details', agentKey)
     }
 
     async createGame(game: GameSettingsData): Promise<CreateGameOutput> {
@@ -49,7 +49,7 @@ export default class GlassBeadGameService {
         return this.callZome('join_game', input)
     }
 
-    async getPlayers(input: EntryHashB64): Promise<Array<[AgentPubKeyB64, ActionHashB64]>> {
+    async getPlayers(input: EntryHashB64): Promise<Array<Player>> {
         return this.callZome('get_players', input)
     }
 

@@ -2,7 +2,7 @@ import { Timestamp } from '@holochain/client'
 import { EntryHashB64, AgentPubKeyB64, ActionHashB64 } from '@holochain-open-dev/core-types'
 
 export type Player = {
-    agent: string
+    agentKey: string
     name: string
     image: string
 }
@@ -71,8 +71,8 @@ export type Signal = {
 }
 
 export type NewComment = {
-    agentKey: string
-    comment: string
+    player: Player
+    text: string
 }
 
 export type NewTopic = {
@@ -166,11 +166,11 @@ export interface GameData {
 
 export interface IComment {
     entryHash: EntryHashB64
-    comment: string
+    text: string
 }
 
 export interface JoinGameInput {
-    agent: AgentPubKeyB64
+    agentKey: AgentPubKeyB64
     entryHash: EntryHashB64
 }
 
@@ -209,7 +209,7 @@ export interface CommentInput {
 export interface CommentOutput {
     headerHash: ActionHashB64
     entryHash: EntryHashB64
-    agent: AgentPubKeyB64
+    agentKey: AgentPubKeyB64
     comment: string
     timestamp: Timestamp
 }
@@ -229,7 +229,7 @@ export interface BeadInput {
 export interface BeadOutput {
     headerHash: ActionHashB64
     entryHash: EntryHashB64
-    agent: AgentPubKeyB64
+    agentKey: AgentPubKeyB64
     bead: Bead
     timestamp: Timestamp
 }
