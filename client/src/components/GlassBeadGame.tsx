@@ -739,7 +739,7 @@ const GlassBeadGame = (): JSX.Element => {
                 peer,
                 audioOnly: !stream.getVideoTracks().length,
             })
-            pushComment(`${agentKey}'s video connected`)
+            pushComment(`${player.name}'s video connected`)
             addStreamToVideo(agentKey, stream)
             setPlayers((previousPlayers) => [...previousPlayers, player])
         })
@@ -1486,7 +1486,7 @@ const GlassBeadGame = (): JSX.Element => {
                             peer,
                             audioOnly: !stream.getVideoTracks().length,
                         })
-                        pushComment(`${player.agentKey}'s video connected`)
+                        pushComment(`${player.name}'s video connected`)
                         addStreamToVideo(player.agentKey, stream)
                         setPlayers((previousPlayers) => [...previousPlayers, player])
                     })
@@ -1666,7 +1666,6 @@ const GlassBeadGame = (): JSX.Element => {
                     signal,
                     playersArray.map((p: any) => p.agentKey)
                 )
-                .then((res) => console.log('notify res: ', res))
                 .catch((error) => console.log('notify error: ', error))
         }
     }
