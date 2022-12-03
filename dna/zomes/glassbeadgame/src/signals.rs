@@ -2,13 +2,6 @@ use holo_hash::{AgentPubKeyB64, EntryHashB64};
 use glassbeadgame_core::{Player};
 use crate::game::*;
 
-// #[derive(Serialize, Deserialize, Debug)]
-// #[serde(rename_all = "camelCase")]
-// pub struct NewGameSignal {
-//     // agent_key: String,
-//     game: Game,
-// }
-
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct CommentSignal {

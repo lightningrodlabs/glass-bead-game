@@ -338,11 +338,12 @@ const GlassBeadGame = (): JSX.Element => {
     const myAgentPubKeyRef = useRef<any>()
     const joinGameHash = useRef<any>()
     const playerRef = useRef<any>({ agentKey: '', name: '', image: '' })
-    const [holoPlayers, setHoloPlayers] = useState<any[]>([])
+    const peopleInRoomRef = useRef<any>([])
 
     const [gameData, setGameData] = useState<any>(gameDefaults)
     const [gameInProgress, setGameInProgress] = useState(false)
     const [userIsStreaming, setUserIsStreaming] = useState(false)
+    const [peopleInRoom, setPeopleInRoom] = useState<any[]>([])
     const [players, setPlayers] = useState<any[]>([])
     const [gameSettingsModalOpen, setGameSettingsModalOpen] = useState(false)
     const [beads, setBeads] = useState<any[]>([])
@@ -631,7 +632,7 @@ const GlassBeadGame = (): JSX.Element => {
             gbgServiceRef
                 .current!.notify(
                     signal,
-                    holoPlayers.map((p) => p.agentKey)
+                    peopleInRoom.map((p) => p.agentKey)
                 )
                 .catch((error) => console.log('notify error: ', error))
             if (!videosRef.current.length) {
@@ -788,7 +789,7 @@ const GlassBeadGame = (): JSX.Element => {
                 gbgServiceRef
                     .current!.notify(
                         signal,
-                        holoPlayers.map((p) => p.agentKey)
+                        peopleInRoom.map((p) => p.agentKey)
                     )
                     .then(() => setNewComment(''))
                     .catch((error) => console.log('notify error: ', error))
@@ -880,7 +881,7 @@ const GlassBeadGame = (): JSX.Element => {
         gbgServiceRef
             .current!.notify(
                 signal,
-                holoPlayers.map((p) => p.agentKey)
+                peopleInRoom.map((p) => p.agentKey)
             )
             .catch((error) => console.log(error))
     }
@@ -1032,7 +1033,7 @@ const GlassBeadGame = (): JSX.Element => {
         gbgServiceRef
             .current!.notify(
                 signal,
-                holoPlayers.map((p) => p.agentKey)
+                peopleInRoom.map((p) => p.agentKey)
             )
             .catch((error) => console.log(error))
     }
@@ -1048,10 +1049,8 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function peopleInRoomText() {
-        const totalUsers = holoPlayers.length
+        const totalUsers = peopleInRoom.length
         return `${totalUsers} ${isPlural(totalUsers) ? 'people' : 'person'} in room`
-        // const totalUsers = usersRef.current.length
-        // return `${totalUsers} ${isPlural(totalUsers) ? 'people' : 'person'} in room`
     }
 
     function peopleStreamingText() {
@@ -1101,7 +1100,7 @@ const GlassBeadGame = (): JSX.Element => {
             gbgServiceRef
                 .current!.notify(
                     signal,
-                    holoPlayers.map((p) => p.agentKey)
+                    peopleInRoom.map((p) => p.agentKey)
                 )
                 .catch((error) => console.log(error))
         })
@@ -1130,7 +1129,7 @@ const GlassBeadGame = (): JSX.Element => {
             gbgServiceRef
                 .current!.notify(
                     signal,
-                    holoPlayers.map((p) => p.agentKey)
+                    peopleInRoom.map((p) => p.agentKey)
                 )
                 .catch((error) => console.log(error))
         })
@@ -1153,7 +1152,7 @@ const GlassBeadGame = (): JSX.Element => {
             gbgServiceRef
                 .current!.notify(
                     signal,
-                    holoPlayers.map((p) => p.agentKey)
+                    peopleInRoom.map((p) => p.agentKey)
                 )
                 .then(() => setTopicTextModalOpen(false))
                 .catch((error) => console.log(error))
@@ -1327,11 +1326,17 @@ const GlassBeadGame = (): JSX.Element => {
         }
     }
 
+    function findPlayer(agentKey) {
+        return peopleInRoomRef.current.find((p) => p.agentKey === agentKey)
+    }
+
     function signalHandler(signal) {
         const { type, content } = signal.data.payload.message
         switch (type) {
             case 'NewPlayer': {
-                setHoloPlayers((p) => [...p, content])
+                setPeopleInRoom((p) => [...p, content])
+                peopleInRoomRef.current.push(content)
+                pushComment(`${content.name} entered the room`)
                 break
             }
             case 'NewComment': {
@@ -1348,7 +1353,8 @@ const GlassBeadGame = (): JSX.Element => {
                 setGameData((data) => {
                     return { ...data, topic, topicGroup: '' }
                 })
-                // pushComment(`${agentKey} updated the topic`)
+                const player = findPlayer(agentKey)
+                pushComment(`${player.name} updated the topic`)
                 break
             }
             case 'NewTopicImage': {
@@ -1356,7 +1362,8 @@ const GlassBeadGame = (): JSX.Element => {
                 setGameData((data) => {
                     return { ...data, topicImageUrl }
                 })
-                // pushComment(`${agentKey} updated the topic image`)
+                const player = findPlayer(agentKey)
+                pushComment(`${player.name} updated the topic image`)
                 break
             }
             case 'NewBackground': {
@@ -1369,7 +1376,8 @@ const GlassBeadGame = (): JSX.Element => {
                         backgroundVideoStartTime: startTime,
                     }
                 })
-                // pushComment(`${agentKey} updated the background`)
+                const player = findPlayer(agentKey)
+                pushComment(`${player.name} updated the background`)
                 break
             }
             case 'StartGame': {
@@ -1377,7 +1385,7 @@ const GlassBeadGame = (): JSX.Element => {
                 const parsedData = JSON.parse(data)
                 setGameSettingsModalOpen(false)
                 setGameData(parsedData)
-                setHoloPlayers(parsedData.players)
+                setPlayers(parsedData.players)
                 setGameInProgress(true)
                 setBeads([])
                 d3.select('#play-button')
@@ -1394,7 +1402,8 @@ const GlassBeadGame = (): JSX.Element => {
                     .remove()
                 liveBeadIndexRef.current = 1
                 startGame(parsedData)
-                // pushComment(`${agentKey} started the game`)
+                const player = findPlayer(agentKey)
+                pushComment(`${player.name} started the game`)
                 break
             }
             case 'StopGame': {
@@ -1403,7 +1412,6 @@ const GlassBeadGame = (): JSX.Element => {
                     setShowComments(true)
                     updateShowVideos(true)
                 }
-                pushComment(`${agentKey} stopped the game`)
                 setGameInProgress(false)
                 clearInterval(secondsTimerRef.current)
                 d3.selectAll(`.${styles.playerState}`).text('')
@@ -1415,14 +1423,20 @@ const GlassBeadGame = (): JSX.Element => {
                 setTurn(0)
                 if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording')
                     mediaRecorderRef.current.stop()
+                const player = findPlayer(agentKey)
+                pushComment(`${player.name} stopped the game`)
                 break
             }
             case 'LeaveGame': {
                 const { agentKey } = content
-                setHoloPlayers((ps) => {
+                const player = findPlayer(agentKey)
+                pushComment(`${player.name} left the room`)
+                setPeopleInRoom((ps) => {
                     return ps.filter((p) => p.agentKey !== agentKey)
                 })
-                pushComment(`${agentKey} left the room`)
+                peopleInRoomRef.current = peopleInRoomRef.current.filter(
+                    (p) => p.agentKey !== agentKey
+                )
                 break
             }
             case 'NewBead': {
@@ -1534,7 +1548,8 @@ const GlassBeadGame = (): JSX.Element => {
                 videosRef.current = videosRef.current.filter((v) => v.player.agentKey !== agentKey)
                 if (!videosRef.current.length && !streamRef.current) updateShowVideos(false)
                 setPlayers((ps) => [...ps.filter((p) => p.agentKey !== agentKey)])
-                // pushComment(`${agentKey}'s stream disconnected`)
+                const player = findPlayer(agentKey)
+                pushComment(`${player.name}'s stream disconnected`)
                 break
             }
             default:
@@ -1563,7 +1578,8 @@ const GlassBeadGame = (): JSX.Element => {
         const gameComments = await gbgServiceRef.current!.getComments(entryHash)
         const gameBeads = await gbgServiceRef.current!.getBeads(entryHash)
         setGameData(game)
-        setHoloPlayers(playersArray)
+        setPeopleInRoom(playersArray)
+        peopleInRoomRef.current = playersArray
         setComments(gameComments)
         // handle beads
         if (gameBeads.length) {
@@ -1650,7 +1666,8 @@ const GlassBeadGame = (): JSX.Element => {
                 .current!.joinGame({ agentKey: myAgentPubKeyRef.current, entryHash })
                 .then((res) => {
                     joinGameHash.current = res
-                    setHoloPlayers((p) => [...p, playerRef.current])
+                    setPeopleInRoom((p) => [...p, playerRef.current])
+                    peopleInRoomRef.current.push(playerRef.current)
                 })
         }
         if (playersArray.length > 0) {
@@ -1673,7 +1690,9 @@ const GlassBeadGame = (): JSX.Element => {
     async function leaveGame() {
         if (gbgServiceRef.current && joinGameHash.current) {
             const playersArray = await gbgServiceRef.current!.getPlayers(entryHash)
-            const otherPlayers = playersArray.filter((p) => p.agentKey !== myAgentPubKeyRef.current)
+            const otherPlayers = playersArray
+                .filter((p) => p.agentKey !== myAgentPubKeyRef.current)
+                .map((p) => p.agentKey)
             const signal: Signal = {
                 gameHash: entryHash,
                 message: {
@@ -1997,7 +2016,7 @@ const GlassBeadGame = (): JSX.Element => {
                                 onClick={signalStopGame}
                             />
                             <p>{`Turn ${turn} / ${gameData.numberOfTurns}`}</p>
-                            {holoPlayers.map((player, index) => (
+                            {peopleInRoom.map((player, index) => (
                                 <Row centerY key={player.agentKey} className={styles.player}>
                                     <div className={styles.position}>{index + 1}</div>
                                     <ImageTitle
@@ -2184,7 +2203,7 @@ const GlassBeadGame = (): JSX.Element => {
                             </Column>
                             <Column className={styles.peopleInRoom}>
                                 <p style={{ marginBottom: 10 }}>{peopleInRoomText()}</p>
-                                {holoPlayers.map((player) => (
+                                {peopleInRoom.map((player) => (
                                     <ImageTitle
                                         key={player.agentKey}
                                         type='user'
