@@ -1383,7 +1383,6 @@ const GlassBeadGame = (): JSX.Element => {
                 const parsedData = JSON.parse(data)
                 setGameSettingsModalOpen(false)
                 setGameData(parsedData)
-                setPlayers(parsedData.players)
                 setGameInProgress(true)
                 setBeads([])
                 d3.select('#play-button')
@@ -1461,7 +1460,6 @@ const GlassBeadGame = (): JSX.Element => {
                     ...previousBeads,
                     {
                         user: {
-                            id: agentKey,
                             name: agentKey === myAgentPubKeyRef.current ? 'You' : player.name,
                             flagImagePath: player.image,
                         },
@@ -1608,7 +1606,6 @@ const GlassBeadGame = (): JSX.Element => {
                     const audioBlob = new Blob([arrayBuffer], { type: 'audio/mpeg-3' })
                     return {
                         user: {
-                            id: index,
                             name: agentKey === myAgentPubKeyRef.current ? 'You' : player.name,
                             flagImagePath: player.image,
                         },
@@ -2026,7 +2023,7 @@ const GlassBeadGame = (): JSX.Element => {
                                 onClick={signalStopGame}
                             />
                             <p>{`Turn ${turn} / ${gameData.numberOfTurns}`}</p>
-                            {peopleInRoom.map((player, index) => (
+                            {players.map((player, index) => (
                                 <Row centerY key={player.agentKey} className={styles.player}>
                                     <div className={styles.position}>{index + 1}</div>
                                     <ImageTitle
