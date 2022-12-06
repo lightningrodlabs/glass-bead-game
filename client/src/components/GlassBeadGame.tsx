@@ -1456,15 +1456,14 @@ const GlassBeadGame = (): JSX.Element => {
                     audio.byteLength + audio.byteOffset
                 )
                 const audioBlob = new Blob([arrayBuffer], { type: 'audio/mpeg-3' })
+                const player = findPlayer(agentKey)
                 setBeads((previousBeads) => [
                     ...previousBeads,
                     {
                         user: {
-                            // todo: fix
                             id: agentKey,
-                            name: agentKey === myAgentPubKeyRef.current ? 'You' : agentKey,
-                            handle: 'test',
-                            flagImagePath: '',
+                            name: agentKey === myAgentPubKeyRef.current ? 'You' : player.name,
+                            flagImagePath: player.image,
                         },
                         index,
                         beadUrl: URL.createObjectURL(audioBlob),
@@ -1600,7 +1599,8 @@ const GlassBeadGame = (): JSX.Element => {
             })
             setBeads(
                 gameBeads.map((b) => {
-                    const { agentKey: key, audio, index } = b.bead
+                    const { player, bead } = b
+                    const { audio, index, agentKey } = bead
                     const arrayBuffer = audio.buffer.slice(
                         audio.byteOffset,
                         audio.byteLength + audio.byteOffset
@@ -1608,10 +1608,9 @@ const GlassBeadGame = (): JSX.Element => {
                     const audioBlob = new Blob([arrayBuffer], { type: 'audio/mpeg-3' })
                     return {
                         user: {
-                            id: key,
-                            name: key === myAgentPubKeyRef.current ? 'You' : key,
-                            handle: 'test',
-                            flagImagePath: '',
+                            id: index,
+                            name: agentKey === myAgentPubKeyRef.current ? 'You' : player.name,
+                            flagImagePath: player.image,
                         },
                         index,
                         beadUrl: URL.createObjectURL(audioBlob),
