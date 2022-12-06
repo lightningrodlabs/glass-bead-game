@@ -1548,8 +1548,10 @@ const GlassBeadGame = (): JSX.Element => {
                 videosRef.current = videosRef.current.filter((v) => v.player.agentKey !== agentKey)
                 if (!videosRef.current.length && !streamRef.current) updateShowVideos(false)
                 setPlayers((ps) => [...ps.filter((p) => p.agentKey !== agentKey)])
-                const player = findPlayer(agentKey)
-                pushComment(`${player.name}'s stream disconnected`)
+                if (agentKey !== myAgentPubKeyRef.current) {
+                    const player = findPlayer(agentKey)
+                    pushComment(`${player.name}'s stream disconnected`)
+                }
                 break
             }
             default:
