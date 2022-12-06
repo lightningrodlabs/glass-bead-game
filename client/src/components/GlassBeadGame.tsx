@@ -2079,11 +2079,12 @@ const GlassBeadGame = (): JSX.Element => {
                                     </Row>
                                 </Modal>
                             )}
-                            {!gameData.locked && (
+                            {!gameData.locked && !beads.length && (
                                 <>
                                     {/* {userIsStreaming && ( */}
                                     <Button
-                                        text={`${beads.length ? 'Restart' : 'Start'} game`}
+                                        // text={`${beads.length ? 'Restart' : 'Start'} game`}
+                                        text='Start game'
                                         color={beads.length ? 'red' : 'blue'}
                                         size={largeScreen ? 'large' : 'small'}
                                         style={{ marginBottom: 10 }}
