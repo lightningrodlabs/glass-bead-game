@@ -1437,6 +1437,16 @@ const GlassBeadGame = (): JSX.Element => {
                 peopleInRoomRef.current = peopleInRoomRef.current.filter(
                     (p) => p.agentKey !== agentKey
                 )
+                const peerObject = peersRef.current.find((p) => p.player.agentKey === agentKey)
+                if (peerObject) {
+                    peerObject.peer.destroy()
+                    peersRef.current = peersRef.current.filter(
+                        (p) => p.player.agentKey !== agentKey
+                    )
+                    videosRef.current = videosRef.current.filter(
+                        (v) => v.player.agentKey !== agentKey
+                    )
+                }
                 break
             }
             case 'NewBead': {
