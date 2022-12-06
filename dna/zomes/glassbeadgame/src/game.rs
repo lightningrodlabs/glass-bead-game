@@ -80,6 +80,14 @@ pub struct BeadOutput {
     pub timestamp: Timestamp,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct BeadWithPlayer {
+    player: Player,
+    bead: Bead,
+    timestamp: Timestamp,
+}
+
 #[hdk_extern]
 pub fn save_player_details(player: Player) -> ExternResult<ActionHashB64> {
     // create player entry
@@ -362,7 +370,7 @@ fn bead_from_details(details: Details) -> ExternResult<Option<BeadOutput>> {
     }
 }
 
-fn get_beads_inner(base: EntryHash) -> ExternResult<Vec<BeadOutput>> {
+fn get_beads_inner(base: EntryHash) -> ExternResult<Vec<BeadWithPlayer>> {
     let links = get_links(base, LinkTypes::Bead, None)?;
 
     let get_input = links
@@ -370,17 +378,26 @@ fn get_beads_inner(base: EntryHash) -> ExternResult<Vec<BeadOutput>> {
         .map(|link| GetInput::new(link.target.into(), GetOptions::default()))
         .collect();
 
-    let game_elements = HDK.with(|hdk| hdk.borrow().get_details(get_input))?;
+    let bead_elements = HDK.with(|hdk| hdk.borrow().get_details(get_input))?;
 
-    let games: Vec<BeadOutput> = game_elements
+    let beads_with_details: Vec<BeadOutput> = bead_elements
         .into_iter()
         .filter_map(|me| me)
         .filter_map(|details| bead_from_details(details).ok()?)
         .collect();
-    Ok(games)
+
+    let mut beads: Vec<BeadWithPlayer> = vec![];
+    for bead in beads_with_details.clone() {
+        if let Some(player) = get_player_details(bead.clone().agent_key.into())? {
+            let bead_with_player = BeadWithPlayer { player, bead: bead.bead, timestamp: bead.timestamp };
+            beads.push(bead_with_player);
+        }
+    }
+    
+    Ok(beads)
 }
 
 #[hdk_extern]
-pub fn get_beads(entry_hash: EntryHashB64) -> ExternResult<Vec<BeadOutput>> {
+pub fn get_beads(entry_hash: EntryHashB64) -> ExternResult<Vec<BeadWithPlayer>> {
     get_beads_inner(entry_hash.into())
 }
