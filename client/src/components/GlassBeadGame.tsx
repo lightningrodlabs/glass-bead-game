@@ -851,13 +851,11 @@ const GlassBeadGame = (): JSX.Element => {
                         content: bead,
                     },
                 }
-                // todo: use players ref
-                const playersArray = await gbgServiceRef.current!.getPlayers(entryHash)
                 gbgServiceRef.current!.createBead({ entryHash, bead }).then(() => {
                     gbgServiceRef
                         .current!.notify(
                             signal,
-                            playersArray.map((p) => p.agentKey)
+                            peopleInRoomRef.current.map((p) => p.agentKey)
                         )
                         .catch((error) => console.log(error))
                 })
@@ -944,7 +942,7 @@ const GlassBeadGame = (): JSX.Element => {
                 // end seconds timer
                 clearInterval(secondsTimerRef.current)
                 // if your move, stop audio recording
-                if (player === myAgentPubKeyRef.current && mediaRecorderRef.current)
+                if (player.agentKey === myAgentPubKeyRef.current && mediaRecorderRef.current)
                     mediaRecorderRef.current.stop()
                 // if more moves left
                 if (moveNumber < numberOfTurns * data.players.length) {
@@ -1703,8 +1701,7 @@ const GlassBeadGame = (): JSX.Element => {
 
     async function leaveGame() {
         if (gbgServiceRef.current && joinGameHash.current) {
-            const playersArray = await gbgServiceRef.current!.getPlayers(entryHash)
-            const otherPlayers = playersArray
+            const otherPlayers = peopleInRoomRef.current
                 .filter((p) => p.agentKey !== myAgentPubKeyRef.current)
                 .map((p) => p.agentKey)
             const signal: Signal = {
