@@ -1447,6 +1447,8 @@ const GlassBeadGame = (): JSX.Element => {
                         (v) => v.player.agentKey !== agentKey
                     )
                 }
+                if (!videosRef.current.length && !streamRef.current) updateShowVideos(false)
+                setPlayers((ps) => [...ps.filter((p) => p.agentKey !== agentKey)])
                 break
             }
             case 'NewBead': {
