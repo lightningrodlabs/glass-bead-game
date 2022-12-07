@@ -1532,7 +1532,7 @@ const GlassBeadGame = (): JSX.Element => {
                             (p) => p.player.agentKey !== player.agentKey
                         )
                     }
-                } else console.log('no peer!')
+                }
                 break
             }
             case 'RefreshRequest': {
