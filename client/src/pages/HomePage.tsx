@@ -109,6 +109,7 @@ const Homepage = (): JSX.Element => {
                     {gbgService && createGameModalOpen && (
                         <CreateGameModal
                             gbgService={gbgService}
+                            player={player}
                             games={games}
                             setGames={setGames}
                             close={() => setCreateGameModalOpen(false)}

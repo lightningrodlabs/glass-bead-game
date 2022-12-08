@@ -17,11 +17,12 @@ import Scrollbars from '../Scrollbars'
 
 const CreateGameModal = (props: {
     gbgService: GlassBeadGameService
+    player: any
     games: any[]
     setGames: (games: any[]) => void
     close: () => void
 }): JSX.Element => {
-    const { gbgService, games, setGames, close } = props
+    const { gbgService, player, games, setGames, close } = props
     const steps = ['Topic', 'Description', 'Settings']
     const [currentStep, setCurrentStep] = useState(1)
     const [topicGroup, setTopicGroup] = useState('archetopics')
@@ -111,7 +112,10 @@ const CreateGameModal = (props: {
                 .then((res) => {
                     setLoading(false)
                     setSaved(true)
-                    setGames([...games, { settings: gameData, entryHash: res.entryHash }])
+                    setGames([
+                        ...games,
+                        { creator: player, settings: gameData, entryHash: res.entryHash },
+                    ])
                     // const signal: Signal = {
                     //     gameHash: '',
                     //     message: {
