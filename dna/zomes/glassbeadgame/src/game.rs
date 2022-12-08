@@ -28,6 +28,7 @@ pub struct CreateOutput {
 #[serde(rename_all = "camelCase")]
 pub struct GameOutput {
     pub entry_hash: EntryHashB64,
+    pub creator: Player,
     pub settings: GameSettings,
 }
 
@@ -220,45 +221,51 @@ pub fn get_games(_: ()) -> ExternResult<Vec<GameOutput>> {
     get_latest_game_settings(inputs)
 }
 
-fn game_from_details(details: Details, game_entry_hash: EntryHashB64) -> ExternResult<Option<GameOutput>> {
+fn game_from_details(creator: Player, details: Details, game_entry_hash: EntryHashB64) -> ExternResult<Option<GameOutput>> {
     match details {
         Details::Record(RecordDetails { record, .. }) => {
             let settings: GameSettings = record.try_into()?;
             Ok(Some(GameOutput {
                 entry_hash: game_entry_hash.into(),
+                creator,
                 settings,
             }))
         }
         _ => Ok(None),
     }
-} 
+}
 
 fn get_latest_game_settings(inputs: Vec<GetLinksInput>) -> ExternResult<Vec<GameOutput>> {
     let all_settings = HDK.with(|hdk| hdk.borrow().get_link_details(inputs))?;
     let mut games: Vec<GameOutput> = vec![];
 
     for link_details in all_settings {
-        // find the most recent linked settings
-        let mut latest_action: Option<Action> = None;
-        for (action,..) in link_details.into_inner() {
-            match latest_action {
-                Some(ref a) => if a.timestamp() < action.action().timestamp() { latest_action = Some(action.action().clone()) }
-                None => latest_action = Some(action.action().clone())
+        // find game creator
+        let (first_action,..) = link_details.clone().into_inner()[0].clone();
+        let creator = get_player_details(first_action.action().author().clone())?;
+        if let Some(creator) = creator {
+            // find the most recent linked settings
+            let mut latest_action: Option<Action> = None;
+            for (action,..) in link_details.into_inner() {
+                match latest_action {
+                    Some(ref a) => if a.timestamp() < action.action().timestamp() { latest_action = Some(action.action().clone()) }
+                    None => latest_action = Some(action.action().clone())
+                }
             }
-        }
-        // get the settings data
-        if let Some(action) = latest_action {
-            match action {
-                Action::CreateLink(create_link )=> {
-                    let settings_action_hash: ActionHash = create_link.target_address.clone().into();
-                    let game_entry_hash: EntryHash = create_link.base_address.clone().into();
-                    if let Some(details) = get_details(settings_action_hash.clone(), GetOptions::default())? {
-                        if let Some(game) = game_from_details(details, game_entry_hash.into())? {
-                            games.push(game);
+            // get the settings data
+            if let Some(action) = latest_action {
+                match action {
+                    Action::CreateLink(create_link )=> {
+                        let settings_action_hash: ActionHash = create_link.target_address.clone().into();
+                        let game_entry_hash: EntryHash = create_link.base_address.clone().into();
+                        if let Some(details) = get_details(settings_action_hash.clone(), GetOptions::default())? {
+                            if let Some(game) = game_from_details(creator, details, game_entry_hash.into())? {
+                                games.push(game);
+                            }
                         }
                     }
+                    _ => ()
                 }
-                _ => ()
             }
         }
     }
