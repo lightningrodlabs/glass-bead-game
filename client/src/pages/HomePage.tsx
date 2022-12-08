@@ -92,8 +92,8 @@ const Homepage = (): JSX.Element => {
                                 onClick={() => setCreateGameModalOpen(true)}
                             />
                             <Column centerX centerY className={styles.games}>
-                                {games.map((data) => (
-                                    <GameCard key={data.entryHash} data={data} />
+                                {games.map((game) => (
+                                    <GameCard key={game.entryHash} game={game} />
                                 ))}
                             </Column>
                         </Column>
