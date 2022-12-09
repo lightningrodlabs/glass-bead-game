@@ -123,7 +123,7 @@ impl SignalPayload {
 
 #[hdk_extern]
 fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
-    let sig: SignalPayload = signal.decode().map_err(|e| wasm_error!(e.into()))?;
+    let sig: SignalPayload = signal.decode().map_err(|e| wasm_error!(e))?;
     Ok(emit_signal(&sig)?)
 }
 
@@ -141,6 +141,6 @@ fn notify(input: NotifyInput) -> ExternResult<()> {
     for a in input.folks.clone() {
         folks.push(a.into())
     }
-    remote_signal(ExternIO::encode(input.signal).map_err(|e| wasm_error!(e.into()))?,folks)?;
+    remote_signal(ExternIO::encode(input.signal).map_err(|e| wasm_error!(e))?,folks)?;
     Ok(())
 }

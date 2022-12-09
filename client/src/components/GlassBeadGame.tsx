@@ -1571,7 +1571,7 @@ const GlassBeadGame = (): JSX.Element => {
         const appInfo = await client.appInfo({ installed_app_id: 'glassbeadgame' })
         const holochainClient = new HolochainClient(client)
         const cellData = appInfo.cell_data.find(
-            (c: InstalledCell) => c.role_id === 'glassbeadgame-role'
+            (c: InstalledCell) => c.role_name === 'glassbeadgame-role'
         )
         if (!cellData) throw new Error('No cell with glassbeadgame-role role id was found')
         const cellClient = new CellClient(holochainClient, cellData)
