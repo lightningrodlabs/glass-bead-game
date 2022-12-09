@@ -8,7 +8,7 @@
         "test:zome": "set -o pipefail && TRYORAMA_LOG_LEVEL=info RUST_BACKTRACE=1 RUST_LOG=holochain::core::ribosome::host_fn::debug=debug TRYORAMA_HOLOCHAIN_PATH=\"holochain\" node --loader ts-node/esm --experimental-specifier-resolution=node src/index.ts"
     },
     "dependencies": {
-        "@holochain/client": "^0.7.0",
+        "@holochain/client": "^0.10.2",
         "@msgpack/msgpack": "^2.7.0",
         "esm": "^3.2.25",
         "js-base64": "^3.6.1",
@@ -22,7 +22,7 @@
       },
       "devDependencies": {
         "@detools/tap-diff": "^0.2.2",
-        "@holochain/tryorama": "^0.8.0",
+        "@holochain/tryorama": "^0.9.1",
         "@types/lodash": "^4.14.173",
         "@types/node": "^14.0.14"
       },

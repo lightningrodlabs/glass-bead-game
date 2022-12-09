@@ -3,7 +3,7 @@ manifest_version: "1"
 name: glassbeadgame
 description: holochain glassbeadgame application
 roles:
-  - id: glassbeadgame-role
+  - name: glassbeadgame-role
     provisioning:
       strategy: create
       deferred: false

@@ -15,10 +15,14 @@ function serializeHash(hash: Uint8Array): string {
 
 test("gbg basic tests", async (t) => {
   await runScenario(async (scenario: Scenario) => {
-
+    console.log("FISH1")
     const dnas: DnaSource[] = [{ path: dnaPath }];
+    try {
+
     const [alice, bobbo] = await scenario.addPlayersWithHapps([dnas, dnas]);
+    console.log("FISH2")
     await scenario.shareAllAgents();
+    console.log("FISH3")
 
     const [alice_gbg] = alice.cells;
     const [bobbo_gbg] = bobbo.cells;
@@ -40,7 +44,6 @@ test("gbg basic tests", async (t) => {
       moveDuration: 60,
       intervalDuration: 0,
     }
-
     let create_game_output: any = await alice_gbg.callZome({
       zome_name: "glassbeadgame",
       fn_name: "create_game",
@@ -179,7 +182,9 @@ test("gbg basic tests", async (t) => {
     t.equals(updatedGames[0].entryHash, update_game_output.entryHash)
     t.equals(updatedGames[0].actionHash, update_game_output.actionHash)
 
-  
+    }catch(e) {
+      console.log("ERROR",e)
+    }
   })
 
 
