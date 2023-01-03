@@ -9,3 +9,5 @@ dna/workdir/happ/*.happ
 node_modules/
 package-lock.json
 target/
+workdir/*.webhapp
+client/ui.zip

@@ -5,19 +5,23 @@
     "scripts": {
         "start": "npm run build:happ && npm run start:agent",
         "network": "npm run build:happ && concurrently-repeat \"npm run start:agent\"",
-        "build": "cd client && yarn install",
         "test": "npm run build:happ && cd test && npm run test",
         "start:agent": "cross-env REACT_APP_HC_PORT=$(port) REACT_APP_CLIENT_PORT=$(port) concurrently \"npm run start:happ\" \"sleep 5 && cd client && yarn start\"",
         "start:happ": "rimraf .hc* && RUST_LOG=warn echo \"pass\" | hc s --piped generate ./dna/workdir/happ/glassbeadgame.happ --run=$REACT_APP_HC_PORT -a glassbeadgame network mdns",
+        "build": "npm run build:happ && npm run build:ui",
+        "build:ui": "cd client && rimraf build && npm run build",
         "build:happ": "npm run build:dna && hc app pack ./dna/workdir/happ",
         "build:dna": "npm run build:zome && hc dna pack ./dna/workdir/dna",
-        "build:zome": "CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown"
+        "build:zome": "CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
+        "package": "npm run build && npm run package:ui && hc web-app pack ./workdir",
+        "package:ui": "cd client && rimraf ui.zip && cd build && bestzip ../ui.zip * "
     },
     "devDependencies": {
         "concurrently": "^6.2.1",
         "concurrently-repeat": "^0.0.1",
         "cross-env": "^7.0.3",
         "new-port-cli": "^1.0.0",
+        "bestzip": "^2.2.0",
         "rimraf": "^3.0.2"
     }
 }
