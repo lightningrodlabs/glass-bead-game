@@ -11,11 +11,14 @@
     transition-property: background-color, filter, color;
     transition-duration: 0.3s;
     flex-shrink: 0;
-    &:hover { // &:focus
+    &:hover {
+        // &:focus
         &:not(.disabled) {
             cursor: pointer;
             filter: brightness(110%);
-            &.grey { filter: brightness(96%) }
+            &.grey {
+                filter: brightness(96%);
+            }
         }
     }
     // colours
@@ -24,17 +27,19 @@
         color: white;
     }
     &.aqua {
-        background-color: $aqua;//#00b178; //#17b35d;
+        background-color: $aqua; //#00b178; //#17b35d;
         color: white;
     }
     &.red {
-        background-color: $red2;//#00b178; //#17b35d;
+        background-color: $red2; //#00b178; //#17b35d;
         color: white;
     }
     &.grey {
-        background-color: $grey2;//#00b178; //#17b35d;
+        background-color: $grey2; //#00b178; //#17b35d;
         color: $black2;
-        > svg > path { fill: $grey6 }
+        > svg > path {
+            fill: $grey6;
+        }
     }
     &.purple {
         background-color: $purple1;
@@ -63,7 +68,9 @@
     }
     // disabled
     &.disabled {
-        > p { opacity: 0.5 }
+        > p {
+            opacity: 0.5;
+        }
     }
     // icon
     > svg {

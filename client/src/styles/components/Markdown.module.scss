@@ -17,8 +17,11 @@
         max-height: none;
     }
     //overflow: hidden;
-    ul { list-style-type: disc; }
-    ul, ol {
+    ul {
+        list-style-type: disc;
+    }
+    ul,
+    ol {
         padding-left: 30px;
         margin-bottom: 10px;
 
@@ -46,7 +49,7 @@
         margin: 20px auto;
     }
     a {
-        color:#82afff;
+        color: #82afff;
         &:hover {
             cursor: pointer;
         }
@@ -57,7 +60,7 @@
             margin-bottom: 0;
         }
     }
-    
+
     hr {
         margin: 20px 0;
         height: 2px;
@@ -83,9 +86,9 @@
         line-height: 40px;
     }
     blockquote {
-        margin: 0 0 20px 0; 
+        margin: 0 0 20px 0;
         padding: 0 10px;
-        color:#6a737d;
+        color: #6a737d;
         border-left: 3px solid #cacaca;
     }
     table {
@@ -100,7 +103,7 @@
                 border: 1px solid #dee2e6;
             }
         }
-        > tbody >  tr {
+        > tbody > tr {
             border-top: 1px solid #dee2e6;
             > td {
                 padding: 10px;

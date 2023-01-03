@@ -1,8 +1,8 @@
 // todo: rename file to 'variables' and update imports
 
 // old colors
-$blueGrey: rgba(58,136,240,1); //#0093ff; //#a9c1ea;
-$blueGreyTransparent: rgba(58,136,240,0.4);
+$blueGrey: rgba(58, 136, 240, 1); //#0093ff; //#a9c1ea;
+$blueGreyTransparent: rgba(58, 136, 240, 0.4);
 $purple: rgb(170, 141, 250);
 $purple-o: rgba(170, 141, 250, 0.4);
 // post types
@@ -77,20 +77,32 @@ $scrollBarWidth: 6px;
 
 // breakpoint mixins
 @mixin for-phone-only {
-    @media (max-width: 599px) { @content; }
+    @media (max-width: 599px) {
+        @content;
+    }
 }
 @mixin for-tablet-portrait-up {
-    @media (min-width: 600px) { @content; }
+    @media (min-width: 600px) {
+        @content;
+    }
 }
 @mixin for-tablet-landscape-up {
-    @media (min-width: 900px) { @content; }
+    @media (min-width: 900px) {
+        @content;
+    }
 }
 @mixin for-desktop-small-up {
-    @media (min-width: 1200px) { @content; }
+    @media (min-width: 1200px) {
+        @content;
+    }
 }
 @mixin for-desktop-medium-up {
-    @media (min-width: 1500px) { @content; }
+    @media (min-width: 1500px) {
+        @content;
+    }
 }
 @mixin for-desktop-large-up {
-    @media (min-width: 1800px) { @content; }
+    @media (min-width: 1800px) {
+        @content;
+    }
 }

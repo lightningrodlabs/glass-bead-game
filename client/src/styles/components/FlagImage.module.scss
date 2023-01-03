@@ -14,7 +14,8 @@
     &.outline {
         background-color: $white;
 
-        > div, > img {
+        > div,
+        > img {
             border-radius: 50%;
             overflow: hidden;
             width: calc(100% - 8px);
@@ -22,7 +23,8 @@
         }
 
         &.small {
-            > div, > img {
+            > div,
+            > img {
                 width: calc(100% - 4px);
                 height: calc(100% - 4px);
             }
@@ -30,9 +32,9 @@
     }
 
     &.shadow {
-        box-shadow: 0 0 20px rgba(0,0,0,0.08);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
         &.small {
-            box-shadow: 0 0 2px rgba(0,0,0,0.2);
+            box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
         }
     }
 

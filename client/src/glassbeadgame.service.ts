@@ -1,6 +1,12 @@
 /* eslint-disable camelcase */
 /* eslint-disable no-useless-constructor */
-import { AppAgentClient, EntryHashB64, AgentPubKeyB64, ActionHashB64, AppAgentCallZomeRequest } from '@holochain/client'
+import {
+    AppAgentClient,
+    EntryHashB64,
+    AgentPubKeyB64,
+    ActionHashB64,
+    AppAgentCallZomeRequest,
+} from '@holochain/client'
 import { serializeHash } from '@holochain-open-dev/utils'
 import {
     Player,
@@ -18,7 +24,11 @@ import {
 } from '@src/GameTypes'
 
 export default class GlassBeadGameService {
-    constructor(public client: AppAgentClient, public roleName, protected zomeName = 'glassbeadgame') {}
+    constructor(
+        public client: AppAgentClient,
+        public roleName,
+        protected zomeName = 'glassbeadgame'
+    ) {}
 
     get myAgentPubKey(): AgentPubKeyB64 {
         return serializeHash(this.client.myPubKey)
@@ -85,8 +95,8 @@ export default class GlassBeadGameService {
             role_name: this.roleName,
             zome_name: this.zomeName,
             fn_name: fnName,
-            payload
-          }
+            payload,
+        }
         return this.client.callZome(req)
     }
 }

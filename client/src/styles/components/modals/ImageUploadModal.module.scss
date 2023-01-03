@@ -39,7 +39,9 @@
             &:not(.disabled) {
                 cursor: pointer;
                 filter: brightness(110%);
-                &.grey { filter: brightness(96%) }
+                &.grey {
+                    filter: brightness(96%);
+                }
             }
         }
     }

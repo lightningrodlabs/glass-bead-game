@@ -3,8 +3,12 @@
 $transitionSpeed: 1s;
 
 @keyframes fadeInOpacity {
-	0% { opacity: 0 }
-	100% { opacity: 1 }
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
 }
 
 .wrapper {
@@ -90,7 +94,7 @@ $transitionSpeed: 1s;
         &.showBeads {
             height: calc(100% - 200px);
         }
-        
+
         .commentBar {
             position: relative;
             width: 100%;
@@ -169,7 +173,7 @@ $transitionSpeed: 1s;
                 padding: 10px;
                 background-color: #f7f7f9;
             }
-            
+
             .closeCommentsButton {
                 all: unset;
                 position: absolute;
@@ -196,7 +200,9 @@ $transitionSpeed: 1s;
             position: relative;
             transition: margin-left $transitionSpeed;
 
-            &.hidden { margin-left: -350px }
+            &.hidden {
+                margin-left: -350px;
+            }
 
             .gameControls {
                 align-items: flex-start;
@@ -209,7 +215,9 @@ $transitionSpeed: 1s;
                 }
 
                 &.large {
-                    > p { font-size: 16px }
+                    > p {
+                        font-size: 16px;
+                    }
                     .player {
                         .position {
                             width: 35px;
@@ -225,7 +233,7 @@ $transitionSpeed: 1s;
 
                 > p {
                     font-size: 10px;
-                    margin-bottom: 5px
+                    margin-bottom: 5px;
                 }
 
                 .player {
@@ -294,7 +302,7 @@ $transitionSpeed: 1s;
                     }
 
                     &.withBeads {
-                        height:  100%;
+                        height: 100%;
                     }
                 }
 
@@ -425,13 +433,16 @@ $transitionSpeed: 1s;
                 right: 20px;
                 top: 20px;
 
-                > p { margin-bottom: 10px }
+                > p {
+                    margin-bottom: 10px;
+                }
 
                 @include for-phone-only {
                     top: 70px;
                 }
 
-                .peopleStreaming, .peopleInRoom {
+                .peopleStreaming,
+                .peopleInRoom {
                     display: none;
                     @include for-tablet-landscape-up {
                         display: flex;
@@ -457,7 +468,9 @@ $transitionSpeed: 1s;
             &.xl {
                 $width: calc($fullWidth / 3) + px;
                 $height: calc($fullHeight / 3) + px;
-                &.hidden { margin-right: - $width }
+                &.hidden {
+                    margin-right: -$width;
+                }
                 width: $width;
                 .videoWrapper {
                     width: $width;
@@ -472,7 +485,9 @@ $transitionSpeed: 1s;
             &.lg {
                 $width: calc($fullWidth / 4) + px;
                 $height: calc($fullHeight / 4) + px;
-                &.hidden { margin-right: - $width }
+                &.hidden {
+                    margin-right: -$width;
+                }
                 width: $width;
                 .videoWrapper {
                     width: $width;
@@ -487,7 +502,9 @@ $transitionSpeed: 1s;
             &.md {
                 $width: calc($fullWidth / 5) + px;
                 $height: calc($fullHeight / 5) + px;
-                &.hidden { margin-right: - $width }
+                &.hidden {
+                    margin-right: -$width;
+                }
                 width: $width;
                 .videoWrapper {
                     width: $width;
@@ -502,7 +519,9 @@ $transitionSpeed: 1s;
             &.sm {
                 $width: calc($fullWidth / 6) + px;
                 $height: calc($fullHeight / 6) + px;
-                &.hidden { margin-right: - $width }
+                &.hidden {
+                    margin-right: -$width;
+                }
                 width: $width;
                 .videoWrapper {
                     width: $width;
@@ -517,7 +536,9 @@ $transitionSpeed: 1s;
             &.mobile {
                 $width: 100%;
                 $height: auto;
-                &.hidden { margin-right: -100% }
+                &.hidden {
+                    margin-right: -100%;
+                }
                 width: $width;
                 width: calc(100% - 20px);
                 .videoWrapper {
@@ -529,13 +550,15 @@ $transitionSpeed: 1s;
                     }
                 }
             }
-        
+
             .videoWrapper {
                 display: flex;
                 position: relative;
                 margin-bottom: $padding;
                 flex-shrink: 0;
-                &:last-child { margin-bottom: 0 }
+                &:last-child {
+                    margin-bottom: 0;
+                }
                 > svg {
                     position: absolute;
                     width: 60px;
@@ -587,7 +610,9 @@ $transitionSpeed: 1s;
                         transition: background-color 0.5s;
                         &:hover {
                             background-color: rgba($black1, 0.5);
-                            > svg { opacity: 1 }
+                            > svg {
+                                opacity: 1;
+                            }
                         }
                     }
                 }
@@ -611,9 +636,11 @@ $transitionSpeed: 1s;
             height: 200px;
             padding: 0 40px;
         }
-    
-        &.hidden { height: 0 }
-    
+
+        &.hidden {
+            height: 0;
+        }
+
         &.transparent {
             background-color: rgba($white, 0.3);
         }
@@ -703,10 +730,8 @@ $transitionSpeed: 1s;
         > svg {
             width: 16px;
             height: 16px;
-            
         }
     }
-    
 }
 
 .grey {

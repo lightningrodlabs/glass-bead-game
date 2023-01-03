@@ -19,7 +19,8 @@
     //     }
     // }
 
-    .title, .selectedOption {
+    .title,
+    .selectedOption {
         height: 100%;
         padding: 0 15px;
     }
@@ -91,7 +92,9 @@
             all: unset;
             cursor: pointer;
             display: flex;
-            &:not(:last-child) { margin-bottom: 10px }
+            &:not(:last-child) {
+                margin-bottom: 10px;
+            }
             white-space: nowrap;
             &:hover {
                 font-weight: 600;

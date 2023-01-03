@@ -2,12 +2,14 @@
 
 .wrapper {
     width: 100%;
-    
+
     .slider {
         position: relative;
         height: 20px;
 
-        .progressBar, .progressBarBackground, .bufferedAmount {
+        .progressBar,
+        .progressBarBackground,
+        .bufferedAmount {
             display: flex;
             position: absolute;
             top: 8px;

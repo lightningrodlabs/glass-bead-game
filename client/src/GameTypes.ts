@@ -1,5 +1,4 @@
-import { Timestamp } from '@holochain/client'
-import { EntryHashB64, AgentPubKeyB64, ActionHashB64 } from '@holochain-open-dev/core-types'
+import { Timestamp, EntryHashB64, AgentPubKeyB64, ActionHashB64 } from '@holochain/client'
 
 export type Player = {
     agentKey: string

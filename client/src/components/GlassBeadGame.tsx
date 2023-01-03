@@ -1566,7 +1566,9 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     async function initialiseGBGService() {
-        const appWebsocket = await AppWebsocket.connect(`ws://localhost:${process.env.REACT_APP_HC_PORT}`);
+        const appWebsocket = await AppWebsocket.connect(
+            `ws://localhost:${process.env.REACT_APP_HC_PORT}`
+        )
         const client = await AppAgentWebsocket.connect(appWebsocket, 'glassbeadgame')
         gbgServiceRef.current = new GlassBeadGameService(client, 'glassbeadgame-role')
         client.on('signal', signalHandler)

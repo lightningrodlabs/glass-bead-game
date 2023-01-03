@@ -1,27 +1,43 @@
 @import '@styles/Variables';
 
 // background transition
-$backgroundColorStart: rgba(0,0,0,0);
-$backgroundColorEnd: rgba(0,0,0,0.5);
+$backgroundColorStart: rgba(0, 0, 0, 0);
+$backgroundColorEnd: rgba(0, 0, 0, 0.5);
 $backgroundTransitionSpeed: 0.5s;
 @keyframes backgroundTransition {
-    from { background-color: $backgroundColorStart }
-    to   { background-color: $backgroundColorEnd }
+    from {
+        background-color: $backgroundColorStart;
+    }
+    to {
+        background-color: $backgroundColorEnd;
+    }
 }
 /* Firefox < 16 */
 @-moz-keyframes backgroundTransition {
-    from { background-color: $backgroundColorStart }
-    to   { background-color: $backgroundColorEnd }
+    from {
+        background-color: $backgroundColorStart;
+    }
+    to {
+        background-color: $backgroundColorEnd;
+    }
 }
 /* Safari, Chrome and Opera > 12.1 */
 @-webkit-keyframes backgroundTransition {
-    from { background-color: $backgroundColorStart }
-    to   { background-color: $backgroundColorEnd }
+    from {
+        background-color: $backgroundColorStart;
+    }
+    to {
+        background-color: $backgroundColorEnd;
+    }
 }
 /* Internet Explorer */
 @-ms-keyframes backgroundTransition {
-    from { background-color: $backgroundColorStart }
-    to   { background-color: $backgroundColorEnd }
+    from {
+        background-color: $backgroundColorStart;
+    }
+    to {
+        background-color: $backgroundColorEnd;
+    }
 }
 .background {
     position: fixed;
@@ -46,23 +62,47 @@ $modalPositionStart: -100px;
 $modalPositionEnd: 0;
 $modalTransitionSpeed: 0.3s;
 @keyframes modalTransition {
-    from { bottom: $modalPositionStart; opacity: 0 }
-    to   { bottom: $modalPositionEnd; opacity: 1 }
+    from {
+        bottom: $modalPositionStart;
+        opacity: 0;
+    }
+    to {
+        bottom: $modalPositionEnd;
+        opacity: 1;
+    }
 }
 /* Firefox < 16 */
 @-moz-keyframes modalTransition {
-    from { bottom: $modalPositionStart; opacity: 0 }
-    to   { bottom: $modalPositionEnd; opacity: 1 }
+    from {
+        bottom: $modalPositionStart;
+        opacity: 0;
+    }
+    to {
+        bottom: $modalPositionEnd;
+        opacity: 1;
+    }
 }
 /* Safari, Chrome and Opera > 12.1 */
 @-webkit-keyframes modalTransition {
-    from { bottom: $modalPositionStart; opacity: 0 }
-    to   { bottom: $modalPositionEnd; opacity: 1 }
+    from {
+        bottom: $modalPositionStart;
+        opacity: 0;
+    }
+    to {
+        bottom: $modalPositionEnd;
+        opacity: 1;
+    }
 }
 /* Internet Explorer */
 @-ms-keyframes modalTransition {
-    from { bottom: $modalPositionStart; opacity: 0 }
-    to   { bottom: $modalPositionEnd; opacity: 1 }
+    from {
+        bottom: $modalPositionStart;
+        opacity: 0;
+    }
+    to {
+        bottom: $modalPositionEnd;
+        opacity: 1;
+    }
 }
 // todo: use transition instead of animation
 .modal {
@@ -93,8 +133,12 @@ $modalTransitionSpeed: 0.3s;
         top: 10px;
         right: 10px;
     }
-    > h1, > h2, > p {
-        > a { color: $blue1 }
+    > h1,
+    > h2,
+    > p {
+        > a {
+            color: $blue1;
+        }
     }
     > p {
         margin-bottom: 20px;
