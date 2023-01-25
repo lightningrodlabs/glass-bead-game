@@ -8,7 +8,7 @@ import CreateGameModal from '@components/Modals/CreateGameModal'
 import GameCard from '@components/Cards/GameCard'
 import { ReactComponent as CastaliaIcon } from '@svgs/castalia-logo.svg'
 import { ReactComponent as EditIcon } from '@svgs/edit-solid.svg'
-import { AppAgentWebsocket, AppWebsocket } from '@holochain/client'
+import { AppAgentWebsocket } from '@holochain/client'
 import LoadingWheel from '@src/components/LoadingWheel'
 import FlagImage from '@src/components/FlagImage'
 import Row from '@src/components/Row'
@@ -22,10 +22,10 @@ const Homepage = (): JSX.Element => {
     const [loading, setLoading] = useState(true)
 
     async function initialiseGBGService() {
-        const appWebsocket = await AppWebsocket.connect(
-            `ws://localhost:${process.env.REACT_APP_HC_PORT}`
+        const client = await AppAgentWebsocket.connect(
+            `ws://localhost:${process.env.REACT_APP_HC_PORT}`,
+            'glassbeadgame'
         )
-        const client = await AppAgentWebsocket.connect(appWebsocket, 'glassbeadgame')
         setGbgService(new GlassBeadGameService(client, 'glassbeadgame-role'))
     }
 

@@ -1,5 +1,5 @@
-import { ActionHash, DnaSource } from "@holochain/client";
-import { pause, runScenario, Scenario  } from "@holochain/tryorama";
+import { ActionHash, AppBundleSource, DnaSource, encodeHashToBase64 } from "@holochain/client";
+import { AppOptions, pause, runScenario, Scenario  } from "@holochain/tryorama";
 import path from "path";
 import { Base64 } from "js-base64";
 import test from "tape-promise/tape.js";
@@ -9,25 +9,26 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const dnaPath = path.join(__dirname, "../../dna/workdir/dna/glassbeadgame.dna");
 
-function serializeHash(hash: Uint8Array): string {
-  return `u${Base64.fromUint8Array(hash, true)}`;
-}
-
 test("gbg basic tests", async (t) => {
   await runScenario(async (scenario: Scenario) => {
     console.log("FISH1")
     const dnas: DnaSource[] = [{ path: dnaPath }];
+    let bundleList: Array<{
+      appBundleSource: AppBundleSource;
+      options?: AppOptions;
+    }> = []
+    bundleList.push({appBundleSource: { path: dnaPath }, options: {installedAppId:'glassbeadgame'}})
     try {
 
-    const [alice, bobbo] = await scenario.addPlayersWithHapps([dnas, dnas]);
+    const [alice, bobbo] = await scenario.addPlayersWithApps(bundleList);
     console.log("FISH2")
     await scenario.shareAllAgents();
     console.log("FISH3")
 
     const [alice_gbg] = alice.cells;
     const [bobbo_gbg] = bobbo.cells;
-    const boboAgentKey = serializeHash(bobbo.agentPubKey);
-    const aliceAgentKey = serializeHash(alice.agentPubKey);
+    const boboAgentKey = encodeHashToBase64(bobbo.agentPubKey);
+    const aliceAgentKey = encodeHashToBase64(alice.agentPubKey);
 
     let game1 = {
       topic: "testing",

@@ -6,8 +6,8 @@ import {
     AgentPubKeyB64,
     ActionHashB64,
     AppAgentCallZomeRequest,
+    encodeHashToBase64,
 } from '@holochain/client'
-import { serializeHash } from '@holochain-open-dev/utils'
 import {
     Player,
     GameOutput,
@@ -31,7 +31,7 @@ export default class GlassBeadGameService {
     ) {}
 
     get myAgentPubKey(): AgentPubKeyB64 {
-        return serializeHash(this.client.myPubKey)
+        return encodeHashToBase64(this.client.myPubKey)
     }
 
     async savePlayerDetails(player: Player): Promise<ActionHashB64> {
