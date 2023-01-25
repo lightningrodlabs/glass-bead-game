@@ -743,3 +743,25 @@ $transitionSpeed: 1s;
     margin-top: 10px;
     color: $red;
 }
+
+.helpButton {
+    all: unset;
+    cursor: pointer;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 200;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    background-color: $blue9;
+    border-radius: 50%;
+
+    > svg {
+        width: 20px;
+        height: 20px;
+        color: $grey7;
+    }
+}
