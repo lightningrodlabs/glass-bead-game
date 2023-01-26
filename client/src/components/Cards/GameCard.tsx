@@ -30,7 +30,13 @@ const GameCard = (props: { game: any }): JSX.Element => {
             <Button
                 color='blue'
                 text='Open game'
-                onClick={() => history.push(`/game/${entryHash}`)}
+                onClick={() =>
+                    /* window.navigator.platform.startsWith('Linux')
+                        ? alert(
+                              'Sorry, opening games is not supported due to no web-rtc support for webkit on Linux.  We hope to work around this soon.'
+                          )
+                        : */ history.push(`/game/${entryHash}`)
+                }
                 style={{ width: 120 }}
             />
         </Column>

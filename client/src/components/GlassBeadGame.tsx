@@ -10,7 +10,7 @@ import axios from 'axios'
 import Peer from 'simple-peer'
 import * as d3 from 'd3'
 import { v4 as uuidv4 } from 'uuid'
-import { AppAgentWebsocket, AppWebsocket, InstalledCell } from '@holochain/client'
+import { AdminWebsocket, AppAgentWebsocket, AppWebsocket, InstalledCell } from '@holochain/client'
 import GlassBeadGameService from '@src/glassbeadgame.service'
 import styles from '@styles/components/GlassBeadGame.module.scss'
 import config from '@src/Config'
@@ -1568,6 +1568,18 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     async function initialiseGBGService() {
+        if (process.env.REACT_APP_ADMIN_PORT) {
+            console.log('authorizing!')
+            const adminWebsocket = await AdminWebsocket.connect(
+                `ws://localhost:${process.env.REACT_APP_ADMIN_PORT}`
+            )
+            const x = await adminWebsocket.listApps({})
+            console.log('apps', x)
+            const cellIds = await adminWebsocket.listCellIds()
+            console.log('CELL IDS', cellIds)
+            await adminWebsocket.authorizeSigningCredentials(cellIds[0])
+        }
+
         const client = await AppAgentWebsocket.connect(
             `ws://localhost:${process.env.REACT_APP_HC_PORT}`,
             'glassbeadgame'
