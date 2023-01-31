@@ -7,12 +7,14 @@ import Button from '@components/Button'
 import PlayerDetailsModal from '@components/Modals/PlayerDetailsModal'
 import CreateGameModal from '@components/Modals/CreateGameModal'
 import GameCard from '@components/Cards/GameCard'
-import { ReactComponent as CastaliaIcon } from '@svgs/castalia-logo.svg'
-import { ReactComponent as EditIcon } from '@svgs/edit-solid.svg'
-import { AppWebsocket, InstalledCell } from '@holochain/client'
 import LoadingWheel from '@src/components/LoadingWheel'
 import FlagImage from '@src/components/FlagImage'
 import Row from '@src/components/Row'
+import HelpModal from '@components/Modals/HelpModal'
+import { ReactComponent as CastaliaIcon } from '@svgs/castalia-logo.svg'
+import { ReactComponent as EditIcon } from '@svgs/edit-solid.svg'
+import { AppWebsocket, InstalledCell } from '@holochain/client'
+import { ReactComponent as HelpIcon } from '@svgs/question-solid.svg'
 
 const Homepage = (): JSX.Element => {
     const [gbgService, setGbgService] = useState<null | GlassBeadGameService>(null)
@@ -20,6 +22,7 @@ const Homepage = (): JSX.Element => {
     const [games, setGames] = useState<any[]>([])
     const [playerDetailsModalOpen, setPlayerDetailsModalOpen] = useState(false)
     const [createGameModalOpen, setCreateGameModalOpen] = useState(false)
+    const [helpModalOpen, setHelpModalOpen] = useState(false)
     const [loading, setLoading] = useState(true)
 
     async function initialiseGBGService() {
@@ -117,6 +120,14 @@ const Homepage = (): JSX.Element => {
                     )}
                 </Column>
             )}
+            <button
+                className={styles.helpButton}
+                type='button'
+                onClick={() => setHelpModalOpen(true)}
+            >
+                <HelpIcon />
+            </button>
+            {helpModalOpen && <HelpModal close={() => setHelpModalOpen(false)} />}
         </Column>
     )
 }

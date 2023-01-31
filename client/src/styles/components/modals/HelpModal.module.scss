@@ -1,0 +1,23 @@
+@import '@styles/Variables';
+
+.wrapper {
+    width: 650px;
+
+    p {
+        margin-bottom: 10px;
+        text-align: center;
+    }
+}
+
+.navButton {
+    all: unset;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+
+    > svg {
+        width: 30px;
+        height: 30px;
+        color: $grey3;
+    }
+}
