@@ -140,7 +140,7 @@ const CreateGameModal = (props: {
             {saved ? (
                 <SuccessMessage text='Game saved!' />
             ) : (
-                <Column centerX style={{ width: 500 }}>
+                <Column centerX style={{ width: 600 }}>
                     <h1>Create Game</h1>
                     {currentStep === 1 && (
                         <Column centerX>
@@ -245,66 +245,105 @@ const CreateGameModal = (props: {
                     )}
 
                     {currentStep === 3 && (
-                        <Column>
-                            <p style={{ marginBottom: 30 }}>Choose the game settings:</p>
-                            <Input
-                                title='Intro duration (seconds)'
-                                type='text'
-                                style={{ marginBottom: 10 }}
-                                disabled={loading || saved}
-                                state={introDuration.state}
-                                errors={introDuration.errors}
-                                value={introDuration.value}
-                                onChange={(v) =>
-                                    updateValue('introDuration', +v.replace(/\D/g, ''))
-                                }
-                            />
-                            <Input
-                                title='Number of turns'
-                                type='text'
-                                style={{ marginBottom: 10 }}
-                                disabled={loading || saved}
-                                state={numberOfTurns.state}
-                                errors={numberOfTurns.errors}
-                                value={numberOfTurns.value}
-                                onChange={(v) =>
-                                    updateValue('numberOfTurns', +v.replace(/\D/g, ''))
-                                }
-                            />
-                            <Input
-                                title='Move duration (seconds)'
-                                type='text'
-                                style={{ marginBottom: 10 }}
-                                disabled={loading || saved}
-                                state={moveDuration.state}
-                                errors={moveDuration.errors}
-                                value={moveDuration.value}
-                                onChange={(v) => updateValue('moveDuration', +v.replace(/\D/g, ''))}
-                            />
-                            <Input
-                                title='Interval duration (seconds)'
-                                type='text'
-                                style={{ marginBottom: 10 }}
-                                disabled={loading || saved}
-                                state={intervalDuration.state}
-                                errors={intervalDuration.errors}
-                                value={intervalDuration.value}
-                                onChange={(v) =>
-                                    updateValue('intervalDuration', +v.replace(/\D/g, ''))
-                                }
-                            />
-                            <Input
-                                title='Outro duration (seconds)'
-                                type='text'
-                                style={{ marginBottom: 10 }}
-                                disabled={loading || saved}
-                                state={outroDuration.state}
-                                errors={outroDuration.errors}
-                                value={outroDuration.value}
-                                onChange={(v) =>
-                                    updateValue('outroDuration', +v.replace(/\D/g, ''))
-                                }
-                            />
+                        <Column centerX>
+                            <p style={{ marginBottom: 30 }}>Choose the games settings:</p>
+                            <Column centerX className={styles.setting}>
+                                <Row centerY>
+                                    <h3>Intro duration (seconds)</h3>
+                                    <Input
+                                        type='text'
+                                        style={{ width: 200 }}
+                                        disabled={loading || saved}
+                                        state={introDuration.state}
+                                        errors={introDuration.errors}
+                                        value={introDuration.value}
+                                        onChange={(v) =>
+                                            updateValue('introDuration', +v.replace(/\D/g, ''))
+                                        }
+                                    />
+                                </Row>
+                                <p>
+                                    Set time for a moment of introspection, silence or meditation
+                                    before the game.
+                                </p>
+                            </Column>
+                            <Column centerX className={styles.setting}>
+                                <Row centerY>
+                                    <h3>Number of turns</h3>
+                                    <Input
+                                        type='text'
+                                        style={{ width: 200 }}
+                                        disabled={loading || saved}
+                                        state={numberOfTurns.state}
+                                        errors={numberOfTurns.errors}
+                                        value={numberOfTurns.value}
+                                        onChange={(v) =>
+                                            updateValue('numberOfTurns', +v.replace(/\D/g, ''))
+                                        }
+                                    />
+                                </Row>
+                                <p>
+                                    Set the amount of turns for the players. The total number of
+                                    moves will be the number of turns times the amount of players.
+                                </p>
+                            </Column>
+                            <Column centerX className={styles.setting}>
+                                <Row centerY>
+                                    <h3>Move duration (seconds)</h3>
+                                    <Input
+                                        type='text'
+                                        style={{ width: 200 }}
+                                        disabled={loading || saved}
+                                        state={moveDuration.state}
+                                        errors={moveDuration.errors}
+                                        value={moveDuration.value}
+                                        onChange={(v) =>
+                                            updateValue('moveDuration', +v.replace(/\D/g, ''))
+                                        }
+                                    />
+                                </Row>
+                                <p>The length of each move in seconds.</p>
+                            </Column>
+                            <Column centerX className={styles.setting}>
+                                <Row centerY>
+                                    <h3>Interval duration (seconds)</h3>
+                                    <Input
+                                        type='text'
+                                        style={{ width: 200 }}
+                                        disabled={loading || saved}
+                                        state={intervalDuration.state}
+                                        errors={intervalDuration.errors}
+                                        value={intervalDuration.value}
+                                        onChange={(v) =>
+                                            updateValue('intervalDuration', +v.replace(/\D/g, ''))
+                                        }
+                                    />
+                                </Row>
+                                <p>
+                                    Set a pause in between each move for players to pause, reflect,
+                                    prepare notes, or meditate.
+                                </p>
+                            </Column>
+                            <Column centerX className={styles.setting}>
+                                <Row centerY>
+                                    <h3>Outro duration (seconds)</h3>
+                                    <Input
+                                        type='text'
+                                        style={{ width: 200 }}
+                                        disabled={loading || saved}
+                                        state={outroDuration.state}
+                                        errors={outroDuration.errors}
+                                        value={outroDuration.value}
+                                        onChange={(v) =>
+                                            updateValue('outroDuration', +v.replace(/\D/g, ''))
+                                        }
+                                    />
+                                </Row>
+                                <p>
+                                    Set time for a moment of reflection, silence or meditation after
+                                    the game.
+                                </p>
+                            </Column>
                         </Column>
                     )}
 
