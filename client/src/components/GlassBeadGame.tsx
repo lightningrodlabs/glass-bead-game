@@ -228,7 +228,7 @@ const GameSettingsModal = (props) => {
             <h1>Game settings</h1>
             <form onSubmit={saveSettings}>
                 <div className={styles.settingSections}>
-                    <Column style={{ width: 450, marginRight: 80, marginBottom: 20 }}>
+                    <Column style={{ width: 420, marginRight: 80, marginBottom: 20 }}>
                         <Column className={styles.setting}>
                             <Row centerY>
                                 <h3>Intro duration (seconds)</h3>
