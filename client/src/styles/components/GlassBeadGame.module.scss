@@ -691,7 +691,7 @@ $transitionSpeed: 1s;
 // game settings modal
 .settingSections {
     display: flex;
-    margin: '10px 0 30px 0';
+    margin-top: 20px;
 
     @include for-phone-only {
         flex-direction: column;
@@ -731,6 +731,25 @@ $transitionSpeed: 1s;
             width: 16px;
             height: 16px;
         }
+    }
+}
+
+.setting {
+    margin-bottom: 30px;
+
+    h3 {
+        font-size: 15px;
+        font-weight: 800;
+        margin: 0 10px 0 0;
+    }
+
+    p {
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+
+    > div {
+        margin-bottom: 5px
     }
 }
 
