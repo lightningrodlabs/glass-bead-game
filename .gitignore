@@ -1,13 +1,33 @@
+
+
+## editors
+/.idea
+/.vscode
+*.swp
+
+## system files
 .DS_Store
 
-.cargo/
-.hc
-.hc_live_?
-Cargo.lock
-dna/workdir/dna/*.dna
-dna/workdir/happ/*.happ
-node_modules/
-package-lock.json
 target/
-workdir/*.webhapp
-client/ui.zip
+node_modules/
+dist/
+.cargo/
+.hc*
+.hc_live_?
+*.dna
+*.happ
+*.webhapp
+*.zip
+*.tsbuildinfo
+.running
+
+## temp folders
+/.tmp/
+
+# build
+/_site/
+/out-tsc/
+
+storybook-static
+.rollup.cache
+*.tsbuildinfo

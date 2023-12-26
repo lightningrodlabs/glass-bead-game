@@ -1,5 +1,5 @@
 use holo_hash::{AgentPubKeyB64, EntryHashB64};
-use glassbeadgame_core::{Player};
+use glassbeadgame_integrity::{Player};
 use crate::game::*;
 
 #[derive(Serialize, Deserialize, Debug)]

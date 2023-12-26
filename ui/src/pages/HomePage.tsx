@@ -41,7 +41,7 @@ const Homepage = (): JSX.Element => {
             `ws://localhost:${process.env.REACT_APP_HC_PORT}`,
             'glassbeadgame'
         )
-        setGbgService(new GlassBeadGameService(client, 'glassbeadgame-role'))
+        setGbgService(new GlassBeadGameService(client, 'glassbeadgame'))
     }
 
     useEffect(() => {

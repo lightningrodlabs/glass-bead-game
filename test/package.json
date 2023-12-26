@@ -1,5 +1,5 @@
 {
-    "name": "holo-glassbeadgame-test",
+    "name": "glassbeadgame-test",
     "version": "0.1.0",
     "private": true,
     "main": "index.js",

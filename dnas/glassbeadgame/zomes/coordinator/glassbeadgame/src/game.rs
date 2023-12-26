@@ -1,6 +1,6 @@
 pub use hdk::prelude::*;
 use hdk::prelude::{holo_hash::{EntryHashB64, ActionHashB64, AgentPubKeyB64}};
-use glassbeadgame_core::{Player, Game, Bead, Comment, EntryTypes, LinkTypes, GameSettings};
+use glassbeadgame_integrity::{Player, Game, Bead, Comment, EntryTypes, LinkTypes, GameSettings};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -128,7 +128,7 @@ pub fn get_player_details(agent_key: AgentPubKey) -> ExternResult<Option<Player>
         if let Some(action) = latest_action {
             match action {
                 Action::CreateLink(create_link )=> {
-                    let action_hash: ActionHash = create_link.target_address.clone().into();
+                    let action_hash: ActionHash = ActionHash::try_from(create_link.target_address).map_err(|e| wasm_error!(e))?;
                     if let Some(details) = get_details(action_hash.clone(), GetOptions::default())? {
                         if let Some(player_data) = player_from_details(details)? {
                             player = Some(player_data);
@@ -191,7 +191,7 @@ pub fn get_players(game_hash: EntryHashB64) -> ExternResult<Vec<Player>> {
     let links = get_links(AnyLinkableHash::from(hash), LinkTypes::Player, None)?;
     let mut players: Vec<Player> = vec![];
     for link in links {
-        let agent: EntryHash = EntryHash::try_from(link.target)?; // gotta go through an agent hash because can't get there direct yet!
+        let agent: EntryHash = EntryHash::try_from(link.target).map_err(|e| wasm_error!(e))?; // gotta go through an agent hash because can't get there direct yet!
         let agent_key: AgentPubKey = AgentPubKey::try_from(agent)?;
         if let Some(player) = get_player_details(agent_key.clone().into())? {
             players.push(player);
@@ -256,8 +256,8 @@ fn get_latest_game_settings(inputs: Vec<GetLinksInput>) -> ExternResult<Vec<Game
             if let Some(action) = latest_action {
                 match action {
                     Action::CreateLink(create_link )=> {
-                        let settings_action_hash: ActionHash = create_link.target_address.clone().into();
-                        let game_entry_hash: EntryHash = create_link.base_address.clone().into();
+                        let settings_action_hash: ActionHash = create_link.target_address.try_into().map_err(|e| wasm_error!("wrong hash type {:?}", e))?;
+                        let game_entry_hash: EntryHash = create_link.base_address.try_into().map_err(|e| wasm_error!("wrong hash type {:?}", e))?;
                         if let Some(details) = get_details(settings_action_hash.clone(), GetOptions::default())? {
                             if let Some(game) = game_from_details(creator, details, game_entry_hash.into())? {
                                 games.push(game);
@@ -317,10 +317,12 @@ fn comment_from_details(details: Details) -> ExternResult<Option<CommentOutput>>
 fn get_comments_inner(base: EntryHash) -> ExternResult<Vec<CommentWithPlayer>> {
     let links = get_links(base, LinkTypes::Comment, None)?;
 
-    let get_input = links
-        .into_iter()
-        .map(|link| GetInput::new(EntryHash::from(link.target).into(), GetOptions::default()))
-        .collect();
+    let mut get_input=  vec!();
+    for link in links {
+        if let Ok(hash) = AnyDhtHash::try_from(link.target) {
+            get_input.push(GetInput::new(hash, GetOptions::default()))
+        }
+    }
 
     let comment_elements = HDK.with(|hdk| hdk.borrow().get_details(get_input))?;
 
@@ -380,10 +382,13 @@ fn bead_from_details(details: Details) -> ExternResult<Option<BeadOutput>> {
 fn get_beads_inner(base: EntryHash) -> ExternResult<Vec<BeadWithPlayer>> {
     let links = get_links(base, LinkTypes::Bead, None)?;
 
-    let get_input = links
-        .into_iter()
-        .map(|link| GetInput::new(EntryHash::from(link.target).into(), GetOptions::default()))
-        .collect();
+    let mut get_input=  vec!();
+    for link in links {
+        if let Ok(hash) = AnyDhtHash::try_from(link.target) {
+            get_input.push(GetInput::new(hash, GetOptions::default()))
+        }
+    }
+
 
     let bead_elements = HDK.with(|hdk| hdk.borrow().get_details(get_input))?;
 

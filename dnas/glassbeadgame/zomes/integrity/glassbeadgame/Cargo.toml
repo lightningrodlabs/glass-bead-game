@@ -1,0 +1,14 @@
+[package]
+authors = ["eric@harris-braun.com"]
+edition = "2021"
+name = "glassbeadgame_integrity"
+version = "0.0.1-alpha1"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "glassbeadgame_integrity"
+
+[dependencies]
+hdi = { workspace = true }
+hdk = { workspace = true }
+serde = { workspace = true }

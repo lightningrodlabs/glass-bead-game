@@ -1378,7 +1378,7 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function signalHandler(signal) {
-        const { type, content } = signal.data.payload.message
+        const { type, content } = signal.payload.message
         switch (type) {
             case 'NewPlayer': {
                 setPeopleInRoom((p) => [...p, content])
@@ -1632,7 +1632,7 @@ const GlassBeadGame = (): JSX.Element => {
             `ws://localhost:${process.env.REACT_APP_HC_PORT}`,
             'glassbeadgame'
         )
-        gbgServiceRef.current = new GlassBeadGameService(client, 'glassbeadgame-role')
+        gbgServiceRef.current = new GlassBeadGameService(client, 'glassbeadgame')
         client.on('signal', signalHandler)
     }
 

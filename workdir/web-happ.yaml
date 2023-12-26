@@ -2,6 +2,6 @@
 manifest_version: "1"
 name: glassbeadgame
 ui:
-  bundled: "../client/ui.zip"
+  bundled: "../ui/dist.zip"
 happ_manifest:
-  bundled: "../dna/workdir/happ/glassbeadgame.happ"
+  bundled: "./glassbeadgame.happ"

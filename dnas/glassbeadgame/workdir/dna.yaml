@@ -1,0 +1,18 @@
+---
+manifest_version: "1"
+name: glassbeadgame
+
+integrity:
+  network_seed: ~
+  properties: ~
+  origin_time: 2023-11-03T00:00:00.0Z
+  zomes:
+    - name: glassbeadgame_integrity
+      bundled: ../../../target/wasm32-unknown-unknown/release/glassbeadgame_integrity.wasm
+
+coordinator:
+  zomes:
+    - name: glassbeadgame
+      bundled: ../../../target/wasm32-unknown-unknown/release/glassbeadgame.wasm
+      dependencies:
+        - name: glassbeadgame_integrity

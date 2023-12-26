@@ -1,0 +1,18 @@
+---
+manifest_version: "1"
+name: glassbeadgame
+description: ~
+roles:
+  - name: glassbeadgame
+    provisioning:
+      strategy: create
+      deferred: false
+    dna:
+      bundled: "../dnas/glassbeadgame/workdir/glassbeadgame.dna"
+      modifiers:
+        network_seed: ~
+        properties: ~
+        origin_time: ~
+        quantum_time: ~
+      version: ~
+      clone_limit: 0
