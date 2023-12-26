@@ -4,6 +4,7 @@
     "private": true,
     "dependencies": {
         "@holochain/client": "0.16.6",
+        "@lightningrodlabs/we-applet": "0.12.0",
         "@holochain-open-dev/utils": "0.16.2",
         "@testing-library/jest-dom": "^4.2.4",
         "@testing-library/react": "^9.3.2",
@@ -26,7 +27,7 @@
         "react-google-recaptcha-v3": "^1.8.0",
         "react-markdown": "^5.0.3",
         "react-router-dom": "^5.1.2",
-        "react-scripts": "4.0.1",
+        "react-scripts": "5.0.1",
         "react-transition-group": "^4.3.0",
         "remark-gfm": "^1.0.0",
         "sass": "^1.55.0",
@@ -41,7 +42,8 @@
         "prettier:fix": "npm run prettier -- --write",
         "build": "react-app-rewired build",
         "test": "react-app-rewired test",
-        "eject": "react-app-rewired eject"
+        "eject": "react-app-rewired eject",
+        "package": "rm -f build.zip && npm run build && cd build && bestzip ../build.zip *"
     },
     "browserslist": [
         ">0.2%",

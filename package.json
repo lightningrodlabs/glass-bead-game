@@ -6,14 +6,14 @@
       "tests"
     ],
     "scripts": {
-      "start": "AGENTS=2 BOOTSTRAP_PORT=$(port) SIGNAL_PORT=$(port) npm run network",
+      "start": "AGENTS=2 BOOTSTRAP_PORT=$(port) SIGNAL_PORT=$(port) REACT_APP_CLIENT_PORT=3000 npm run network",
       "dev": "REACT_APP_ADMIN_PORT=$(port) REACT_APP_HC_PORT=$(port) SIGNAL_PORT=$(port) BOOTSTRAP_PORT=$(port) REACT_APP_CLIENT_PORT=8888 npm run x",
       "x": "hc s clean &&  export NODE_OPTIONS=--openssl-legacy-provider; npm run build:happ && REACT_APP_CLIENT_PORT=8888 concurrently \"npm start -w ui\" \"npm run start:happ\" \"hc run-local-services -b $BOOTSTRAP_PORT -s $SIGNAL_PORT\"",
       "applet-dev": " UI_PORT=8888 npm run applet-devx",
       "applet-devx": "BPORT=46263 SPORT=46262; concurrently \"hc run-local-services -b $BPORT -s $SPORT\" \"npm start -w ui\" \"./we_dev/we.AppImage  --dev-config we_dev/config.json --agent-num 1 -b http://127.0.0.1:$BPORT -s ws://127.0.0.1:$SPORT\" \"sleep 10 && ./we_dev/we.AppImage --dev-config we_dev/config.json --agent-num 2 -b http://127.0.0.1:$BPORT -s ws://127.0.0.1:$SPORT\"",
-      "network": "hc s clean && npm run build:happ && UI_PORT=8888 concurrently \"npm start -w ui\" \"npm run launch:happ\" \"holochain-playground\"",
+      "network": "export NODE_OPTIONS=--openssl-legacy-provider; hc s clean && npm run build:happ && REACT_APP_HC_PORT=8888 concurrently \"npm start -w ui\" \"npm run launch:happ\" \"holochain-playground\"",
       "test": "npm run build:zomes && hc app pack workdir --recursive && npm t -w tests",
-      "launch:happ": "concurrently \"hc run-local-services --bootstrap-port $BOOTSTRAP_PORT --signal-port $SIGNAL_PORT\" \"echo pass | RUST_LOG=warn hc launch --piped -n $AGENTS workdir/glassbeadgame.happ --ui-port $UI_PORT network --bootstrap http://127.0.0.1:\"$BOOTSTRAP_PORT\" webrtc ws://127.0.0.1:\"$SIGNAL_PORT\"\"",   
+      "launch:happ": "concurrently \"echo $REACT_APP_CLIENT_PORT\" \"hc run-local-services --bootstrap-port $BOOTSTRAP_PORT --signal-port $SIGNAL_PORT\" \"echo pass | RUST_LOG=warn hc launch --piped -n $AGENTS workdir/glassbeadgame.happ --ui-path ./ui/build network --bootstrap http://127.0.0.1:\"$BOOTSTRAP_PORT\" webrtc ws://127.0.0.1:\"$SIGNAL_PORT\"\"",   
       "package": "npm run build:happ && npm run package -w ui && hc web-app pack workdir --recursive",
       "start:happ": "echo \"starting with admin $REACT_APP_ADMIN_PORT\" && RUST_LOG=warn echo \"pass\" | hc s -f=$REACT_APP_ADMIN_PORT --piped generate workdir/glassbeadgame.happ --run=$REACT_APP_HC_PORT -a glassbeadgame network -b \"http://127.0.0.1:$BOOTSTRAP_PORT\"  webrtc \"ws://127.0.0.1:$SIGNAL_PORT\"",
       "build:happ": "npm run build:zomes && hc app pack workdir --recursive",

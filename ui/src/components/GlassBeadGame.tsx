@@ -63,6 +63,7 @@ import { ReactComponent as CurvedDNASVG } from '@svgs/curved-dna.svg'
 import { ReactComponent as CommentIconSVG } from '@svgs/comment-solid.svg'
 import { ReactComponent as CastaliaIconSVG } from '@svgs/castalia-logo.svg'
 import { ReactComponent as HelpIcon } from '@svgs/question-solid.svg'
+import { WeClient, isWeContext } from '@lightningrodlabs/we-applet';
 
 const gameDefaults = {
     id: null,
@@ -1616,24 +1617,32 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     async function initialiseGBGService() {
-        if (process.env.REACT_APP_ADMIN_PORT) {
-            console.log('authorizing!')
-            const adminWebsocket = await AdminWebsocket.connect(
-                `ws://localhost:${process.env.REACT_APP_ADMIN_PORT}`
-            )
-            const x = await adminWebsocket.listApps({})
-            console.log('apps', x)
-            const cellIds = await adminWebsocket.listCellIds()
-            console.log('CELL IDS', cellIds)
-            await adminWebsocket.authorizeSigningCredentials(cellIds[0])
-        }
+        if (!isWeContext()) {
+            if (process.env.REACT_APP_ADMIN_PORT) {
+                console.log('authorizing!')
+                const adminWebsocket = await AdminWebsocket.connect(new URL(
+                    `ws://localhost:${process.env.REACT_APP_ADMIN_PORT}`)
+                )
+                const x = await adminWebsocket.listApps({})
+                console.log('apps', x)
+                const cellIds = await adminWebsocket.listCellIds()
+                console.log('CELL IDS', cellIds)
+                await adminWebsocket.authorizeSigningCredentials(cellIds[0])
+            }
 
-        const client = await AppAgentWebsocket.connect(
-            `ws://localhost:${process.env.REACT_APP_HC_PORT}`,
-            'glassbeadgame'
-        )
-        gbgServiceRef.current = new GlassBeadGameService(client, 'glassbeadgame')
-        client.on('signal', signalHandler)
+            const client = await AppAgentWebsocket.connect(
+                new URL(`ws://localhost`),
+                'glassbeadgame'
+            )
+            gbgServiceRef.current = new GlassBeadGameService(client, 'glassbeadgame')
+            client.on('signal', signalHandler)
+        } else {
+            const weClient = await WeClient.connect(); 
+            //@ts-ignore
+            const client = weClient.renderInfo.appletClient;
+            gbgServiceRef.current = new GlassBeadGameService(client, 'glassbeadgame')
+            client.on('signal', signalHandler)
+        }
     }
 
     async function initialiseGame() {

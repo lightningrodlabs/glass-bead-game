@@ -13,6 +13,7 @@ module.exports = {
         // 'no-console': 'off',
         'react/jsx-no-bind': 'off',
     },
+    
     parserOptions: {
         project: 'tsconfig.json',
         tsconfigRootDir: __dirname,

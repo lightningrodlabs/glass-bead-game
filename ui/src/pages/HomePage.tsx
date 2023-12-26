@@ -14,6 +14,7 @@ import { ReactComponent as CastaliaIcon } from '@svgs/castalia-logo.svg'
 import { ReactComponent as EditIcon } from '@svgs/edit-solid.svg'
 import { AdminWebsocket, AppAgentWebsocket } from '@holochain/client'
 import { ReactComponent as HelpIcon } from '@svgs/question-solid.svg'
+import { WeClient, isWeContext } from '@lightningrodlabs/we-applet';
 
 const Homepage = (): JSX.Element => {
     const [gbgService, setGbgService] = useState<null | GlassBeadGameService>(null)
@@ -25,23 +26,30 @@ const Homepage = (): JSX.Element => {
     const [loading, setLoading] = useState(true)
 
     async function initialiseGBGService() {
-        if (process.env.REACT_APP_ADMIN_PORT) {
-            console.log('authorizing!')
-            const adminWebsocket = await AdminWebsocket.connect(
-                `ws://localhost:${process.env.REACT_APP_ADMIN_PORT}`
-            )
-            const x = await adminWebsocket.listApps({})
-            console.log('apps', x)
-            const cellIds = await adminWebsocket.listCellIds()
-            console.log('CELL IDS', cellIds)
-            await adminWebsocket.authorizeSigningCredentials(cellIds[0])
-        }
+        if (!isWeContext()) {
+            if (process.env.REACT_APP_ADMIN_PORT) {
+                console.log('authorizing!')
+                const adminWebsocket = await AdminWebsocket.connect(
+                    new URL(`ws://localhost:${process.env.REACT_APP_ADMIN_PORT}`)
+                )
+                const x = await adminWebsocket.listApps({})
+                console.log('apps', x)
+                const cellIds = await adminWebsocket.listCellIds()
+                console.log('CELL IDS', cellIds)
+                await adminWebsocket.authorizeSigningCredentials(cellIds[0])
+            }
 
-        const client = await AppAgentWebsocket.connect(
-            `ws://localhost:${process.env.REACT_APP_HC_PORT}`,
-            'glassbeadgame'
-        )
-        setGbgService(new GlassBeadGameService(client, 'glassbeadgame'))
+            const client = await AppAgentWebsocket.connect(
+                new URL(`ws://localhost:${process.env.REACT_APP_HC_PORT}`),
+                'glassbeadgame'
+            )
+            setGbgService(new GlassBeadGameService(client, 'glassbeadgame'))
+        } else {
+            const weClient = await WeClient.connect(); 
+            //@ts-ignore
+            const client = weClient.renderInfo.appletClient;
+            setGbgService(new GlassBeadGameService(client, 'glassbeadgame'))
+        }
     }
 
     useEffect(() => {
