@@ -1631,7 +1631,7 @@ const GlassBeadGame = (): JSX.Element => {
             }
 
             const client = await AppAgentWebsocket.connect(
-                new URL(`ws://localhost`),
+                new URL(`ws://localhost:${process.env.REACT_APP_HC_PORT}`),
                 'glassbeadgame'
             )
             gbgServiceRef.current = new GlassBeadGameService(client, 'glassbeadgame')
