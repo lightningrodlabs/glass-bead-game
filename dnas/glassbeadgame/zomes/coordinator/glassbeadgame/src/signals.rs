@@ -1,96 +1,93 @@
-use holo_hash::{AgentPubKeyB64, EntryHashB64};
-use glassbeadgame_integrity::{Player};
-use crate::game::*;
+use hdk::prelude::*;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CommentSignal {
-    player: Player,
-    text: String,
+    pub agent_key: AgentPubKey,
+    pub text: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct NewTopicSignal {
-    agent_key: AgentPubKeyB64,
-    topic: String,
+    pub agent_key: AgentPubKey,
+    pub topic: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct NewTopicImageSignal {
-    agent_key: AgentPubKeyB64,
-    topic_image_url: String,
+    pub agent_key: AgentPubKey,
+    pub topic_image_url: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct NewBackgroundSignal {
-    agent_key: AgentPubKeyB64,
-    sub_type: String,
-    url: String,
-    start_time: usize
+    pub agent_key: AgentPubKey,
+    pub sub_type: String,
+    pub url: String,
+    pub start_time: usize,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct StartGameSignal {
-    agent_key: AgentPubKeyB64,
-    data: String
+    pub agent_key: AgentPubKey,
+    pub data: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct StopGameSignal {
-    agent_key: AgentPubKeyB64
+    pub agent_key: AgentPubKey,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LeaveGameSignal {
-    agent_key: AgentPubKeyB64
+    pub agent_key: AgentPubKey,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct NewBeadSignal {
-    agent_key: AgentPubKeyB64,
+    pub agent_key: AgentPubKey,
     #[serde(with = "serde_bytes")]
-    audio: Vec<u8>,
-    index: usize
+    pub audio: Vec<u8>,
+    pub index: usize,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SignalRequest {
-    player: Player,
-    signal: String
+    pub agent_key: AgentPubKey,
+    pub signal: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SignalResponse {
-    player: Player,
-    signal: String
+    pub agent_key: AgentPubKey,
+    pub signal: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RefreshRequestSignal {
-    agent_key: AgentPubKeyB64
+    pub agent_key: AgentPubKey,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamDisconnectedSignal {
-    agent_key: AgentPubKeyB64
+    pub agent_key: AgentPubKey,
 }
 
-#[derive(Serialize, Deserialize, SerializedBytes, Debug)]
+#[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
 #[serde(tag = "type", content = "content")]
 pub enum Message {
-    // NewGame(NewGameSignal),
-    NewPlayer(Player),
+    NewPlayer(AgentPubKey),
     NewComment(CommentSignal),
     NewTopic(NewTopicSignal),
     NewTopicImage(NewTopicImageSignal),
@@ -102,45 +99,36 @@ pub enum Message {
     NewSignalRequest(SignalRequest),
     NewSignalResponse(SignalResponse),
     RefreshRequest(RefreshRequestSignal),
-    StreamDisconnected(StreamDisconnectedSignal)
+    StreamDisconnected(StreamDisconnectedSignal),
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SignalPayload {
-    game_hash: EntryHashB64,
-    message: Message,
+    pub game_hash: EntryHash,
+    pub message: Message,
 }
 
 impl SignalPayload {
-    pub fn new(game_hash: EntryHashB64, message: Message) -> Self {
-        SignalPayload {
-            game_hash,
-            message,
-        }
+    pub fn new(game_hash: EntryHash, message: Message) -> Self {
+        SignalPayload { game_hash, message }
     }
 }
 
 #[hdk_extern]
-fn recv_remote_signal(signal: ExternIO) -> ExternResult<()> {
-    let sig: SignalPayload = signal.decode().map_err(|e| wasm_error!(e))?;
-    Ok(emit_signal(&sig)?)
+fn recv_remote_signal(payload: SignalPayload) -> ExternResult<()> {
+    emit_signal(&payload)
 }
 
-/// Input to the notify call
-#[derive(Serialize, Deserialize, SerializedBytes, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct NotifyInput {
-    pub folks: Vec<AgentPubKeyB64>,
+    pub folks: Vec<AgentPubKey>,
     pub signal: SignalPayload,
 }
 
 #[hdk_extern]
 fn notify(input: NotifyInput) -> ExternResult<()> {
-    let mut folks: Vec<AgentPubKey> = vec![];
-    for a in input.folks.clone() {
-        folks.push(a.into())
-    }
-    remote_signal(ExternIO::encode(input.signal).map_err(|e| wasm_error!(e))?,folks)?;
+    send_remote_signal(input.signal, input.folks)?;
     Ok(())
 }

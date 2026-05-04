@@ -1,131 +1,82 @@
-import { Timestamp, EntryHashB64, AgentPubKeyB64, ActionHashB64 } from '@holochain/client'
-
-export type Player = {
-    agentKey: string
-    name: string
-    image: string
-}
+import type { Timestamp, EntryHash, AgentPubKey, ActionHash } from '@holochain/client'
 
 export type Message =
-    | {
-          type: 'NewPlayer'
-          content: AgentPubKeyB64
-      }
-    | {
-          type: 'NewComment'
-          content: NewComment
-      }
-    | {
-          type: 'NewTopic'
-          content: NewTopic
-      }
-    | {
-          type: 'NewTopicImage'
-          content: NewTopicImage
-      }
-    | {
-          type: 'NewBackground'
-          content: NewBackground
-      }
-    | {
-          type: 'StartGame'
-          content: StartGame
-      }
-    | {
-          type: 'StopGame'
-          content: StopGame
-      }
-    | {
-          type: 'LeaveGame'
-          content: LeaveGame
-      }
-    | {
-          type: 'NewBead'
-          content: NewBead
-      }
-    | {
-          type: 'NewSignalRequest'
-          content: NewSignalRequest
-      }
-    | {
-          type: 'NewSignalResponse'
-          content: NewSignalResponse
-      }
-    | {
-          type: 'RefreshRequest'
-          content: RefreshRequest
-      }
-    | {
-          type: 'StreamDisconnected'
-          content: StreamDisconnected
-      }
-// | {
-//       type: 'NewGame'
-//       content: NewGame
-//   }
+    | { type: 'NewPlayer'; content: AgentPubKey }
+    | { type: 'NewComment'; content: NewComment }
+    | { type: 'NewTopic'; content: NewTopic }
+    | { type: 'NewTopicImage'; content: NewTopicImage }
+    | { type: 'NewBackground'; content: NewBackground }
+    | { type: 'StartGame'; content: StartGame }
+    | { type: 'StopGame'; content: StopGame }
+    | { type: 'LeaveGame'; content: LeaveGame }
+    | { type: 'NewBead'; content: NewBead }
+    | { type: 'NewSignalRequest'; content: NewSignalRequest }
+    | { type: 'NewSignalResponse'; content: NewSignalResponse }
+    | { type: 'RefreshRequest'; content: RefreshRequest }
+    | { type: 'StreamDisconnected'; content: StreamDisconnected }
 
 export type Signal = {
-    gameHash: EntryHashB64
+    gameHash: EntryHash
     message: Message
 }
 
 export type NewComment = {
-    player: Player
+    agentKey: AgentPubKey
     text: string
 }
 
 export type NewTopic = {
-    agentKey: string
+    agentKey: AgentPubKey
     topic: string
 }
 
 export type NewTopicImage = {
-    agentKey: string
+    agentKey: AgentPubKey
     topicImageUrl: string
 }
 
 export type NewBackground = {
-    agentKey: string
+    agentKey: AgentPubKey
     subType: string
     url: string
     startTime: number
 }
 
 export type StartGame = {
-    agentKey: string
+    agentKey: AgentPubKey
     data: string
 }
 
 export type StopGame = {
-    agentKey: string
+    agentKey: AgentPubKey
 }
 
 export type LeaveGame = {
-    agentKey: string
+    agentKey: AgentPubKey
 }
 
 export type NewBead = {
-    agentKey: string
-    audio: any
+    agentKey: AgentPubKey
+    audio: Uint8Array
     index: number
 }
 
 export type NewSignalRequest = {
-    player: Player
+    agentKey: AgentPubKey
     signal: string
 }
 
 export type NewSignalResponse = {
-    player: Player
+    agentKey: AgentPubKey
     signal: string
 }
 
 export type RefreshRequest = {
-    agentKey: string
+    agentKey: AgentPubKey
 }
 
 export type StreamDisconnected = {
-    agentKey: string
+    agentKey: AgentPubKey
 }
 
 export interface GameSettingsData {
@@ -144,91 +95,65 @@ export interface GameSettingsData {
     intervalDuration: number
 }
 
-export interface GameData {
-    id: number
-    numberOfTurns: number
-    moveDuration: number
-    introDuration: number
-    intervalDuration: number
-    outroDuration: number
-    locked: boolean
-    topic: string
-    topicGroup: string | null
-    topicImage: string | null
-    description: string
-    backgroundImage: string | null
-    backgroundVideo: string | null
-    backgroundVideoStartTime: number | null
-    GlassBeadGameComments: Comment[]
-    GlassBeads: Bead[]
-}
-
 export interface IComment {
-    entryHash: EntryHashB64
+    entryHash: EntryHash
     text: string
 }
 
 export interface JoinGameInput {
-    agentKey: AgentPubKeyB64
-    entryHash: EntryHashB64
+    agentKey: AgentPubKey
+    entryHash: EntryHash
 }
 
 export interface CreateOutput {
-    headerHash: ActionHashB64
-    entryHash: EntryHashB64
+    actionHash: ActionHash
+    entryHash: EntryHash
 }
 
 export interface CreateGameOutput {
-    actionHash: ActionHashB64
-    entryHash: EntryHashB64
+    actionHash: ActionHash
+    settingsActionHash: ActionHash
+    entryHash: EntryHash
 }
 
 export interface GameOutput {
-    entryHash: EntryHashB64
+    entryHash: EntryHash
+    creator: AgentPubKey
     settings: GameSettingsData
-    // author: AgentPubKeyB64
 }
 
 export interface UpdateGameInput {
-    entryHash: EntryHashB64
+    entryHash: EntryHash
     newSettings: GameSettingsData
 }
 
-export interface NewCommentData {
-    gameId: number
-    userId: number
+export interface CommentInput {
+    entryHash: EntryHash
     text: string
 }
 
-export interface CommentInput {
-    entryHash: EntryHashB64
-    comment: string
-}
-
 export interface CommentOutput {
-    headerHash: ActionHashB64
-    entryHash: EntryHashB64
-    agentKey: AgentPubKeyB64
-    comment: string
+    actionHash: ActionHash
+    entryHash: EntryHash
+    agentKey: AgentPubKey
+    text: string
     timestamp: Timestamp
 }
 
 export interface Bead {
-    entryHash: EntryHashB64
-    agentKey: string
-    audio: any
+    audio: Uint8Array
     index: number
 }
 
 export interface BeadInput {
-    entryHash: EntryHashB64
+    entryHash: EntryHash
     bead: Bead
 }
 
 export interface BeadOutput {
-    headerHash: ActionHashB64
-    entryHash: EntryHashB64
-    agentKey: AgentPubKeyB64
+    actionHash: ActionHash
+    entryHash: EntryHash
+    agentKey: AgentPubKey
     bead: Bead
     timestamp: Timestamp
 }

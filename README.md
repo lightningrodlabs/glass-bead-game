@@ -1,37 +1,40 @@
 # The Glass Bead Game
 
-## Set up
-Enter the nix shell:
+A Holochain Glass Bead Game that runs as a Tauri desktop binary, an Electron-based dev launcher, or as a Moss / Weave applet.
+
+## Setup
+
+Enter the dev shell (provides Holochain CLI, Rust, Node, Tauri toolchain):
+
 ```
-nix-shell
+nix develop
 ```
 
-Install the root folder:
+Install JS deps (npm workspaces — installs `ui/` and `tests/`):
+
 ```
 npm install
 ```
 
-Install the client folder (must use yarn):
-```
-cd client
-```
+## Run
+
+Three ways to launch the app for development:
 
 ```
-yarn install
+npm run start:electron      # hc-spin launcher (2 agents)
+npm run start:tauri         # native Tauri windows (2 agents)
+npm run start:moss          # inside Moss / Weave (2 agents)
 ```
 
-Change directory back to the root folder:
+## Build
+
 ```
-cd ..
+npm run build:happ          # compile zomes and pack the .happ
+npm run package             # build .happ + UI bundle, pack .webhapp
 ```
 
-## Start
-```
-npm start
-```
+## Test
 
-## Start network
-Include the number of agents you want to boot up after 'network'
 ```
-npm run network 2
+npm test                    # tryorama + vitest
 ```

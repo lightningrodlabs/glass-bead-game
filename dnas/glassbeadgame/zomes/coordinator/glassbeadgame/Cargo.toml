@@ -9,9 +9,8 @@ crate-type = ["cdylib", "rlib"]
 name = "glassbeadgame"
 
 [dependencies]
-chrono = { version = "=0.4.22", default-features = false, features = ["clock", "std", "oldtime", "serde"], optional = true }
 hdk = { workspace = true }
-
 serde = { workspace = true }
+holochain_serialized_bytes = { workspace = true }
 
-glassbeadgame_integrity = { workspace = true } 
+glassbeadgame_integrity = { workspace = true }

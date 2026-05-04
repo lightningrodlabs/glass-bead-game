@@ -31,3 +31,11 @@ dist/
 storybook-static
 .rollup.cache
 *.tsbuildinfo
+
+## tauri
+src-tauri/target/
+src-tauri/gen/
+
+## kitsune2 dev runtime
+.kitsune2_bootstrap_srv
+

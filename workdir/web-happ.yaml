@@ -1,7 +1,6 @@
----
-manifest_version: "1"
+manifest_version: "0"
 name: glassbeadgame
 ui:
-  bundled: "../ui/build.zip"
-happ_manifest:
-  bundled: "./glassbeadgame.happ"
+  path: "../ui/dist.zip"
+happ:
+  path: "./glassbeadgame.happ"

@@ -6,11 +6,14 @@ opt-level = "z"
 
 [workspace]
 members = ["dnas/*/zomes/coordinator/*", "dnas/*/zomes/integrity/*"]
+exclude = ["src-tauri"]
+resolver = "2"
 
 [workspace.dependencies]
-hdi = "0.3"
-hdk = "0.2"
+hdi = "0.7.0"
+hdk = "0.6.0"
 serde = "1"
+holochain_serialized_bytes = "0.0.56"
 
 [workspace.dependencies.glassbeadgame]
 path = "dnas/glassbeadgame/zomes/coordinator/glassbeadgame"
@@ -18,3 +21,8 @@ path = "dnas/glassbeadgame/zomes/coordinator/glassbeadgame"
 [workspace.dependencies.glassbeadgame_integrity]
 path = "dnas/glassbeadgame/zomes/integrity/glassbeadgame"
 
+[workspace.dependencies.profiles]
+path = "dnas/glassbeadgame/zomes/coordinator/profiles"
+
+[workspace.dependencies.profiles_integrity]
+path = "dnas/glassbeadgame/zomes/integrity/profiles"

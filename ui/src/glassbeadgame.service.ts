@@ -1,45 +1,33 @@
-/* eslint-disable camelcase */
-/* eslint-disable no-useless-constructor */
 import {
-    AppAgentClient,
-    EntryHashB64,
-    AgentPubKeyB64,
-    ActionHashB64,
-    AppAgentCallZomeRequest,
-    encodeHashToBase64,
+    AppClient,
+    AgentPubKey,
+    ActionHash,
+    EntryHash,
+    AppCallZomeRequest,
 } from '@holochain/client'
 import {
-    Player,
     GameOutput,
     GameSettingsData,
     Signal,
     JoinGameInput,
     CreateOutput,
-    Bead,
+    BeadInput,
+    CommentInput,
     CommentOutput,
     BeadOutput,
-    IComment,
     CreateGameOutput,
     UpdateGameInput,
 } from '@src/GameTypes'
 
 export default class GlassBeadGameService {
     constructor(
-        public client: AppAgentClient,
-        public roleName,
+        public client: AppClient,
+        public roleName: string,
         protected zomeName = 'glassbeadgame'
     ) {}
 
-    get myAgentPubKey(): AgentPubKeyB64 {
-        return encodeHashToBase64(this.client.myPubKey)
-    }
-
-    async savePlayerDetails(player: Player): Promise<ActionHashB64> {
-        return this.callZome('save_player_details', player)
-    }
-
-    async getPlayerDetails(agentKey: string): Promise<Player> {
-        return this.callZome('get_player_details', agentKey)
+    get myAgentPubKey(): AgentPubKey {
+        return this.client.myPubKey
     }
 
     async createGame(game: GameSettingsData): Promise<CreateGameOutput> {
@@ -50,48 +38,48 @@ export default class GlassBeadGameService {
         return this.callZome('get_games', null)
     }
 
-    async getGame(input: EntryHashB64): Promise<GameOutput> {
+    async getGame(input: EntryHash): Promise<GameOutput> {
         return this.callZome('get_game', input)
     }
 
-    async joinGame(input: JoinGameInput): Promise<ActionHashB64> {
+    async joinGame(input: JoinGameInput): Promise<ActionHash> {
         return this.callZome('join_game', input)
     }
 
-    async getPlayers(input: EntryHashB64): Promise<Array<Player>> {
+    async getPlayers(input: EntryHash): Promise<Array<AgentPubKey>> {
         return this.callZome('get_players', input)
     }
 
-    async leaveGame(input: ActionHashB64): Promise<ActionHashB64> {
+    async leaveGame(input: ActionHash): Promise<ActionHash> {
         return this.callZome('leave_game', input)
     }
 
-    async updateGame(input: UpdateGameInput): Promise<ActionHashB64> {
+    async updateGame(input: UpdateGameInput): Promise<ActionHash> {
         return this.callZome('update_game', input)
     }
 
-    async createComment(input: IComment): Promise<CreateOutput> {
+    async createComment(input: CommentInput): Promise<CreateOutput> {
         return this.callZome('create_comment', input)
     }
 
-    async getComments(input: EntryHashB64): Promise<CommentOutput[]> {
+    async getComments(input: EntryHash): Promise<CommentOutput[]> {
         return this.callZome('get_comments', input)
     }
 
-    async createBead(input: Bead): Promise<CreateOutput> {
+    async createBead(input: BeadInput): Promise<CreateOutput> {
         return this.callZome('create_bead', input)
     }
 
-    async getBeads(input: EntryHashB64): Promise<BeadOutput> {
+    async getBeads(input: EntryHash): Promise<BeadOutput[]> {
         return this.callZome('get_beads', input)
     }
 
-    async notify(signal: Signal, folks: Array<AgentPubKeyB64>): Promise<void> {
+    async notify(signal: Signal, folks: Array<AgentPubKey>): Promise<void> {
         return this.callZome('notify', { signal, folks })
     }
 
     private callZome(fnName: string, payload: any) {
-        const req: AppAgentCallZomeRequest = {
+        const req: AppCallZomeRequest = {
             role_name: this.roleName,
             zome_name: this.zomeName,
             fn_name: fnName,
