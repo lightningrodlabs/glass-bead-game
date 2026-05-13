@@ -14,6 +14,7 @@ export type Message =
     | { type: 'NewSignalResponse'; content: NewSignalResponse }
     | { type: 'RefreshRequest'; content: RefreshRequest }
     | { type: 'StreamDisconnected'; content: StreamDisconnected }
+    | { type: 'ModuleData'; content: ModuleData }
 
 export type Signal = {
     gameHash: EntryHash
@@ -77,6 +78,12 @@ export type RefreshRequest = {
 
 export type StreamDisconnected = {
     agentKey: AgentPubKey
+}
+
+export type ModuleData = {
+    fromAgent: AgentPubKey
+    msgType: string
+    payload: string
 }
 
 export interface GameSettingsData {

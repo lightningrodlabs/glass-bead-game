@@ -26,6 +26,13 @@ import {
     defaultErrorState,
 } from '@src/Helpers'
 import { GameSettingsData, Signal } from '@src/GameTypes'
+import {
+    HolochainAudio,
+    HOLOCHAIN_AUDIO_MSG_TYPE,
+    HOLOCHAIN_AUDIO_ANNOUNCE_TYPE,
+    HOLOCHAIN_AUDIO_MUTE_TYPE,
+} from '@src/holochain-audio'
+import CloseOnClickOutside from '@components/CloseOnClickOutside'
 import Modal from '@components/Modal'
 import ImageUploadModal from '@components/Modals/ImageUploadModal'
 import Input from '@components/Input'
@@ -427,6 +434,175 @@ const GameSettingsModal = (props: {
     )
 }
 
+type ConnectionMode = 'webrtc' | 'holochain' | null
+
+const ConnectControl = (props: {
+    mode: ConnectionMode
+    loading: boolean
+    menuOpen: boolean
+    onMenuToggle: () => void
+    onMenuClose: () => void
+    onPickWebRTC: () => void
+    onPickHolochain: () => void
+    onDisconnect: () => void
+}): JSX.Element => {
+    const { mode, loading, menuOpen, onMenuToggle, onMenuClose, onPickWebRTC, onPickHolochain, onDisconnect } = props
+    if (mode !== null) {
+        return (
+            <Button
+                text='Go offline'
+                color='red'
+                style={{ marginBottom: 10, alignSelf: 'flex-start' }}
+                loading={loading}
+                disabled={loading}
+                onClick={onDisconnect}
+            />
+        )
+    }
+    return (
+        <div style={{ position: 'relative', marginBottom: 10, alignSelf: 'flex-start' }}>
+            <Button
+                text='Go live ▾'
+                color='aqua'
+                loading={loading}
+                disabled={loading}
+                onClick={onMenuToggle}
+            />
+            {menuOpen && (
+                <CloseOnClickOutside onClick={onMenuClose}>
+                    <div
+                        style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            marginTop: 4,
+                            background: 'white',
+                            border: '1px solid #ddd',
+                            borderRadius: 6,
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            zIndex: 50,
+                            minWidth: 200,
+                        }}
+                    >
+                        <button
+                            type='button'
+                            onClick={onPickHolochain}
+                            style={{
+                                display: 'block',
+                                width: '100%',
+                                textAlign: 'left',
+                                padding: '8px 12px',
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            Audio (holochain)
+                        </button>
+                        <button
+                            type='button'
+                            onClick={onPickWebRTC}
+                            style={{
+                                display: 'block',
+                                width: '100%',
+                                textAlign: 'left',
+                                padding: '8px 12px',
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            Video & Audio (webrtc)
+                        </button>
+                    </div>
+                </CloseOnClickOutside>
+            )}
+        </div>
+    )
+}
+
+// 5-brick stacked vertical level meter, ported from presence's audio-level-meter.
+// Sqrt scaling gives perceptually-linear response. Bottom 3 green, 4th amber, 5th red.
+const LEVEL_METER_COLORS = ['#7adc7a', '#7adc7a', '#7adc7a', '#e7a008', '#c72100']
+const LevelMeter = (props: { level: number }): JSX.Element => {
+    const bricks = Math.min(5, Math.round(Math.sqrt(Math.max(0, props.level)) * 5))
+    return (
+        <div
+            style={{
+                display: 'inline-flex',
+                flexDirection: 'column-reverse',
+                gap: 1,
+                height: 20,
+                verticalAlign: 'middle',
+            }}
+        >
+            {[0, 1, 2, 3, 4].map((i) => (
+                <div
+                    key={i}
+                    style={{
+                        width: 6,
+                        height: 3,
+                        borderRadius: 1,
+                        background:
+                            i < bricks ? LEVEL_METER_COLORS[i] : 'rgba(0,0,0,0.15)',
+                    }}
+                />
+            ))}
+        </div>
+    )
+}
+
+const LiveRoomPlayerRow = (props: {
+    agentKey: AgentPubKey
+    myAgentPubKey: AgentPubKey | undefined
+    isLive: boolean
+    isMe: boolean
+    muted: boolean
+    level: number
+    onToggleMute?: () => void
+}): JSX.Element => {
+    const { agentKey, myAgentPubKey, isLive, isMe, muted, level, onToggleMute } = props
+    const showMuted = muted
+    return (
+        <Row centerY style={{ marginBottom: 10, gap: 8 }}>
+            <PlayerRow
+                agentKey={agentKey}
+                myAgentPubKey={myAgentPubKey}
+                fontSize={16}
+                imageSize={40}
+            />
+            {isLive && (
+                <>
+                    <button
+                        type='button'
+                        onClick={onToggleMute}
+                        disabled={!onToggleMute}
+                        title={isMe ? (showMuted ? 'Unmute' : 'Mute') : undefined}
+                        style={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: 12,
+                            border: 'none',
+                            background: showMuted ? '#e74c3c' : '#2ecc71',
+                            cursor: onToggleMute ? 'pointer' : 'default',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        {showMuted ? (
+                            <AudioSlashIconSVG style={{ width: 12, height: 12, fill: 'white' }} />
+                        ) : (
+                            <AudioIconSVG style={{ width: 12, height: 12, fill: 'white' }} />
+                        )}
+                    </button>
+                    <LevelMeter level={level} />
+                </>
+            )}
+        </Row>
+    )
+}
+
 const GlassBeadGame = (): JSX.Element => {
     const ctx = useContext(AppContext)
     const history = useHistory()
@@ -459,6 +635,12 @@ const GlassBeadGame = (): JSX.Element => {
     const [audioOnly, setAudioOnly] = useState(false)
     const [turn, setTurn] = useState(0)
     const [loadingStream, setLoadingStream] = useState(false)
+    const [connectionMode, setConnectionMode] = useState<'webrtc' | 'holochain' | null>(null)
+    const [connectMenuOpen, setConnectMenuOpen] = useState(false)
+    const [holochainMuted, setHolochainMuted] = useState(false)
+    const [activePlayer, setActivePlayer] = useState<AgentPubKey | null>(null)
+    // Forces a re-render at meter-update cadence while holochain audio is active.
+    const [, setLevelTick] = useState(0)
     const [backgroundModalOpen, setBackgroundModalOpen] = useState(false)
     const [showLoadingAnimation, setShowLoadingAnimation] = useState(true)
     const [topicImageModalOpen, setTopicImageModalOpen] = useState(false)
@@ -478,6 +660,17 @@ const GlassBeadGame = (): JSX.Element => {
     const mediaRecorderRef = useRef<any>(null)
     const chunksRef = useRef<any[]>([])
     const streamRef = useRef<any>(null)
+    const holochainAudioRef = useRef<HolochainAudio | null>(null)
+    const levelTickIntervalRef = useRef<any>(null)
+    const activePlayerRef = useRef<AgentPubKey | null>(null)
+    // Agents currently broadcasting Holochain audio in this room, by keyB64.
+    // Tracked independently of holochainAudioRef so peers who haven't gone live
+    // can still see who has.
+    const livePeersRef = useRef<Set<string>>(new Set())
+    // Peer mute state, by base64 agent key. Updated from announce + mute signals.
+    const peerMutedRef = useRef<Map<string, boolean>>(new Map())
+    const [, setLivePeersTick] = useState(0)
+    const bumpLivePeers = () => setLivePeersTick((t) => (t + 1) & 0xffff)
     const audioRef = useRef<any>(null)
     const videoRef = useRef<any>(null)
     const showVideoRef = useRef(showVideos)
@@ -563,81 +756,170 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function pushComment(text: string) {
-        setComments((c) => [...c, { text, timestamp: new Date().toISOString() }])
+        setComments((c) => [
+            ...c,
+            { id: uuidv4(), text, timestamp: new Date().toISOString() },
+        ])
     }
 
     function pushUserComment(agentKey: AgentPubKey, text: string) {
-        setComments((c) => [...c, { agentKey, text, timestamp: new Date().toISOString() }])
+        setComments((c) => [
+            ...c,
+            { id: uuidv4(), agentKey, text, timestamp: new Date().toISOString() },
+        ])
     }
 
-    function toggleStream() {
+    function disconnectWebRTC() {
         if (!serviceRef.current || !myAgentPubKeyRef.current) return
-        if (userIsStreaming) {
-            if (videoRef.current) {
-                videoRef.current.pause()
-                videoRef.current.srcObject = null
-            }
-            if (streamRef.current) {
-                streamRef.current.getTracks().forEach((track) => track.stop())
-            }
-            streamRef.current = null
-            videoRef.current = null
-            setUserIsStreaming(false)
-            setAudioTrackEnabled(true)
-            setVideoTrackEnabled(true)
-            const signal: Signal = {
-                gameHash: entryHash,
-                message: {
-                    type: 'StreamDisconnected',
-                    content: { agentKey: myAgentPubKeyRef.current },
-                },
-            }
-            serviceRef.current
-                .notify(signal, peopleInRoom)
-                .catch((error) => console.log('notify error: ', error))
-            if (!videosRef.current.length) {
-                updateShowVideos(false)
-                updateMobileTab('game')
-            }
-        } else {
-            setLoadingStream(true)
-            navigator.mediaDevices
-                .getUserMedia({ video: { width: 427, height: 240 }, audio: true })
-                .then((stream) => {
-                    streamRef.current = stream
-                    peersRef.current.forEach((p) => p.peer.addStream(stream))
-                    setAudioOnly(false)
-                    setUserIsStreaming(true)
-                    setPlayers((prev) => [...prev, myAgentPubKeyRef.current as AgentPubKey])
-                    setLoadingStream(false)
-                    openVideoWall()
-                })
-                .catch(() => {
-                    console.log('Unable to connect video, trying audio only...')
-                    navigator.mediaDevices
-                        .getUserMedia({ audio: true })
-                        .then((stream) => {
-                            streamRef.current = stream
-                            stream.getTracks().forEach((track) => (track.enabled = false))
-                            peersRef.current.forEach((p) => p.peer.addStream(stream))
-                            setAudioOnly(true)
-                            setUserIsStreaming(true)
-                            setPlayers((prev) => [
-                                ...prev,
-                                myAgentPubKeyRef.current as AgentPubKey,
-                            ])
-                            setLoadingStream(false)
-                            openVideoWall()
-                        })
-                        .catch(() => {
-                            setAlertMessage('Unable to connect media devices')
-                            setAlertModalOpen(true)
-                            setLoadingStream(false)
-                        })
-                })
-            navigator.mediaDevices
-                .getUserMedia({ audio: true })
-                .then((audio) => (audioRef.current = audio))
+        if (videoRef.current) {
+            videoRef.current.pause()
+            videoRef.current.srcObject = null
+        }
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach((track) => track.stop())
+        }
+        streamRef.current = null
+        videoRef.current = null
+        setUserIsStreaming(false)
+        setAudioTrackEnabled(true)
+        setVideoTrackEnabled(true)
+        const signal: Signal = {
+            gameHash: entryHash,
+            message: {
+                type: 'StreamDisconnected',
+                content: { agentKey: myAgentPubKeyRef.current },
+            },
+        }
+        serviceRef.current
+            .notify(signal, peopleInRoom)
+            .catch((error) => console.log('notify error: ', error))
+        if (!videosRef.current.length) {
+            updateShowVideos(false)
+            updateMobileTab('game')
+        }
+    }
+
+    function connectWebRTC() {
+        if (!serviceRef.current || !myAgentPubKeyRef.current) return
+        setLoadingStream(true)
+        navigator.mediaDevices
+            .getUserMedia({ video: { width: 427, height: 240 }, audio: true })
+            .then((stream) => {
+                streamRef.current = stream
+                peersRef.current.forEach((p) => p.peer.addStream(stream))
+                setAudioOnly(false)
+                setUserIsStreaming(true)
+                setConnectionMode('webrtc')
+                setPlayers((prev) => [...prev, myAgentPubKeyRef.current as AgentPubKey])
+                setLoadingStream(false)
+                openVideoWall()
+            })
+            .catch(() => {
+                console.log('Unable to connect video, trying audio only...')
+                navigator.mediaDevices
+                    .getUserMedia({ audio: true })
+                    .then((stream) => {
+                        streamRef.current = stream
+                        stream.getTracks().forEach((track) => (track.enabled = false))
+                        peersRef.current.forEach((p) => p.peer.addStream(stream))
+                        setAudioOnly(true)
+                        setUserIsStreaming(true)
+                        setConnectionMode('webrtc')
+                        setPlayers((prev) => [...prev, myAgentPubKeyRef.current as AgentPubKey])
+                        setLoadingStream(false)
+                        openVideoWall()
+                    })
+                    .catch(() => {
+                        setAlertMessage('Unable to connect media devices')
+                        setAlertModalOpen(true)
+                        setLoadingStream(false)
+                    })
+            })
+        navigator.mediaDevices
+            .getUserMedia({ audio: true })
+            .then((audio) => (audioRef.current = audio))
+    }
+
+    async function connectHolochain() {
+        if (!serviceRef.current || !myAgentPubKeyRef.current) return
+        if (holochainAudioRef.current) return
+        setLoadingStream(true)
+        const audio = new HolochainAudio({
+            send: (msgType, payload, targets) => {
+                const svc = serviceRef.current
+                const me = myAgentPubKeyRef.current
+                if (!svc || !me) return
+                const sig: Signal = {
+                    gameHash: entryHash,
+                    message: {
+                        type: 'ModuleData',
+                        content: { fromAgent: me, msgType, payload },
+                    },
+                }
+                svc.notify(sig, targets).catch((error) =>
+                    console.log('holochain audio notify error: ', error)
+                )
+            },
+            getTargets: () => {
+                const me = myAgentPubKeyRef.current
+                if (!me) return []
+                return peopleInRoomRef.current.filter((p) => !eqKey(p, me))
+            },
+        })
+        const ok = await audio.start()
+        if (!ok) {
+            setAlertMessage('Unable to start Holochain audio')
+            setAlertModalOpen(true)
+            setLoadingStream(false)
+            return
+        }
+        holochainAudioRef.current = audio
+        setConnectionMode('holochain')
+        setHolochainMuted(false)
+        setLoadingStream(false)
+        // Announce ourselves so existing peers see us before any voice frame arrives.
+        const me = myAgentPubKeyRef.current
+        const others = peopleInRoomRef.current.filter((p) => !eqKey(p, me))
+        audio.announce('join', others)
+        levelTickIntervalRef.current = setInterval(() => {
+            setLevelTick((t) => (t + 1) & 0xffff)
+        }, 80)
+    }
+
+    function disconnectHolochain() {
+        if (levelTickIntervalRef.current) {
+            clearInterval(levelTickIntervalRef.current)
+            levelTickIntervalRef.current = null
+        }
+        const audio = holochainAudioRef.current
+        if (audio) {
+            const me = myAgentPubKeyRef.current
+            const others = me
+                ? peopleInRoomRef.current.filter((p) => !eqKey(p, me))
+                : []
+            audio.announce('leave', others)
+            holochainAudioRef.current = null
+            audio.stop().catch((e) => console.log('holochain audio stop error: ', e))
+        }
+        setHolochainMuted(false)
+    }
+
+    function disconnect() {
+        if (connectionMode === 'webrtc') disconnectWebRTC()
+        else if (connectionMode === 'holochain') disconnectHolochain()
+        setConnectionMode(null)
+    }
+
+    function toggleHolochainMute() {
+        const audio = holochainAudioRef.current
+        if (!audio) return
+        const next = !holochainMuted
+        audio.setMuted(next)
+        setHolochainMuted(next)
+        const me = myAgentPubKeyRef.current
+        if (me) {
+            const others = peopleInRoomRef.current.filter((p) => !eqKey(p, me))
+            audio.broadcastMute(others)
         }
     }
 
@@ -862,6 +1144,8 @@ const GlassBeadGame = (): JSX.Element => {
 
     function startMove(moveNumber, turnNumber, player: AgentPubKey, data) {
         const { numberOfTurns, moveDuration, intervalDuration } = data
+        activePlayerRef.current = player
+        setActivePlayer(player)
         if (eqKey(player, myAgentPubKeyRef.current)) startAudioRecording(moveNumber)
         const turnDuration = data.players.length * (moveDuration + intervalDuration)
         const gameDuration = turnDuration * numberOfTurns - intervalDuration
@@ -941,6 +1225,8 @@ const GlassBeadGame = (): JSX.Element => {
         highMetalTone.play()
         setGameInProgress(false)
         setTurn(0)
+        activePlayerRef.current = null
+        setActivePlayer(null)
         d3.select('#timer-seconds').text('')
         d3.select('#timer-move-state').text('Move')
         d3.select(`#game-arc`).remove()
@@ -975,8 +1261,11 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function peopleStreamingText() {
-        const totalStreaming = videosRef.current.length + (userIsStreaming ? 1 : 0)
-        return `${totalStreaming} ${isPlural(totalStreaming) ? 'people' : 'person'} streaming`
+        const holochainPeers = livePeersRef.current.size
+        const meHolochain = connectionMode === 'holochain' ? 1 : 0
+        const webrtcTotal = videosRef.current.length + (userIsStreaming ? 1 : 0)
+        const total = webrtcTotal + holochainPeers + meHolochain
+        return `${total} ${isPlural(total) ? 'people' : 'person'} live`
     }
 
     function addStreamToVideo(elementId: string, stream) {
@@ -1207,6 +1496,8 @@ const GlassBeadGame = (): JSX.Element => {
                 setPeopleInRoom((p) => [...p, agentKey])
                 peopleInRoomRef.current.push(agentKey)
                 nicknameFor(agentKey).then((name) => pushComment(`${name} entered the room`))
+                // If I'm already live, let the new arrival know.
+                holochainAudioRef.current?.announce('join', [agentKey])
                 break
             }
             case 'NewComment': {
@@ -1297,6 +1588,10 @@ const GlassBeadGame = (): JSX.Element => {
                 peopleInRoomRef.current = peopleInRoomRef.current.filter(
                     (p) => !eqKey(p, agentKey)
                 )
+                holochainAudioRef.current?.forgetPeer(agentKey)
+                if (livePeersRef.current.delete(encodeHashToBase64(agentKey))) {
+                    bumpLivePeers()
+                }
                 const peerObject = peersRef.current.find((p) => eqKey(p.agentKey, agentKey))
                 if (peerObject) {
                     peerObject.peer.destroy()
@@ -1392,6 +1687,55 @@ const GlassBeadGame = (): JSX.Element => {
                 }
                 break
             }
+            case 'ModuleData': {
+                const { fromAgent, msgType, payload: modulePayload } = content
+                if (msgType === HOLOCHAIN_AUDIO_MSG_TYPE) {
+                    const keyB64 = encodeHashToBase64(fromAgent)
+                    // Voice arrival is itself proof the peer is live.
+                    if (!livePeersRef.current.has(keyB64)) {
+                        livePeersRef.current.add(keyB64)
+                        bumpLivePeers()
+                    }
+                    holochainAudioRef.current?.receiveFrame(fromAgent, modulePayload)
+                } else if (msgType === HOLOCHAIN_AUDIO_ANNOUNCE_TYPE) {
+                    let parsed: { action?: 'join' | 'leave'; muted?: boolean }
+                    try {
+                        parsed = JSON.parse(modulePayload)
+                    } catch {
+                        break
+                    }
+                    const keyB64 = encodeHashToBase64(fromAgent)
+                    if (parsed.action === 'join') {
+                        if (!livePeersRef.current.has(keyB64)) {
+                            livePeersRef.current.add(keyB64)
+                            bumpLivePeers()
+                        }
+                        if (typeof parsed.muted === 'boolean') {
+                            peerMutedRef.current.set(keyB64, parsed.muted)
+                            bumpLivePeers()
+                        }
+                        if (holochainAudioRef.current) {
+                            holochainAudioRef.current.announce('join', [fromAgent])
+                        }
+                    } else if (parsed.action === 'leave') {
+                        if (livePeersRef.current.delete(keyB64)) bumpLivePeers()
+                        peerMutedRef.current.delete(keyB64)
+                        holochainAudioRef.current?.forgetPeer(fromAgent)
+                    }
+                } else if (msgType === HOLOCHAIN_AUDIO_MUTE_TYPE) {
+                    let parsed: { muted?: boolean }
+                    try {
+                        parsed = JSON.parse(modulePayload)
+                    } catch {
+                        break
+                    }
+                    if (typeof parsed.muted === 'boolean') {
+                        peerMutedRef.current.set(encodeHashToBase64(fromAgent), parsed.muted)
+                        bumpLivePeers()
+                    }
+                }
+                break
+            }
             case 'StreamDisconnected': {
                 const { agentKey } = content
                 videosRef.current = videosRef.current.filter((v) => !eqKey(v.agentKey, agentKey))
@@ -1421,6 +1765,7 @@ const GlassBeadGame = (): JSX.Element => {
         peopleInRoomRef.current = playersArray
         setComments(
             gameComments.map((c) => ({
+                id: uuidv4(),
                 agentKey: c.agentKey,
                 text: c.text,
                 timestamp: new Date(Number(c.timestamp) / 1000).toISOString(),
@@ -1543,6 +1888,15 @@ const GlassBeadGame = (): JSX.Element => {
                 /* ignore */
             }
             leaveGame()
+            if (levelTickIntervalRef.current) {
+                clearInterval(levelTickIntervalRef.current)
+                levelTickIntervalRef.current = null
+            }
+            if (holochainAudioRef.current) {
+                const audio = holochainAudioRef.current
+                holochainAudioRef.current = null
+                audio.stop().catch(() => {})
+            }
             initialisedRef.current = false
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1798,7 +2152,7 @@ const GlassBeadGame = (): JSX.Element => {
                     <Scrollbars className={styles.comments} autoScrollToBottom>
                         {comments.map((comment) => (
                             <Comment
-                                key={uuidv4()}
+                                key={comment.id}
                                 comment={comment}
                                 myAgentPubKey={myAgentPubKeyRef.current}
                             />
@@ -1958,13 +2312,21 @@ const GlassBeadGame = (): JSX.Element => {
                     </Column>
                     {largeScreen && (
                         <Column className={styles.people}>
-                            <Button
-                                text={`${userIsStreaming ? 'Stop' : 'Start'} streaming`}
-                                color={userIsStreaming ? 'red' : 'aqua'}
-                                style={{ marginBottom: 10, alignSelf: 'flex-start' }}
+                            <ConnectControl
+                                mode={connectionMode}
                                 loading={loadingStream}
-                                disabled={loadingStream}
-                                onClick={() => allowedTo('stream') && toggleStream()}
+                                menuOpen={connectMenuOpen}
+                                onMenuToggle={() => setConnectMenuOpen((o) => !o)}
+                                onMenuClose={() => setConnectMenuOpen(false)}
+                                onPickWebRTC={() => {
+                                    setConnectMenuOpen(false)
+                                    if (allowedTo('stream')) connectWebRTC()
+                                }}
+                                onPickHolochain={() => {
+                                    setConnectMenuOpen(false)
+                                    if (allowedTo('stream')) connectHolochain()
+                                }}
+                                onDisconnect={disconnect}
                             />
                             {videosRef.current.length + (userIsStreaming ? 1 : 0) > 0 && (
                                 <Button
@@ -2004,16 +2366,39 @@ const GlassBeadGame = (): JSX.Element => {
                             </Column>
                             <Column className={styles.peopleInRoom}>
                                 <p style={{ marginBottom: 10 }}>{peopleInRoomText()}</p>
-                                {peopleInRoom.map((agentKey) => (
-                                    <PlayerRow
-                                        key={keyOf(agentKey)}
-                                        agentKey={agentKey}
-                                        myAgentPubKey={myAgentPubKeyRef.current}
-                                        fontSize={16}
-                                        imageSize={40}
-                                        style={{ marginBottom: 10 }}
-                                    />
-                                ))}
+                                {peopleInRoom.map((agentKey) => {
+                                    const isMe = eqKey(agentKey, myAgentPubKeyRef.current)
+                                    const keyB64 = keyOf(agentKey)
+                                    const isLive =
+                                        (isMe && connectionMode === 'holochain') ||
+                                        (!isMe && livePeersRef.current.has(keyB64))
+                                    return (
+                                        <LiveRoomPlayerRow
+                                            key={keyB64}
+                                            agentKey={agentKey}
+                                            myAgentPubKey={myAgentPubKeyRef.current}
+                                            isLive={isLive}
+                                            isMe={isMe}
+                                            muted={
+                                                isMe
+                                                    ? holochainMuted
+                                                    : peerMutedRef.current.get(keyB64) ?? false
+                                            }
+                                            level={
+                                                isLive
+                                                    ? isMe
+                                                        ? holochainAudioRef.current?.getLocalLevel() ?? 0
+                                                        : holochainAudioRef.current?.getPeerLevel(agentKey) ?? 0
+                                                    : 0
+                                            }
+                                            onToggleMute={
+                                                isMe && connectionMode === 'holochain'
+                                                    ? toggleHolochainMute
+                                                    : undefined
+                                            }
+                                        />
+                                    )
+                                })}
                             </Column>
                         </Column>
                     )}
@@ -2024,13 +2409,21 @@ const GlassBeadGame = (): JSX.Element => {
                     }`}
                 >
                     {!largeScreen && (
-                        <Button
-                            text={`${userIsStreaming ? 'Stop' : 'Start'} streaming`}
-                            color={userIsStreaming ? 'red' : 'aqua'}
-                            style={{ marginBottom: 10, alignSelf: 'flex-start' }}
+                        <ConnectControl
+                            mode={connectionMode}
                             loading={loadingStream}
-                            disabled={loadingStream}
-                            onClick={() => allowedTo('stream') && toggleStream()}
+                            menuOpen={connectMenuOpen}
+                            onMenuToggle={() => setConnectMenuOpen((o) => !o)}
+                            onMenuClose={() => setConnectMenuOpen(false)}
+                            onPickWebRTC={() => {
+                                setConnectMenuOpen(false)
+                                if (allowedTo('stream')) connectWebRTC()
+                            }}
+                            onPickHolochain={() => {
+                                setConnectMenuOpen(false)
+                                if (allowedTo('stream')) connectHolochain()
+                            }}
+                            onDisconnect={disconnect}
                         />
                     )}
                     {userIsStreaming && myAgentPubKeyRef.current && (

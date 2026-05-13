@@ -84,6 +84,14 @@ pub struct StreamDisconnectedSignal {
     pub agent_key: AgentPubKey,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ModuleDataSignal {
+    pub from_agent: AgentPubKey,
+    pub msg_type: String,
+    pub payload: String,
+}
+
 #[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
 #[serde(tag = "type", content = "content")]
 pub enum Message {
@@ -100,6 +108,7 @@ pub enum Message {
     NewSignalResponse(SignalResponse),
     RefreshRequest(RefreshRequestSignal),
     StreamDisconnected(StreamDisconnectedSignal),
+    ModuleData(ModuleDataSignal),
 }
 
 #[derive(Serialize, Deserialize, SerializedBytes, Debug, Clone)]
