@@ -12,7 +12,17 @@ const Row = (props: {
     wrap?: boolean
     scroll?: boolean
 }): JSX.Element => {
-    const { children, style, className, id, centerX, centerY, spaceBetween, wrap, scroll } = props
+    const {
+        children,
+        style = null,
+        className = false,
+        id,
+        centerX = false,
+        centerY = false,
+        spaceBetween = false,
+        wrap = false,
+        scroll = false,
+    } = props
 
     const classes = [styles.wrapper]
     if (className) classes.unshift(className)
@@ -27,17 +37,6 @@ const Row = (props: {
             {children}
         </div>
     )
-}
-
-Row.defaultProps = {
-    style: null,
-    className: false,
-    id: null,
-    centerX: false,
-    centerY: false,
-    spaceBetween: false,
-    wrap: false,
-    scroll: false,
 }
 
 export default Row

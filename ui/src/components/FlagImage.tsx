@@ -11,7 +11,15 @@ const FlagImage = (props: {
     shadow?: boolean
     style?: any
 }): JSX.Element => {
-    const { size, type, imagePath, className, outline, shadow, style } = props
+    const {
+        size,
+        type,
+        imagePath,
+        className,
+        outline = false,
+        shadow = false,
+        style = null,
+    } = props
 
     const classes = [styles.wrapper]
     if (className) classes.unshift(className)
@@ -31,13 +39,6 @@ const FlagImage = (props: {
             )}
         </div>
     )
-}
-
-FlagImage.defaultProps = {
-    className: null,
-    outline: false,
-    shadow: false,
-    style: null,
 }
 
 export default FlagImage

@@ -10,10 +10,10 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@holochain/client": "^0.20.4-rc.0",
     "@holochain-open-dev/elements": "^0.601.0",
     "@holochain-open-dev/profiles": "^0.601.3",
     "@holochain-open-dev/stores": "^0.601.0",
+    "@holochain/client": "^0.20.4-rc.0",
     "@msgpack/msgpack": "^2.7.2",
     "@theweave/api": "^0.6.6",
     "d3": "^5.15.1",
@@ -48,6 +48,8 @@
     "bestzip": "^2.2.0",
     "typescript": "^5.5.3",
     "vite": "^5.4.0",
+    "vite-plugin-node-polyfills": "^0.26.0",
+    "vite-plugin-svgr": "^5.2.0",
     "vite-tsconfig-paths": "^5.0.0"
   }
 }

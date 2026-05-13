@@ -8,28 +8,35 @@ const Modal = (props: {
     children: any
     style?: any
     centered?: boolean
+    closeOnClickOutside?: boolean
 }): JSX.Element => {
-    const { close, children, style, centered } = props
-    return (
-        <div className={`${styles.background} hide-scrollbars`}>
-            <CloseOnClickOutside onClick={close}>
-                <div
-                    className={`${styles.modal} ${centered && styles.centered} hide-scrollbars`}
-                    style={style}
-                >
-                    <div className={styles.closeButtonWrapper}>
-                        <CloseButton size={20} onClick={close} />
-                    </div>
-                    {children}
-                </div>
-            </CloseOnClickOutside>
+    const {
+        close,
+        children,
+        style = null,
+        centered = false,
+        closeOnClickOutside = true,
+    } = props
+    const inner = (
+        <div
+            className={`${styles.modal} ${centered && styles.centered} hide-scrollbars`}
+            style={style}
+        >
+            <div className={styles.closeButtonWrapper}>
+                <CloseButton size={20} onClick={close} />
+            </div>
+            {children}
         </div>
     )
-}
-
-Modal.defaultProps = {
-    style: null,
-    centered: false,
+    return (
+        <div className={`${styles.background} hide-scrollbars`}>
+            {closeOnClickOutside ? (
+                <CloseOnClickOutside onClick={close}>{inner}</CloseOnClickOutside>
+            ) : (
+                inner
+            )}
+        </div>
+    )
 }
 
 export default Modal

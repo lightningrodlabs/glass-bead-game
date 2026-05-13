@@ -10,7 +10,14 @@ const DropDownMenu = (props: {
     orientation: string
     style?: any
 }): JSX.Element => {
-    const { title, options, selectedOption, setSelectedOption, orientation, style } = props
+    const {
+        title,
+        options,
+        selectedOption,
+        setSelectedOption,
+        orientation,
+        style = null,
+    } = props
     const [menuOpen, setMenuOpen] = useState(false)
 
     return (
@@ -65,10 +72,6 @@ const DropDownMenu = (props: {
             </CloseOnClickOutside>
         </div>
     )
-}
-
-DropDownMenu.defaultProps = {
-    style: null,
 }
 
 export default DropDownMenu

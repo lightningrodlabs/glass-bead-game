@@ -1,45 +1,89 @@
-import React from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { useHistory } from 'react-router-dom'
+import { encodeHashToBase64 } from '@holochain/client'
+import type { EntryRecord } from '@holochain-open-dev/utils'
+import type { Profile } from '@holochain-open-dev/profiles'
 import styles from '@styles/components/cards/GameCard.module.scss'
 import Column from '@src/components/Column'
 import Row from '@src/components/Row'
-import Button from '@components/Button'
-import FlagImage from '@src/components/FlagImage'
+import AgentAvatar from '@components/AgentAvatar'
+import { ReactComponent as LockIcon } from '@svgs/lock-solid.svg'
+import '@shoelace-style/shoelace/dist/components/tooltip/tooltip.js'
+import { AppContext } from '@src/contexts'
+import { timeSinceCreated } from '@src/Helpers'
+import type { GameOutput } from '@src/GameTypes'
 
-const GameCard = (props: { game: any }): JSX.Element => {
+const GameCard = (props: { game: GameOutput }): JSX.Element => {
     const { game } = props
-    const { creator, settings, entryHash } = game
-    const { topicImageUrl, topic, description } = settings
+    const { creator, created, settings, entryHash } = game
+    const { topicImageUrl, topic, description, locked } = settings
+    const ctx = useContext(AppContext)
     const history = useHistory()
+    const [creatorProfile, setCreatorProfile] = useState<
+        EntryRecord<Profile> | undefined
+    >(undefined)
+
+    useEffect(() => {
+        if (!ctx) return
+        ctx.profilesStore.client.getAgentProfile(creator).then(setCreatorProfile)
+    }, [ctx, creator])
+
+    // Holochain Timestamp is microseconds since epoch
+    const createdMs = Number(created) / 1000
+    const timeAgo = timeSinceCreated(new Date(createdMs).toISOString())
+
+    const open = () =>
+        history.push(`/game/${encodeURIComponent(encodeHashToBase64(entryHash))}`)
 
     return (
-        <Column centerX className={styles.wrapper}>
-            {topicImageUrl && <img src={topicImageUrl} alt='' />}
-            <h1>{topic}</h1>
-            <p>{description}</p>
-            <Row centerY style={{ margin: '20px 0 30px 0' }}>
-                <p>Created by</p>
-                <FlagImage
-                    type='user'
-                    size={35}
-                    imagePath={creator.image}
-                    style={{ margin: '0 10px' }}
-                />
-                <p>{creator.name}</p>
+        <button
+            type='button'
+            className={styles.wrapper}
+            onClick={open}
+            aria-label={`Open game: ${topic || 'untitled'}`}
+        >
+            <Row centerY className={styles.inner}>
+                {topicImageUrl ? (
+                    <img className={styles.thumb} src={topicImageUrl} alt='' />
+                ) : (
+                    <div className={styles.thumbPlaceholder} />
+                )}
+                <Column className={styles.body}>
+                    <Row centerY className={styles.titleRow}>
+                        <h2 className={styles.topic}>{topic || 'Untitled'}</h2>
+                        {description && (
+                            <sl-tooltip
+                                content={description}
+                                placement='top'
+                                hoist
+                                className={styles.descriptionTooltip}
+                            >
+                                <span className={styles.description}>{description}</span>
+                            </sl-tooltip>
+                        )}
+                    </Row>
+                    <Row centerY className={styles.meta}>
+                        <span className={styles.metaLabel}>Created by</span>
+                        <AgentAvatar
+                            agentPubKey={creator}
+                            size={20}
+                            style={{ margin: '0 6px' }}
+                        />
+                        {creatorProfile && (
+                            <span className={styles.metaName}>
+                                {creatorProfile.entry.nickname}
+                            </span>
+                        )}
+                    </Row>
+                    {timeAgo && <p className={styles.timeAgo}>{timeAgo}</p>}
+                </Column>
             </Row>
-            <Button
-                color='blue'
-                text='Open game'
-                onClick={() =>
-                    /* window.navigator.platform.startsWith('Linux')
-                        ? alert(
-                              'Sorry, opening games is not supported due to no web-rtc support for webkit on Linux.  We hope to work around this soon.'
-                          )
-                        : */ history.push(`/game/${entryHash}`)
-                }
-                style={{ width: 120 }}
-            />
-        </Column>
+            {locked && (
+                <span className={styles.lockBadge} title='Game locked'>
+                    <LockIcon />
+                </span>
+            )}
+        </button>
     )
 }
 

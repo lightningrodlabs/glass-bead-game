@@ -1,11 +1,16 @@
 import { AppClient, AppWebsocket } from '@holochain/client'
 import { WeaveClient, isWeaveContext, initializeHotReload } from '@theweave/api'
+import { ProfilesClient } from '@holochain-open-dev/profiles'
 
 export type ConnectionMode = 'tauri' | 'weave' | 'browser'
+
+const ROLE_NAME = 'glassbeadgame'
+const PROFILES_ZOME_NAME = 'profiles'
 
 export interface Connection {
     client: AppClient
     weaveClient: WeaveClient | undefined
+    profilesClient: ProfilesClient
     mode: ConnectionMode
 }
 
@@ -27,6 +32,7 @@ export async function connect(): Promise<Connection> {
             return {
                 client: weaveClient.renderInfo.appletClient,
                 weaveClient,
+                profilesClient: weaveClient.renderInfo.profilesClient,
                 mode: 'weave',
             }
         }
@@ -34,6 +40,7 @@ export async function connect(): Promise<Connection> {
     }
 
     const client = await AppWebsocket.connect()
+    const profilesClient = new ProfilesClient(client, ROLE_NAME, PROFILES_ZOME_NAME)
     const mode: ConnectionMode = (window as any).__HC_LAUNCHER_ENV__ ? 'tauri' : 'browser'
-    return { client, weaveClient: undefined, mode }
+    return { client, weaveClient: undefined, profilesClient, mode }
 }

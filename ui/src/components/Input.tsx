@@ -27,15 +27,15 @@ const Input = (props: {
         title,
         prefix,
         placeholder,
-        state,
+        state = 'default',
         errors,
-        value,
+        value = '',
         onChange,
         rows,
         style,
-        disabled,
-        loading,
-        autoFill,
+        disabled = false,
+        loading = false,
+        autoFill = false,
     } = props
 
     return (
@@ -74,22 +74,6 @@ const Input = (props: {
             </div>
         </div>
     )
-}
-
-Input.defaultProps = {
-    title: null,
-    id: null,
-    prefix: null,
-    placeholder: null,
-    state: 'default',
-    errors: null,
-    value: '',
-    onChange: null,
-    rows: null,
-    style: null,
-    disabled: false,
-    loading: false,
-    autoFill: false,
 }
 
 export default Input

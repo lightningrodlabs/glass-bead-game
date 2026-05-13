@@ -29,6 +29,7 @@ pub struct CreateOutput {
 pub struct GameOutput {
     pub entry_hash: EntryHash,
     pub creator: AgentPubKey,
+    pub created: Timestamp,
     pub settings: GameSettings,
 }
 
@@ -165,6 +166,7 @@ fn get_game_inner(game_entry_hash: EntryHash) -> ExternResult<Option<GameOutput>
         None => return Ok(None),
     };
     let creator: AgentPubKey = game_record.action().author().clone();
+    let created: Timestamp = game_record.action().timestamp();
 
     // most-recent settings via newest active link
     let settings_links = get_links(
@@ -178,13 +180,24 @@ fn get_game_inner(game_entry_hash: EntryHash) -> ExternResult<Option<GameOutput>
     let Some(record) = get(settings_action_hash, GetOptions::network())? else {
         return Ok(None);
     };
-    let settings: GameSettings = match record.entry().to_app_option() {
+    let mut settings: GameSettings = match record.entry().to_app_option() {
         Ok(Some(s)) => s,
         _ => return Ok(None),
     };
+
+    // A game is considered locked once any beads have been recorded for it.
+    let bead_links = get_links(
+        LinkQuery::try_new(game_entry_hash.clone(), LinkTypes::Bead)?,
+        GetStrategy::Network,
+    )?;
+    if !bead_links.is_empty() {
+        settings.locked = true;
+    }
+
     Ok(Some(GameOutput {
         entry_hash: game_entry_hash,
         creator,
+        created,
         settings,
     }))
 }

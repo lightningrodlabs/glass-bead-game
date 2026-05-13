@@ -3,17 +3,20 @@
 /* eslint-disable no-return-assign */
 /* eslint-disable no-param-reassign */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useContext, useState, useEffect, useRef } from 'react'
 import { useHistory, useLocation } from 'react-router-dom'
-import { io } from 'socket.io-client'
-import axios from 'axios'
 import Peer from 'simple-peer'
 import * as d3 from 'd3'
 import { v4 as uuidv4 } from 'uuid'
-import { AdminWebsocket, AppAgentWebsocket, AppWebsocket, InstalledCell } from '@holochain/client'
+import {
+    encodeHashToBase64,
+    decodeHashFromBase64,
+    SignalType,
+} from '@holochain/client'
+import type { AgentPubKey, EntryHash, Signal as HcSignal } from '@holochain/client'
 import GlassBeadGameService from '@src/glassbeadgame.service'
+import { AppContext } from '@src/contexts'
 import styles from '@styles/components/GlassBeadGame.module.scss'
-import config from '@src/Config'
 import {
     isPlural,
     timeSinceCreated,
@@ -22,24 +25,11 @@ import {
     allValid,
     defaultErrorState,
 } from '@src/Helpers'
-import {
-    GameSettingsData,
-    CreateOutput,
-    GameOutput,
-    GameData,
-    JoinGameInput,
-    IComment,
-    NewCommentData,
-    Bead,
-    Signal,
-    Message,
-} from '@src/GameTypes'
-import FlagImage from '@components/FlagImage'
+import { GameSettingsData, Signal } from '@src/GameTypes'
 import Modal from '@components/Modal'
 import ImageUploadModal from '@components/Modals/ImageUploadModal'
 import Input from '@components/Input'
 import Button from '@components/Button'
-import ImageTitle from '@components/ImageTitle'
 import LoadingWheel from '@components/LoadingWheel'
 import SuccessMessage from '@components/SuccessMessage'
 import Row from '@components/Row'
@@ -49,6 +39,7 @@ import Markdown from '@components/Markdown'
 import GBGBackgroundModal from '@components/Modals/GBGBackgroundModal'
 import BeadCard from '@src/components/Cards/BeadCard'
 import HelpModal from '@components/Modals/HelpModal'
+import AgentAvatar from '@components/AgentAvatar'
 import { ReactComponent as AudioIconSVG } from '@svgs/microphone-solid.svg'
 import { ReactComponent as AudioSlashIconSVG } from '@svgs/microphone-slash-solid.svg'
 import { ReactComponent as VideoIconSVG } from '@svgs/video-solid.svg'
@@ -63,7 +54,25 @@ import { ReactComponent as CurvedDNASVG } from '@svgs/curved-dna.svg'
 import { ReactComponent as CommentIconSVG } from '@svgs/comment-solid.svg'
 import { ReactComponent as CastaliaIconSVG } from '@svgs/castalia-logo.svg'
 import { ReactComponent as HelpIcon } from '@svgs/question-solid.svg'
-import { WeClient, isWeContext } from '@lightningrodlabs/we-applet';
+
+const eqKey = (a: AgentPubKey | undefined, b: AgentPubKey | undefined): boolean => {
+    if (!a || !b) return false
+    return encodeHashToBase64(a) === encodeHashToBase64(b)
+}
+
+const keyOf = (k: AgentPubKey): string => encodeHashToBase64(k)
+
+const dedupeKeys = (keys: AgentPubKey[]): AgentPubKey[] => {
+    const seen = new Set<string>()
+    const out: AgentPubKey[] = []
+    for (const k of keys) {
+        const b = keyOf(k)
+        if (seen.has(b)) continue
+        seen.add(b)
+        out.push(k)
+    }
+    return out
+}
 
 const gameDefaults = {
     id: null,
@@ -92,7 +101,7 @@ const colors = {
 const Video = (props) => {
     const {
         id,
-        user,
+        agentKey,
         size,
         audioEnabled,
         videoEnabled,
@@ -108,11 +117,7 @@ const Video = (props) => {
                 <track kind='captions' />
             </video>
             <div className={styles.videoUser}>
-                <ImageTitle
-                    type='user'
-                    imagePath={user.image}
-                    title={id === 'your-video' ? 'You' : user.name}
-                />
+                <AgentAvatar agentPubKey={agentKey} size={40} />
             </div>
             {id === 'your-video' ? (
                 <div className={styles.videoButtons}>
@@ -127,7 +132,7 @@ const Video = (props) => {
                 </div>
             ) : (
                 <div className={styles.videoButtons}>
-                    <button type='button' onClick={() => refreshStream(id, user)}>
+                    <button type='button' onClick={() => refreshStream(agentKey)}>
                         <RefreshIconSVG />
                     </button>
                 </div>
@@ -136,31 +141,79 @@ const Video = (props) => {
     )
 }
 
-const Comment = (props) => {
+const Comment = (props: {
+    comment: { agentKey?: AgentPubKey; text: string; timestamp?: string }
+    myAgentPubKey: AgentPubKey | undefined
+}) => {
     const { comment, myAgentPubKey } = props
-    const { player, text, timestamp } = comment
-    if (player)
+    const { agentKey, text, timestamp } = comment
+    const ctx = useContext(AppContext)
+    const [nickname, setNickname] = useState<string>('')
+
+    useEffect(() => {
+        if (!ctx || !agentKey) return
+        ctx.profilesStore.client.getAgentProfile(agentKey).then((p) => {
+            if (p) setNickname(p.entry.nickname)
+        })
+    }, [ctx, agentKey ? keyOf(agentKey) : ''])
+
+    if (!agentKey) {
         return (
-            <Row className={styles.userComment}>
-                <FlagImage type='user' size={40} imagePath={player.image} />
-                <Column className={styles.textWrapper}>
-                    <Row className={styles.header}>
-                        <h1>{player.agentKey === myAgentPubKey ? 'You' : player.name}</h1>
-                        <p title={dateCreated(timestamp)}>{timeSinceCreated(timestamp)}</p>
-                    </Row>
-                    <Markdown text={text} />
-                </Column>
+            <Row className={styles.adminComment}>
+                <p>{text}</p>
             </Row>
         )
+    }
     return (
-        <Row className={styles.adminComment}>
-            <p>{text}</p>
+        <Row className={styles.userComment}>
+            <AgentAvatar agentPubKey={agentKey} size={40} />
+            <Column className={styles.textWrapper}>
+                <Row className={styles.header}>
+                    <h1>{eqKey(agentKey, myAgentPubKey) ? 'You' : nickname}</h1>
+                    {timestamp && (
+                        <p title={dateCreated(timestamp)}>{timeSinceCreated(timestamp)}</p>
+                    )}
+                </Row>
+                <Markdown text={text} />
+            </Column>
         </Row>
     )
 }
 
-const GameSettingsModal = (props) => {
-    const { close, gameData, player, players, setPlayers, signalStartGame } = props
+const PlayerRow = (props: {
+    agentKey: AgentPubKey
+    myAgentPubKey: AgentPubKey | undefined
+    fontSize: number
+    imageSize: number
+    style?: React.CSSProperties
+}) => {
+    const { agentKey, myAgentPubKey, fontSize, imageSize, style } = props
+    const ctx = useContext(AppContext)
+    const [nickname, setNickname] = useState<string>('')
+    useEffect(() => {
+        if (!ctx) return
+        ctx.profilesStore.client.getAgentProfile(agentKey).then((p) => {
+            if (p) setNickname(p.entry.nickname)
+        })
+    }, [ctx, keyOf(agentKey)])
+
+    return (
+        <Row centerY style={style}>
+            <AgentAvatar agentPubKey={agentKey} size={imageSize} style={{ marginRight: 10 }} />
+            <p style={{ fontSize }}>{eqKey(agentKey, myAgentPubKey) ? 'You' : nickname}</p>
+        </Row>
+    )
+}
+
+const GameSettingsModal = (props: {
+    close: () => void
+    gameData: any
+    myAgentPubKey: AgentPubKey
+    players: AgentPubKey[]
+    setPlayers: (players: AgentPubKey[]) => void
+    signalStartGame: (data: any) => void
+}) => {
+    const { close, gameData, myAgentPubKey, players, setPlayers, signalStartGame } = props
 
     const [formData, setFormData] = useState({
         introDuration: {
@@ -330,7 +383,7 @@ const GameSettingsModal = (props) => {
                     <Column style={{ marginBottom: 20, minWidth: 200 }}>
                         <h2 style={{ margin: 0, lineHeight: '20px' }}>Player order</h2>
                         {players.map((p, i) => (
-                            <Row style={{ marginTop: 10 }} key={p.agentKey}>
+                            <Row style={{ marginTop: 10 }} key={keyOf(p)}>
                                 <div className={styles.position}>{i + 1}</div>
                                 <div className={styles.positionControls}>
                                     {i > 0 && (
@@ -350,10 +403,9 @@ const GameSettingsModal = (props) => {
                                         </button>
                                     )}
                                 </div>
-                                <ImageTitle
-                                    type='user'
-                                    imagePath={p.image}
-                                    title={p.agentKey === player.agentKey ? 'You' : p.name}
+                                <PlayerRow
+                                    agentKey={p}
+                                    myAgentPubKey={myAgentPubKey}
                                     fontSize={16}
                                     imageSize={35}
                                 />
@@ -376,24 +428,24 @@ const GameSettingsModal = (props) => {
 }
 
 const GlassBeadGame = (): JSX.Element => {
+    const ctx = useContext(AppContext)
     const history = useHistory()
     const location = useLocation()
-    const entryHash = location.pathname.split('/')[2]
+    const entryHashB64 = decodeURIComponent(location.pathname.split('/')[2] || '')
+    const entryHash: EntryHash = decodeHashFromBase64(entryHashB64)
     const loggedIn = true
-    const postData = {
-        id: 1,
-    }
-    const gbgServiceRef = useRef<any>()
-    const myAgentPubKeyRef = useRef<any>()
+    const postId = entryHashB64
+
+    const serviceRef = useRef<GlassBeadGameService | null>(null)
+    const myAgentPubKeyRef = useRef<AgentPubKey | undefined>(undefined)
     const joinGameHash = useRef<any>()
-    const playerRef = useRef<any>({ agentKey: '', name: '', image: '' })
-    const peopleInRoomRef = useRef<any>([])
+    const peopleInRoomRef = useRef<AgentPubKey[]>([])
 
     const [gameData, setGameData] = useState<any>(gameDefaults)
     const [gameInProgress, setGameInProgress] = useState(false)
     const [userIsStreaming, setUserIsStreaming] = useState(false)
-    const [peopleInRoom, setPeopleInRoom] = useState<any[]>([])
-    const [players, setPlayers] = useState<any[]>([])
+    const [peopleInRoom, setPeopleInRoom] = useState<AgentPubKey[]>([])
+    const [players, setPlayers] = useState<AgentPubKey[]>([])
     const [gameSettingsModalOpen, setGameSettingsModalOpen] = useState(false)
     const [beads, setBeads] = useState<any[]>([])
     const [comments, setComments] = useState<any[]>([])
@@ -417,12 +469,11 @@ const GlassBeadGame = (): JSX.Element => {
     const [alertModalOpen, setAlertModalOpen] = useState(false)
     const [helpModalOpen, setHelpModalOpen] = useState(false)
 
-    // state refs (used for up to date values between renders)
-    const roomIdRef = useRef<number>()
-    const socketRef = useRef<any>(null)
-    const socketIdRef = useRef('')
-    const peersRef = useRef<any[]>([])
-    const videosRef = useRef<any[]>([])
+    const initialisedRef = useRef(false)
+    const peersRef = useRef<Array<{ agentKey: AgentPubKey; peer: any }>>([])
+    const videosRef = useRef<
+        Array<{ agentKey: AgentPubKey; peer: any; audioOnly: boolean }>
+    >([])
     const secondsTimerRef = useRef<any>(null)
     const mediaRecorderRef = useRef<any>(null)
     const chunksRef = useRef<any[]>([])
@@ -458,167 +509,12 @@ const GlassBeadGame = (): JSX.Element => {
             .cornerRadius(5),
     }
     const iceConfig = {
-        // iceTransportPolicy: 'relay',
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
-            // { urls: `stun:${config.turnServerUrl}` },
-            // {
-            //     urls: `turn:${config.turnServerUrl}`,
-            //     username: config.turnServerUsername,
-            //     credential: config.turnServerPassword,
-            // },
         ],
     }
     const totalUsersStreaming = videosRef.current.length + (userIsStreaming ? 1 : 0)
-    const isYou = (id) => id === socketIdRef.current
-
-    const isWeco = false
-    const backendShim = {
-        /// / DB queries
-
-        // getGameData:
-        // in weco we use the postId to find the game data in the db
-        // in the holochain version posts aren't used so we'll pass in the gameId instead (retrieved from the page url, see line: 341 above)
-        // below I've created a temporary promise to mimic the API request and return dummy game data so the page loads succesfully
-        getGameData: (): Promise<any> => {
-            return isWeco
-                ? axios.get(`${config.apiURL}/glass-bead-game-data?postId=${postData.id}`)
-                : new Promise((resolve, reject) => {
-                      gbgServiceRef
-                          .current!.getGame(entryHash)
-                          .then((response) => resolve(response))
-                          .catch((error) => console.log(error))
-                  })
-        },
-
-        joinGame: (): Promise<any> => {
-            return new Promise((resolve, reject) => {
-                gbgServiceRef
-                    .current!.joinGame({
-                        agentKey: gbgServiceRef.current!.myAgentPubKey,
-                        entryHash,
-                    })
-                    .then((response) => resolve(response))
-                    .catch((error) => console.log(error))
-            })
-        },
-
-        getPlayers: (): Promise<any> => {
-            // entryHash: EntryHashB64
-            return new Promise((resolve, reject) => {
-                gbgServiceRef
-                    .current!.getPlayers(entryHash)
-                    .then((response) => resolve(response))
-                    .catch((error) => console.log(error))
-            })
-        },
-
-        // saveGameSettings:
-        // once in a game room and streaming their audio/video a user can click the start game button
-        // here they have the option to edit the games settings before they start the game
-        // this includes the number of turns, length of intro, move, interval, and outro, and the player order
-        // when they hit start game, it saves these updated settings in the backend using this API request
-        // no data is returned to the client
-        saveGameSettings: (data: GameSettingsData): Promise<void> => {
-            return isWeco
-                ? axios.post(`${config.apiURL}/save-glass-bead-game-settings`, data)
-                : new Promise((resolve, reject) => resolve()) // updateGa,me(game: GameSettingsData): Promise<CreateOutput>
-        },
-
-        // saveComment:
-        // when a user types in the input on the left hand comment bar and hits enter or clicks send their comment is saved in the db
-        // no data is returned to the client
-        saveComment: (data: IComment): Promise<CreateOutput> => {
-            return isWeco
-                ? axios.post(`${config.apiURL}/glass-bead-game-comment`, data)
-                : gbgServiceRef.current!.createComment(data)
-        },
-
-        getComments: (input: any): Promise<any> => {
-            return gbgServiceRef.current!.getComments(input)
-        },
-
-        // uploadBeadAudio:
-        // after a players move has finished recording it is sent up to the server to be converted from a raw audio Blob to an mp3 file and then stored on the backend
-        // after being stored, a url (string) pointing to the files location is returned to the client
-        uploadBeadAudio: (formData: FormData): Promise<{ data: string }> => {
-            return isWeco
-                ? axios.post(`${config.apiURL}/audio-upload`, formData, {
-                      headers: { 'Content-Type': 'multipart/form-data' },
-                  })
-                : new Promise((resolve, reject) => resolve({ data: '' })) // No Holochain API yet
-        },
-
-        // saveGame:
-        // after all the players have finished their moves and the timer has finished, the option to save the game appears
-        // when a user clicks the save game button, this API request is fired sending up the gameId and bead data to the backend
-        // the beads are then saved in the db and linked to the game so they can be retrieved by other users opening the game room in the future
-        // no data is returned to the client
-        saveGame: (gameId: number, gameBeads: Bead[]): Promise<void> => {
-            return isWeco
-                ? axios.post(`${config.apiURL}/save-glass-bead-game`, { gameId, beads: gameBeads })
-                : new Promise((resolve, reject) => resolve()) // for each createBead(input: Bead): Promise<CreateOutput>
-        },
-
-        // updateTopic:
-        // this request updates the games topic only
-        // no data is returned to the client
-        updateTopic: (gameId: number, topic: string): Promise<void> => {
-            return isWeco
-                ? axios.post(`${config.apiURL}/save-gbg-topic`, { gameId, newTopic: topic })
-                : new Promise((resolve, reject) => resolve()) // No Holochain API yet
-        },
-
-        /// / WebRTC signals:
-
-        // on weco we're using socket.io (https://socket.io/) to send real-time webrtc signals between users in each game room.
-        // once the socket is initialised (on line: 1305), signals are emitted by passing in the signal name (string) and signal data (any).
-        // client side example: socket.emit('signalName', data)
-        // on the server (https://github.com/wecollective/rest-api/blob/develop/Server.js) we listen for those signals and handle them there, usually relaying the data to other users:
-        // server side example: socket.on('signalName', data => { do something here... then: io.in(roomId).emit('signalName', newData) })
-        // then back on the client we listen for signals sent from the server:
-        // client side example: socket.on('signalName', data => { do something here... })
-        // to recreate this functionality on holochain I think we'll need to replace the socket instance with something that works without a central server
-        socket: isWeco ? socketRef.current : null, // holochain socket instance
-
-        // below is a list of the signals we emit from the client side:
-        // 'outgoing-join-room'
-        // 'outgoing-signal-request'
-        // 'outgoing-signal'
-        // 'outgoing-refresh-request'
-        // 'outgoing-comment'
-        // 'outgoing-start-game'
-        // 'outgoing-stop-game'
-        // 'outgoing-save-game'
-        // 'outgoing-audio-bead'
-        // 'outgoing-new-topic-text'
-        // 'outgoing-new-topic-image'
-        // 'outgoing-new-background'
-        // 'outgoing-stream-disconnected'
-
-        // and here is a list of signals we listen for:
-        // 'incoming-room-joined'
-        // 'incoming-user-joined'
-        // 'incoming-signal-request'
-        // 'incoming-signal'
-        // 'incoming-refresh-request'
-        // 'incoming-comment'
-        // 'incoming-start-game'
-        // 'incoming-stop-game'
-        // 'incoming-save-game'
-        // 'incoming-audio-bead'
-        // 'incoming-new-topic-text'
-        // 'incoming-new-topic-image'
-        // 'incoming-new-background'
-        // 'incoming-stream-disconnected'
-        // 'incoming-user-left'
-
-        // you can search for each signal in the code using the names above to see what data is passed in or recieved
-
-        // we're also using simple-peer (https://www.npmjs.com/package/simple-peer) to enable audio video streaming between users
-        // when we have a better understanding of how that will be approached in holochain we might add that to the shim as well
-    }
 
     function updateShowVideos(value: boolean) {
         setShowVideos(value)
@@ -660,13 +556,32 @@ const GlassBeadGame = (): JSX.Element => {
         }
     }
 
+    async function nicknameFor(agentKey: AgentPubKey): Promise<string> {
+        if (!ctx) return ''
+        const profile = await ctx.profilesStore.client.getAgentProfile(agentKey)
+        return profile?.entry.nickname ?? 'Someone'
+    }
+
+    function pushComment(text: string) {
+        setComments((c) => [...c, { text, timestamp: new Date().toISOString() }])
+    }
+
+    function pushUserComment(agentKey: AgentPubKey, text: string) {
+        setComments((c) => [...c, { agentKey, text, timestamp: new Date().toISOString() }])
+    }
+
     function toggleStream() {
+        if (!serviceRef.current || !myAgentPubKeyRef.current) return
         if (userIsStreaming) {
-            // close stream
-            videoRef.current.pause()
-            videoRef.current.srcObject = null
-            streamRef.current.getTracks().forEach((track) => track.stop())
+            if (videoRef.current) {
+                videoRef.current.pause()
+                videoRef.current.srcObject = null
+            }
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach((track) => track.stop())
+            }
             streamRef.current = null
+            videoRef.current = null
             setUserIsStreaming(false)
             setAudioTrackEnabled(true)
             setVideoTrackEnabled(true)
@@ -674,36 +589,26 @@ const GlassBeadGame = (): JSX.Element => {
                 gameHash: entryHash,
                 message: {
                     type: 'StreamDisconnected',
-                    content: {
-                        agentKey: myAgentPubKeyRef.current,
-                    },
+                    content: { agentKey: myAgentPubKeyRef.current },
                 },
             }
-            gbgServiceRef
-                .current!.notify(
-                    signal,
-                    peopleInRoom.map((p) => p.agentKey)
-                )
+            serviceRef.current
+                .notify(signal, peopleInRoom)
                 .catch((error) => console.log('notify error: ', error))
             if (!videosRef.current.length) {
                 updateShowVideos(false)
                 updateMobileTab('game')
             }
         } else {
-            // set up and signal stream
             setLoadingStream(true)
             navigator.mediaDevices
                 .getUserMedia({ video: { width: 427, height: 240 }, audio: true })
                 .then((stream) => {
-                    setUserIsStreaming(true)
-                    setAudioOnly(false)
                     streamRef.current = stream
-                    // auto disable video and audio tracks when connected
-                    // streamRef.current.getTracks().forEach((track) => (track.enabled = false))
                     peersRef.current.forEach((p) => p.peer.addStream(stream))
-                    videoRef.current = document.getElementById('your-video')
-                    videoRef.current.srcObject = stream
-                    setPlayers((previousPlayers) => [...previousPlayers, playerRef.current])
+                    setAudioOnly(false)
+                    setUserIsStreaming(true)
+                    setPlayers((prev) => [...prev, myAgentPubKeyRef.current as AgentPubKey])
                     setLoadingStream(false)
                     openVideoWall()
                 })
@@ -712,16 +617,15 @@ const GlassBeadGame = (): JSX.Element => {
                     navigator.mediaDevices
                         .getUserMedia({ audio: true })
                         .then((stream) => {
-                            setUserIsStreaming(true)
-                            setAudioOnly(true)
                             streamRef.current = stream
-                            streamRef.current
-                                .getTracks()
-                                .forEach((track) => (track.enabled = false))
+                            stream.getTracks().forEach((track) => (track.enabled = false))
                             peersRef.current.forEach((p) => p.peer.addStream(stream))
-                            videoRef.current = document.getElementById('your-video')
-                            videoRef.current.srcObject = stream
-                            setPlayers((previousPlayers) => [...previousPlayers, playerRef.current])
+                            setAudioOnly(true)
+                            setUserIsStreaming(true)
+                            setPlayers((prev) => [
+                                ...prev,
+                                myAgentPubKeyRef.current as AgentPubKey,
+                            ])
                             setLoadingStream(false)
                             openVideoWall()
                         })
@@ -731,39 +635,42 @@ const GlassBeadGame = (): JSX.Element => {
                             setLoadingStream(false)
                         })
                 })
-            // set up seperate audio stream for moves
             navigator.mediaDevices
                 .getUserMedia({ audio: true })
                 .then((audio) => (audioRef.current = audio))
         }
     }
 
-    // todo: set up general createPeer function
-    // function createPeer(isInitiator) {}
+    useEffect(() => {
+        if (!userIsStreaming || !streamRef.current) return undefined
+        const el = document.getElementById('your-video') as HTMLVideoElement | null
+        if (!el) return undefined
+        videoRef.current = el
+        el.srcObject = streamRef.current
+        return () => {
+            videoRef.current = null
+        }
+    }, [userIsStreaming])
 
-    function refreshStream(agentKey, player) {
-        // signal refresh request
+    function refreshStream(agentKey: AgentPubKey) {
+        if (!serviceRef.current || !myAgentPubKeyRef.current) return
         const sig: Signal = {
             gameHash: entryHash,
             message: {
                 type: 'RefreshRequest',
-                content: {
-                    agentKey: myAgentPubKeyRef.current,
-                },
+                content: { agentKey: myAgentPubKeyRef.current },
             },
         }
-        gbgServiceRef
-            .current!.notify(sig, [agentKey])
+        serviceRef.current
+            .notify(sig, [agentKey])
             .catch((error) => console.log('notify error: ', error))
-        // destory old peer connection
-        const peerObject = peersRef.current.find((p) => p.player.agentKey === agentKey)
+        const peerObject = peersRef.current.find((p) => eqKey(p.agentKey, agentKey))
         if (peerObject) {
             peerObject.peer.destroy()
-            peersRef.current = peersRef.current.filter((p) => p.player.agentKey !== agentKey)
-            videosRef.current = videosRef.current.filter((v) => v.player.agentKey !== agentKey)
-            setPlayers((ps) => [...ps.filter((p) => p.agentKey !== agentKey)])
+            peersRef.current = peersRef.current.filter((p) => !eqKey(p.agentKey, agentKey))
+            videosRef.current = videosRef.current.filter((v) => !eqKey(v.agentKey, agentKey))
+            setPlayers((ps) => ps.filter((p) => !eqKey(p, agentKey)))
         }
-        // create new peer connection
         const peer = new Peer({
             initiator: true,
             config: iceConfig,
@@ -775,38 +682,40 @@ const GlassBeadGame = (): JSX.Element => {
                 message: {
                     type: 'NewSignalRequest',
                     content: {
-                        player: playerRef.current,
+                        agentKey: myAgentPubKeyRef.current as AgentPubKey,
                         signal: JSON.stringify(data),
                     },
                 },
             }
-            gbgServiceRef
-                .current!.notify(signal, [agentKey])
+            serviceRef.current!
+                .notify(signal, [agentKey])
                 .catch((error) => console.log('notify error: ', error))
         })
         peer.on('stream', (stream) => {
             videosRef.current.push({
-                player,
+                agentKey,
                 peer,
                 audioOnly: !stream.getVideoTracks().length,
             })
-            pushComment(`${player.name}'s video connected`)
-            addStreamToVideo(agentKey, stream)
-            setPlayers((previousPlayers) => [...previousPlayers, player])
+            nicknameFor(agentKey).then((name) => pushComment(`${name}'s video connected`))
+            addStreamToVideo(keyOf(agentKey), stream)
+            setPlayers((prev) => [...prev, agentKey])
         })
         peer.on('close', () => peer.destroy())
         peer.on('error', (error) => console.log('error 2: ', error))
-        peersRef.current.push({ player, peer })
+        peersRef.current.push({ agentKey, peer })
     }
 
     function toggleAudioTrack() {
-        const audioTrack = streamRef.current.getTracks()[0]
+        const audioTrack = streamRef.current?.getTracks()[0]
+        if (!audioTrack) return
         audioTrack.enabled = !audioTrackEnabled
         setAudioTrackEnabled(!audioTrackEnabled)
     }
 
     function toggleVideoTrack() {
-        const videoTrack = streamRef.current.getTracks()[1]
+        const videoTrack = streamRef.current?.getTracks()[1]
+        if (!videoTrack) return
         videoTrack.enabled = !videoTrackEnabled
         setVideoTrackEnabled(!videoTrackEnabled)
     }
@@ -822,33 +731,26 @@ const GlassBeadGame = (): JSX.Element => {
 
     function createComment(e) {
         e.preventDefault()
+        if (!serviceRef.current || !myAgentPubKeyRef.current) return
         if (allowedTo('comment') && newComment.length) {
-            // save comment
-            gbgServiceRef.current!.createComment({ entryHash, text: newComment }).then(() => {
-                // signal comment
+            const text = newComment
+            serviceRef.current.createComment({ entryHash, text }).then(() => {
                 const signal: Signal = {
                     gameHash: entryHash,
                     message: {
                         type: 'NewComment',
                         content: {
-                            player: playerRef.current,
-                            text: newComment,
+                            agentKey: myAgentPubKeyRef.current as AgentPubKey,
+                            text,
                         },
                     },
                 }
-                gbgServiceRef
-                    .current!.notify(
-                        signal,
-                        peopleInRoom.map((p) => p.agentKey)
-                    )
+                serviceRef.current!
+                    .notify(signal, peopleInRoom)
                     .then(() => setNewComment(''))
                     .catch((error) => console.log('notify error: ', error))
             })
         }
-    }
-
-    function pushComment(comment) {
-        setComments((c) => [...c, comment.player ? comment : { text: comment }])
     }
 
     function startArc(
@@ -878,6 +780,7 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function startAudioRecording(moveNumber: number) {
+        if (!serviceRef.current || !myAgentPubKeyRef.current) return
         mediaRecorderRef.current = new MediaRecorder(audioRef.current)
         mediaRecorderRef.current.ondataavailable = (e) => {
             chunksRef.current.push(e.data)
@@ -890,7 +793,6 @@ const GlassBeadGame = (): JSX.Element => {
                 const array = e!.target!.result as ArrayBufferLike
                 const uint8Array = new Uint8Array(array)
                 const bead = {
-                    agentKey: myAgentPubKeyRef.current,
                     audio: uint8Array,
                     index: moveNumber,
                 }
@@ -898,15 +800,16 @@ const GlassBeadGame = (): JSX.Element => {
                     gameHash: entryHash,
                     message: {
                         type: 'NewBead',
-                        content: bead,
+                        content: {
+                            agentKey: myAgentPubKeyRef.current as AgentPubKey,
+                            audio: uint8Array,
+                            index: moveNumber,
+                        },
                     },
                 }
-                gbgServiceRef.current!.createBead({ entryHash, bead }).then(() => {
-                    gbgServiceRef
-                        .current!.notify(
-                            signal,
-                            peopleInRoomRef.current.map((p) => p.agentKey)
-                        )
+                serviceRef.current!.createBead({ entryHash, bead }).then(() => {
+                    serviceRef.current!
+                        .notify(signal, peopleInRoomRef.current)
                         .catch((error) => console.log(error))
                 })
             })
@@ -916,21 +819,23 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function signalStartGame(data) {
+        if (!serviceRef.current || !myAgentPubKeyRef.current) return
+        const wirePayload = {
+            ...data,
+            players: (data.players as AgentPubKey[]).map((p) => keyOf(p)),
+        }
         const signal: Signal = {
             gameHash: entryHash,
             message: {
                 type: 'StartGame',
                 content: {
                     agentKey: myAgentPubKeyRef.current,
-                    data: JSON.stringify(data),
+                    data: JSON.stringify(wirePayload),
                 },
             },
         }
-        gbgServiceRef
-            .current!.notify(
-                signal,
-                peopleInRoom.map((p) => p.agentKey)
-            )
+        serviceRef.current
+            .notify(signal, peopleInRoom)
             .catch((error) => console.log(error))
     }
 
@@ -941,8 +846,8 @@ const GlassBeadGame = (): JSX.Element => {
         updateShowVideos(false)
         d3.select('#timer-move-state').text('Intro')
         d3.select('#timer-seconds').text(data.introDuration)
-        const firstPlayer = data.players[0]
-        d3.select(`#player-${firstPlayer.agentKey}`).text('(up next)')
+        const firstPlayer: AgentPubKey = data.players[0]
+        d3.select(`#player-${keyOf(firstPlayer)}`).text('(up next)')
         startArc('move', data.introDuration, colors.yellow)
         let timeLeft = data.introDuration
         secondsTimerRef.current = setInterval(() => {
@@ -955,55 +860,41 @@ const GlassBeadGame = (): JSX.Element => {
         }, 1000)
     }
 
-    function startMove(moveNumber, turnNumber, player, data) {
+    function startMove(moveNumber, turnNumber, player: AgentPubKey, data) {
         const { numberOfTurns, moveDuration, intervalDuration } = data
-        // if your move, start audio recording
-        if (player.agentKey === myAgentPubKeyRef.current) startAudioRecording(moveNumber)
-        // calculate turn and game duration
+        if (eqKey(player, myAgentPubKeyRef.current)) startAudioRecording(moveNumber)
         const turnDuration = data.players.length * (moveDuration + intervalDuration)
         const gameDuration = turnDuration * numberOfTurns - intervalDuration
-        // if first move, start game arc
         if (moveNumber === 1) startArc('game', gameDuration, colors.blue)
-        // if new turn, start turn arc
         const newTurnNumber = Math.ceil(moveNumber / data.players.length)
         if (turnNumber !== newTurnNumber) {
             setTurn(newTurnNumber)
             startArc(
                 'turn',
-                // if final turn, remove interval duration from turn duration
                 newTurnNumber === numberOfTurns ? turnDuration - intervalDuration : turnDuration,
                 colors.aqua
             )
         }
-        // start move arc
         startArc('move', moveDuration, colors.green)
         lowMetalTone.play()
-        // update ui state
         d3.select('#timer-move-state').text('Move')
         d3.select('#timer-seconds').text(moveDuration)
         d3.selectAll(`.${styles.playerState}`).text('')
-        d3.select(`#player-${player.agentKey}`).text('(recording)')
-        // start seconds timer
+        d3.select(`#player-${keyOf(player)}`).text('(recording)')
         let timeLeft = moveDuration
         secondsTimerRef.current = setInterval(() => {
             timeLeft -= 1
             d3.select('#timer-seconds').text(timeLeft)
             if (timeLeft < 1) {
-                // end seconds timer
                 clearInterval(secondsTimerRef.current)
-                // if your move, stop audio recording
-                if (player.agentKey === myAgentPubKeyRef.current && mediaRecorderRef.current)
+                if (eqKey(player, myAgentPubKeyRef.current) && mediaRecorderRef.current)
                     mediaRecorderRef.current.stop()
-                // if more moves left
                 if (moveNumber < numberOfTurns * data.players.length) {
-                    // calculate next player from previous players index
-                    const PPIndex = data.players.findIndex((p) => p === player)
+                    const PPIndex = data.players.findIndex((p: AgentPubKey) => eqKey(p, player))
                     const endOfTurn = PPIndex + 1 === data.players.length
-                    const nextPlayer = data.players[endOfTurn ? 0 : PPIndex + 1]
-                    // if interval, start interval
+                    const nextPlayer: AgentPubKey = data.players[endOfTurn ? 0 : PPIndex + 1]
                     if (intervalDuration > 0)
                         startInterval(moveNumber + 1, newTurnNumber, nextPlayer, data)
-                    // else start next move
                     else startMove(moveNumber + 1, newTurnNumber, nextPlayer, data)
                 } else if (data.outroDuration) startOutro(data)
                 else endGame()
@@ -1011,23 +902,19 @@ const GlassBeadGame = (): JSX.Element => {
         }, 1000)
     }
 
-    function startInterval(moveNumber, turnNumber, nextPlayer, data) {
+    function startInterval(moveNumber, turnNumber, nextPlayer: AgentPubKey, data) {
         const { intervalDuration } = data
-        // start interval timer
         startArc('move', intervalDuration, colors.yellow)
         lowMetalTone.play()
-        // update ui state
         d3.select('#timer-move-state').text('Interval')
         d3.select('#timer-seconds').text(intervalDuration)
         d3.selectAll(`.${styles.playerState}`).text('')
-        d3.select(`#player-${nextPlayer.agentKey}`).text('(up next)')
-        // start seconds timer
+        d3.select(`#player-${keyOf(nextPlayer)}`).text('(up next)')
         let timeLeft = intervalDuration
         secondsTimerRef.current = setInterval(() => {
             timeLeft -= 1
             d3.select('#timer-seconds').text(timeLeft)
             if (timeLeft === 0) {
-                // end seconds timer and start move
                 clearInterval(secondsTimerRef.current)
                 startMove(moveNumber, turnNumber, nextPlayer, data)
             }
@@ -1069,31 +956,17 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function signalStopGame() {
+        if (!serviceRef.current || !myAgentPubKeyRef.current) return
         const signal: Signal = {
             gameHash: entryHash,
             message: {
                 type: 'StopGame',
-                content: {
-                    agentKey: myAgentPubKeyRef.current,
-                },
+                content: { agentKey: myAgentPubKeyRef.current },
             },
         }
-        gbgServiceRef
-            .current!.notify(
-                signal,
-                peopleInRoom.map((p) => p.agentKey)
-            )
+        serviceRef.current
+            .notify(signal, peopleInRoom)
             .catch((error) => console.log(error))
-    }
-
-    function saveGame() {
-        const signalData = {
-            roomId: roomIdRef.current,
-            userSignaling: playerRef.current,
-            gameData,
-        }
-        // backendShim.socket.emit('outgoing-save-game', signalData)
-        backendShim.saveGame(gameData.id, beads).catch((error) => console.log(error))
     }
 
     function peopleInRoomText() {
@@ -1106,8 +979,8 @@ const GlassBeadGame = (): JSX.Element => {
         return `${totalStreaming} ${isPlural(totalStreaming) ? 'people' : 'person'} streaming`
     }
 
-    function addStreamToVideo(socketId, stream) {
-        const video = document.getElementById(socketId) as HTMLVideoElement
+    function addStreamToVideo(elementId: string, stream) {
+        const video = document.getElementById(elementId) as HTMLVideoElement
         if (video) {
             video.srcObject = stream
             if (showVideoRef.current) {
@@ -1119,9 +992,8 @@ const GlassBeadGame = (): JSX.Element => {
 
     function openVideoWall() {
         if (firstInteractionWithPage) {
-            // unmute videos
             videosRef.current.forEach((v) => {
-                const video = document.getElementById(v.socketId) as HTMLVideoElement
+                const video = document.getElementById(keyOf(v.agentKey)) as HTMLVideoElement
                 if (video) {
                     video.muted = false
                     video.play()
@@ -1133,124 +1005,73 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function signalNewTopicImage(url) {
+        if (!serviceRef.current || !myAgentPubKeyRef.current) return
         const newSettings = { ...gameData, topicImageUrl: url, topicGroup: '' }
-        gbgServiceRef.current!.updateGame({ entryHash, newSettings }).then(() => {
+        serviceRef.current.updateGame({ entryHash, newSettings }).then(() => {
             const signal: Signal = {
                 gameHash: entryHash,
                 message: {
                     type: 'NewTopicImage',
                     content: {
-                        agentKey: myAgentPubKeyRef.current,
+                        agentKey: myAgentPubKeyRef.current as AgentPubKey,
                         topicImageUrl: url,
                     },
                 },
             }
-            gbgServiceRef
-                .current!.notify(
-                    signal,
-                    peopleInRoom.map((p) => p.agentKey)
-                )
+            serviceRef.current!
+                .notify(signal, peopleInRoom)
                 .catch((error) => console.log(error))
         })
     }
 
     function signalNewBackground(type, url, startTime) {
+        if (!serviceRef.current || !myAgentPubKeyRef.current) return
         const newSettings = {
             ...gameData,
             backgroundImage: type === 'image' ? url : '',
             backgroundVideo: type === 'video' ? url : '',
             backgroundVideoStartTime: startTime,
         }
-        gbgServiceRef.current!.updateGame({ entryHash, newSettings }).then(() => {
+        serviceRef.current.updateGame({ entryHash, newSettings }).then(() => {
             const signal: Signal = {
                 gameHash: entryHash,
                 message: {
                     type: 'NewBackground',
                     content: {
-                        agentKey: myAgentPubKeyRef.current,
+                        agentKey: myAgentPubKeyRef.current as AgentPubKey,
                         subType: type,
                         url,
                         startTime,
                     },
                 },
             }
-            gbgServiceRef
-                .current!.notify(
-                    signal,
-                    peopleInRoom.map((p) => p.agentKey)
-                )
+            serviceRef.current!
+                .notify(signal, peopleInRoom)
                 .catch((error) => console.log(error))
         })
     }
 
     function signalNewTopic(e) {
         e.preventDefault()
+        if (!serviceRef.current || !myAgentPubKeyRef.current) return
         const newSettings = { ...gameData, topic: newTopic, topicGroup: '' }
-        gbgServiceRef.current!.updateGame({ entryHash, newSettings }).then(() => {
+        serviceRef.current.updateGame({ entryHash, newSettings }).then(() => {
             const signal: Signal = {
                 gameHash: entryHash,
                 message: {
                     type: 'NewTopic',
                     content: {
-                        agentKey: myAgentPubKeyRef.current,
+                        agentKey: myAgentPubKeyRef.current as AgentPubKey,
                         topic: newTopic,
                     },
                 },
             }
-            gbgServiceRef
-                .current!.notify(
-                    signal,
-                    peopleInRoom.map((p) => p.agentKey)
-                )
+            serviceRef.current!
+                .notify(signal, peopleInRoom)
                 .then(() => setTopicTextModalOpen(false))
                 .catch((error) => console.log(error))
         })
     }
-
-    // // const history = useHistory()
-    // useEffect(() => {
-    //     console.log('history: ', history)
-    //     const path = history.location.pathname
-
-    //     const historyListener = history.listen((newLocation, action) => {
-    //         // console.log('test')
-    //         // console.log('newLocation: ', newLocation)
-    //         console.log('action: ', action)
-    //         if (action === 'POP') {
-    //             console.log('pop')
-    //             // if (path !== newLocation) {
-    //             //     console.log('attempted back button')
-    //             //     // Clone location object and push it to history
-    //             //     history.push({
-    //             //         pathname: newLocation.pathname,
-    //             //         search: newLocation.search,
-    //             //     })
-    //             // } else {
-    //             //     console.log('attempted back button 2')
-    //             //     // If a "POP" action event occurs,
-    //             //     // Send user back to the originating location
-    //             //     history.go(1)
-    //             // }
-    //         }
-    //         if (action === 'PUSH') {
-    //             console.log('push')
-    //             // if (path !== newLocation) {
-    //             //     console.log('attempted back button')
-    //             //     // Clone location object and push it to history
-    //             //     history.push({
-    //             //         pathname: newLocation.pathname,
-    //             //         search: newLocation.search,
-    //             //     })
-    //             // } else {
-    //             //     console.log('attempted back button 2')
-    //             //     // If a "POP" action event occurs,
-    //             //     // Send user back to the originating location
-    //             //     history.go(1)
-    //             // }
-    //         }
-    //     })
-    //     return () => historyListener()
-    // }, [])
 
     function addPlayButtonToCenterBead() {
         Promise.all([d3.xml('/icons/play-solid.svg'), d3.xml('/icons/pause-solid.svg')]).then(
@@ -1286,7 +1107,7 @@ const GlassBeadGame = (): JSX.Element => {
                         playButton.attr('display', 'none')
                         pauseButton.attr('display', 'flex')
                         const audio = d3
-                            .select(`#gbg-bead-${postData.id}-${liveBeadIndexRef.current}-gbg`)
+                            .select(`#gbg-bead-${postId}-${liveBeadIndexRef.current}-gbg`)
                             .select('audio')
                             .node()
                         if (audio) audio.play()
@@ -1311,7 +1132,7 @@ const GlassBeadGame = (): JSX.Element => {
                         pauseButton.attr('display', 'none')
                         playButton.attr('display', 'flex')
                         const audio = d3
-                            .select(`#gbg-bead-${postData.id}-${liveBeadIndexRef.current}-gbg`)
+                            .select(`#gbg-bead-${postId}-${liveBeadIndexRef.current}-gbg`)
                             .select('audio')
                             .node()
                         if (audio) audio.pause()
@@ -1321,7 +1142,7 @@ const GlassBeadGame = (): JSX.Element => {
     }
 
     function addEventListenersToBead(beadIndex) {
-        d3.select(`#gbg-bead-${postData.id}-${beadIndex}-gbg`)
+        d3.select(`#gbg-bead-${postId}-${beadIndex}-gbg`)
             .select('audio')
             .on('play', () => {
                 liveBeadIndexRef.current = beadIndex
@@ -1374,63 +1195,60 @@ const GlassBeadGame = (): JSX.Element => {
         }
     }
 
-    function findPlayer(agentKey) {
-        return peopleInRoomRef.current.find((p) => p.agentKey === agentKey)
-    }
-
-    function signalHandler(signal) {
-        const { type, content } = signal.payload.message
+    function signalHandler(signal: HcSignal) {
+        if (signal.type !== SignalType.App) return
+        const payload = signal.value.payload as Signal | undefined
+        if (!payload?.message) return
+        const { type, content } = payload.message
         switch (type) {
             case 'NewPlayer': {
-                setPeopleInRoom((p) => [...p, content])
-                peopleInRoomRef.current.push(content)
-                pushComment(`${content.name} entered the room`)
+                const agentKey: AgentPubKey = content
+                if (peopleInRoomRef.current.some((p) => eqKey(p, agentKey))) break
+                setPeopleInRoom((p) => [...p, agentKey])
+                peopleInRoomRef.current.push(agentKey)
+                nicknameFor(agentKey).then((name) => pushComment(`${name} entered the room`))
                 break
             }
             case 'NewComment': {
-                const commentData = {
-                    player: content.player,
-                    text: content.text,
-                    createdAt: new Date().toISOString(),
-                }
-                setComments((c) => [...c, commentData])
+                const { agentKey, text } = content
+                pushUserComment(agentKey, text)
                 break
             }
             case 'NewTopic': {
                 const { agentKey, topic } = content
-                setGameData((data) => {
-                    return { ...data, topic, topicGroup: '' }
-                })
-                const player = findPlayer(agentKey)
-                pushComment(`${player.name} updated the topic`)
+                setGameData((data) => ({ ...data, topic, topicGroup: '' }))
+                nicknameFor(agentKey).then((name) => pushComment(`${name} updated the topic`))
                 break
             }
             case 'NewTopicImage': {
                 const { agentKey, topicImageUrl } = content
-                setGameData((data) => {
-                    return { ...data, topicImageUrl }
-                })
-                const player = findPlayer(agentKey)
-                pushComment(`${player.name} updated the topic image`)
+                setGameData((data) => ({ ...data, topicImageUrl }))
+                nicknameFor(agentKey).then((name) =>
+                    pushComment(`${name} updated the topic image`)
+                )
                 break
             }
             case 'NewBackground': {
                 const { agentKey, subType, url, startTime } = content
-                setGameData((data) => {
-                    return {
-                        ...data,
-                        backgroundImage: subType === 'image' ? url : '',
-                        backgroundVideo: subType === 'video' ? url : '',
-                        backgroundVideoStartTime: startTime,
-                    }
-                })
-                const player = findPlayer(agentKey)
-                pushComment(`${player.name} updated the background`)
+                setGameData((data) => ({
+                    ...data,
+                    backgroundImage: subType === 'image' ? url : '',
+                    backgroundVideo: subType === 'video' ? url : '',
+                    backgroundVideoStartTime: startTime,
+                }))
+                nicknameFor(agentKey).then((name) =>
+                    pushComment(`${name} updated the background`)
+                )
                 break
             }
             case 'StartGame': {
                 const { agentKey, data } = content
                 const parsedData = JSON.parse(data)
+                if (Array.isArray(parsedData.players)) {
+                    parsedData.players = parsedData.players.map((p: string) =>
+                        decodeHashFromBase64(p)
+                    )
+                }
                 setGameSettingsModalOpen(false)
                 setGameData(parsedData)
                 setGameInProgress(true)
@@ -1449,8 +1267,7 @@ const GlassBeadGame = (): JSX.Element => {
                     .remove()
                 liveBeadIndexRef.current = 1
                 startGame(parsedData)
-                const player = findPlayer(agentKey)
-                pushComment(`${player.name} started the game`)
+                nicknameFor(agentKey).then((name) => pushComment(`${name} started the game`))
                 break
             }
             case 'StopGame': {
@@ -1470,67 +1287,42 @@ const GlassBeadGame = (): JSX.Element => {
                 setTurn(0)
                 if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording')
                     mediaRecorderRef.current.stop()
-                const player = findPlayer(agentKey)
-                pushComment(`${player.name} stopped the game`)
+                nicknameFor(agentKey).then((name) => pushComment(`${name} stopped the game`))
                 break
             }
             case 'LeaveGame': {
                 const { agentKey } = content
-                const player = findPlayer(agentKey)
-                pushComment(`${player.name} left the room`)
-                setPeopleInRoom((ps) => {
-                    return ps.filter((p) => p.agentKey !== agentKey)
-                })
+                nicknameFor(agentKey).then((name) => pushComment(`${name} left the room`))
+                setPeopleInRoom((ps) => ps.filter((p) => !eqKey(p, agentKey)))
                 peopleInRoomRef.current = peopleInRoomRef.current.filter(
-                    (p) => p.agentKey !== agentKey
+                    (p) => !eqKey(p, agentKey)
                 )
-                const peerObject = peersRef.current.find((p) => p.player.agentKey === agentKey)
+                const peerObject = peersRef.current.find((p) => eqKey(p.agentKey, agentKey))
                 if (peerObject) {
                     peerObject.peer.destroy()
                     peersRef.current = peersRef.current.filter(
-                        (p) => p.player.agentKey !== agentKey
+                        (p) => !eqKey(p.agentKey, agentKey)
                     )
                     videosRef.current = videosRef.current.filter(
-                        (v) => v.player.agentKey !== agentKey
+                        (v) => !eqKey(v.agentKey, agentKey)
                     )
                 }
                 if (!videosRef.current.length && !streamRef.current) updateShowVideos(false)
-                setPlayers((ps) => [...ps.filter((p) => p.agentKey !== agentKey)])
+                setPlayers((ps) => ps.filter((p) => !eqKey(p, agentKey)))
                 break
             }
             case 'NewBead': {
                 const { agentKey, audio, index } = content
-                const arrayBuffer = audio.buffer.slice(
-                    audio.byteOffset,
-                    audio.byteLength + audio.byteOffset
-                )
-                const audioBlob = new Blob([arrayBuffer], { type: 'audio/mpeg-3' })
-                const player = findPlayer(agentKey)
-                setBeads((previousBeads) => [
-                    ...previousBeads,
-                    {
-                        user: {
-                            name: agentKey === myAgentPubKeyRef.current ? 'You' : player.name,
-                            flagImagePath: player.image,
-                        },
-                        index,
-                        beadUrl: URL.createObjectURL(audioBlob),
-                    },
-                ])
+                setBeads((previousBeads) => [...previousBeads, { agentKey, audio, index }])
                 addEventListenersToBead(index)
                 break
             }
             case 'NewSignalRequest': {
-                const { player } = content
-                const parsedSignal = JSON.parse(content.signal)
-                // search for peer in peers array
-                const existingPeer = peersRef.current.find(
-                    (p) => p.player.agentKey === player.agentKey
-                )
-                // if peer exists, pass signal to peer
+                const { agentKey, signal: signalString } = content
+                const parsedSignal = JSON.parse(signalString)
+                const existingPeer = peersRef.current.find((p) => eqKey(p.agentKey, agentKey))
                 if (existingPeer) existingPeer.peer.signal(parsedSignal)
                 else {
-                    // otherwise, create new peer connection (with stream if running)
                     const peer = new Peer({
                         initiator: false,
                         stream: streamRef.current,
@@ -1542,44 +1334,44 @@ const GlassBeadGame = (): JSX.Element => {
                             message: {
                                 type: 'NewSignalResponse',
                                 content: {
-                                    player: playerRef.current,
+                                    agentKey: myAgentPubKeyRef.current as AgentPubKey,
                                     signal: JSON.stringify(data),
                                 },
                             },
                         }
-                        gbgServiceRef
-                            .current!.notify(signalResponse, [player.agentKey])
+                        serviceRef.current!
+                            .notify(signalResponse, [agentKey])
                             .catch((error) => console.log('notify error: ', error))
                     })
                     peer.on('stream', (stream) => {
                         videosRef.current.push({
-                            player,
+                            agentKey,
                             peer,
                             audioOnly: !stream.getVideoTracks().length,
                         })
-                        pushComment(`${player.name}'s video connected`)
-                        addStreamToVideo(player.agentKey, stream)
-                        setPlayers((previousPlayers) => [...previousPlayers, player])
+                        nicknameFor(agentKey).then((name) =>
+                            pushComment(`${name}'s video connected`)
+                        )
+                        addStreamToVideo(keyOf(agentKey), stream)
+                        setPlayers((prev) => [...prev, agentKey])
                     })
                     peer.on('close', () => peer.destroy())
                     peer.on('error', (error) => console.log('error 2: ', error))
                     peer.signal(parsedSignal)
-                    peersRef.current.push({ player, peer })
+                    peersRef.current.push({ agentKey, peer })
                 }
                 break
             }
             case 'NewSignalResponse': {
-                const { player } = content
-                const parsedSignal = JSON.parse(content.signal)
-                const peerObject = peersRef.current.find(
-                    (p) => p.player.agentKey === player.agentKey
-                )
+                const { agentKey, signal: signalString } = content
+                const parsedSignal = JSON.parse(signalString)
+                const peerObject = peersRef.current.find((p) => eqKey(p.agentKey, agentKey))
                 if (peerObject) {
                     if (peerObject.peer.readable) peerObject.peer.signal(parsedSignal)
                     else {
                         peerObject.peer.destroy()
                         peersRef.current = peersRef.current.filter(
-                            (p) => p.player.agentKey !== player.agentKey
+                            (p) => !eqKey(p.agentKey, agentKey)
                         )
                     }
                 }
@@ -1587,27 +1379,28 @@ const GlassBeadGame = (): JSX.Element => {
             }
             case 'RefreshRequest': {
                 const { agentKey } = content
-                const peerObject = peersRef.current.find((p) => p.player.agentKey === agentKey)
+                const peerObject = peersRef.current.find((p) => eqKey(p.agentKey, agentKey))
                 if (peerObject) {
                     peerObject.peer.destroy()
                     peersRef.current = peersRef.current.filter(
-                        (p) => p.player.agentKey !== agentKey
+                        (p) => !eqKey(p.agentKey, agentKey)
                     )
                     videosRef.current = videosRef.current.filter(
-                        (v) => v.player.agentKey !== agentKey
+                        (v) => !eqKey(v.agentKey, agentKey)
                     )
-                    setPlayers((ps) => [...ps.filter((p) => p.agentKey !== agentKey)])
+                    setPlayers((ps) => ps.filter((p) => !eqKey(p, agentKey)))
                 }
                 break
             }
             case 'StreamDisconnected': {
                 const { agentKey } = content
-                videosRef.current = videosRef.current.filter((v) => v.player.agentKey !== agentKey)
+                videosRef.current = videosRef.current.filter((v) => !eqKey(v.agentKey, agentKey))
                 if (!videosRef.current.length && !streamRef.current) updateShowVideos(false)
-                setPlayers((ps) => [...ps.filter((p) => p.agentKey !== agentKey)])
-                if (agentKey !== myAgentPubKeyRef.current) {
-                    const player = findPlayer(agentKey)
-                    pushComment(`${player.name}'s stream disconnected`)
+                setPlayers((ps) => ps.filter((p) => !eqKey(p, agentKey)))
+                if (!eqKey(agentKey, myAgentPubKeyRef.current)) {
+                    nicknameFor(agentKey).then((name) =>
+                        pushComment(`${name}'s stream disconnected`)
+                    )
                 }
                 break
             }
@@ -1616,89 +1409,46 @@ const GlassBeadGame = (): JSX.Element => {
         }
     }
 
-    async function initialiseGBGService() {
-        if (!isWeContext()) {
-            if (process.env.REACT_APP_ADMIN_PORT) {
-                console.log('authorizing!')
-                const adminWebsocket = await AdminWebsocket.connect(new URL(
-                    `ws://localhost:${process.env.REACT_APP_ADMIN_PORT}`)
-                )
-                const x = await adminWebsocket.listApps({})
-                console.log('apps', x)
-                const cellIds = await adminWebsocket.listCellIds()
-                console.log('CELL IDS', cellIds)
-                await adminWebsocket.authorizeSigningCredentials(cellIds[0])
-            }
-
-            const client = await AppAgentWebsocket.connect(
-                new URL(`ws://localhost:${process.env.REACT_APP_HC_PORT}`),
-                'glassbeadgame'
-            )
-            gbgServiceRef.current = new GlassBeadGameService(client, 'glassbeadgame')
-            client.on('signal', signalHandler)
-        } else {
-            const weClient = await WeClient.connect(); 
-            //@ts-ignore
-            const client = weClient.renderInfo.appletClient;
-            gbgServiceRef.current = new GlassBeadGameService(client, 'glassbeadgame')
-            client.on('signal', signalHandler)
-        }
-    }
-
     async function initialiseGame() {
-        myAgentPubKeyRef.current = await gbgServiceRef.current!.myAgentPubKey
-        playerRef.current = await gbgServiceRef.current!.getPlayerDetails(myAgentPubKeyRef.current)
-        const { settings: game } = await gbgServiceRef.current!.getGame(entryHash)
-        const playersArray = await gbgServiceRef.current!.getPlayers(entryHash)
-        const gameComments = await gbgServiceRef.current!.getComments(entryHash)
-        const gameBeads = await gbgServiceRef.current!.getBeads(entryHash)
+        if (!serviceRef.current || !myAgentPubKeyRef.current) return
+        const me = myAgentPubKeyRef.current
+        const { settings: game } = await serviceRef.current.getGame(entryHash)
+        const playersArray = dedupeKeys(await serviceRef.current.getPlayers(entryHash))
+        const gameComments = await serviceRef.current.getComments(entryHash)
+        const gameBeads = await serviceRef.current.getBeads(entryHash)
         setGameData(game)
         setPeopleInRoom(playersArray)
         peopleInRoomRef.current = playersArray
-        setComments(gameComments)
-        // handle beads
+        setComments(
+            gameComments.map((c) => ({
+                agentKey: c.agentKey,
+                text: c.text,
+                timestamp: new Date(Number(c.timestamp) / 1000).toISOString(),
+            }))
+        )
         if (gameBeads.length) {
-            setGameData((d) => {
-                return { ...d, locked: true }
-            })
+            setGameData((d) => ({ ...d, locked: true }))
             setBeads(
-                gameBeads.map((b) => {
-                    const { player, bead } = b
-                    const { audio, index, agentKey } = bead
-                    const arrayBuffer = audio.buffer.slice(
-                        audio.byteOffset,
-                        audio.byteLength + audio.byteOffset
-                    )
-                    const audioBlob = new Blob([arrayBuffer], { type: 'audio/mpeg-3' })
-                    return {
-                        user: {
-                            name: agentKey === myAgentPubKeyRef.current ? 'You' : player.name,
-                            flagImagePath: player.image,
-                        },
-                        index,
-                        beadUrl: URL.createObjectURL(audioBlob),
-                    }
-                })
+                gameBeads.map((b) => ({
+                    agentKey: b.agentKey,
+                    audio: b.bead.audio,
+                    index: b.bead.index,
+                }))
             )
         }
-        // connect to peers
         playersArray
-            .filter((p) => p.agentKey !== myAgentPubKeyRef.current)
-            .forEach((player) => {
-                // remove old peer if present
-                const peerObject = peersRef.current.find(
-                    (p) => p.player.agentKey === player.agentKey
-                )
+            .filter((p) => !eqKey(p, me))
+            .forEach((agentKey) => {
+                const peerObject = peersRef.current.find((p) => eqKey(p.agentKey, agentKey))
                 if (peerObject) {
                     peerObject.peer.destroy()
                     peersRef.current = peersRef.current.filter(
-                        (p) => p.player.agentKey !== player.agentKey
+                        (p) => !eqKey(p.agentKey, agentKey)
                     )
                     videosRef.current = videosRef.current.filter(
-                        (v) => v.player.agentKey !== player.agentKey
+                        (v) => !eqKey(v.agentKey, agentKey)
                     )
                 }
-                // create peer connection
                 const peer = new Peer({
                     initiator: true,
                     config: iceConfig,
@@ -1709,93 +1459,94 @@ const GlassBeadGame = (): JSX.Element => {
                         message: {
                             type: 'NewSignalRequest',
                             content: {
-                                player: playerRef.current,
+                                agentKey: me,
                                 signal: JSON.stringify(data),
                             },
                         },
                     }
-                    gbgServiceRef
-                        .current!.notify(signal, [player.agentKey])
+                    serviceRef.current!
+                        .notify(signal, [agentKey])
                         .catch((error) => console.log('notify error: ', error))
                 })
                 peer.on('stream', (stream) => {
                     videosRef.current.push({
-                        player,
+                        agentKey,
                         peer,
                         audioOnly: !stream.getVideoTracks().length,
                     })
-                    pushComment(`${player.name}'s video connected`)
-                    addStreamToVideo(player.agentKey, stream)
-                    setPlayers((previousPlayers) => [...previousPlayers, player])
+                    nicknameFor(agentKey).then((name) =>
+                        pushComment(`${name}'s video connected`)
+                    )
+                    addStreamToVideo(keyOf(agentKey), stream)
+                    setPlayers((prev) => [...prev, agentKey])
                 })
                 peer.on('close', () => peer.destroy())
                 peer.on('error', (error) => console.log(error))
-                peersRef.current.push({ player, peer })
+                peersRef.current.push({ agentKey, peer })
             })
-        // if new to game, join game and notify other platers
-        const playerInRoom = playersArray.find((p) => p.agentKey === myAgentPubKeyRef.current)
-        if (playerInRoom) joinGameHash.current = playerInRoom[1]
-        else {
-            gbgServiceRef
-                .current!.joinGame({ agentKey: myAgentPubKeyRef.current, entryHash })
-                .then((res) => {
-                    joinGameHash.current = res
-                    setPeopleInRoom((p) => [...p, playerRef.current])
-                    peopleInRoomRef.current.push(playerRef.current)
-                })
+        const alreadyJoined = playersArray.some((p) => eqKey(p, me))
+        if (!alreadyJoined) {
+            try {
+                const res = await serviceRef.current.joinGame({ agentKey: me, entryHash })
+                joinGameHash.current = res
+                setPeopleInRoom((p) =>
+                    p.some((x) => eqKey(x, me)) ? p : [...p, me]
+                )
+                if (!peopleInRoomRef.current.some((p) => eqKey(p, me))) {
+                    peopleInRoomRef.current.push(me)
+                }
+            } catch (error) {
+                console.log(error)
+            }
         }
-        if (playersArray.length > 0) {
+        const others = playersArray.filter((p) => !eqKey(p, me))
+        if (others.length > 0) {
             const signal: Signal = {
                 gameHash: entryHash,
-                message: {
-                    type: 'NewPlayer',
-                    content: playerRef.current,
-                },
+                message: { type: 'NewPlayer', content: me },
             }
-            gbgServiceRef
-                .current!.notify(
-                    signal,
-                    playersArray.map((p: any) => p.agentKey)
-                )
+            serviceRef.current
+                .notify(signal, others)
                 .catch((error) => console.log('notify error: ', error))
         }
     }
 
     async function leaveGame() {
-        if (gbgServiceRef.current && joinGameHash.current) {
-            const otherPlayers = peopleInRoomRef.current
-                .filter((p) => p.agentKey !== myAgentPubKeyRef.current)
-                .map((p) => p.agentKey)
-            const signal: Signal = {
-                gameHash: entryHash,
-                message: {
-                    type: 'LeaveGame',
-                    content: {
-                        agentKey: myAgentPubKeyRef.current,
-                    },
-                },
-            }
-            gbgServiceRef
-                .current!.notify(signal, otherPlayers)
-                .then(() => {
-                    gbgServiceRef
-                        .current!.leaveGame(joinGameHash.current)
-                        .catch((error) => console.log(error))
-                })
-                .catch((error) => console.log(error))
+        if (!serviceRef.current || !myAgentPubKeyRef.current) return
+        if (!joinGameHash.current) return
+        const me = myAgentPubKeyRef.current
+        const otherPlayers = peopleInRoomRef.current.filter((p) => !eqKey(p, me))
+        const signal: Signal = {
+            gameHash: entryHash,
+            message: { type: 'LeaveGame', content: { agentKey: me } },
+        }
+        try {
+            await serviceRef.current.notify(signal, otherPlayers)
+            await serviceRef.current.leaveGame(joinGameHash.current)
+        } catch (error) {
+            console.log(error)
         }
     }
 
     useEffect(() => {
-        initialiseGBGService()
-    }, [])
-
-    useEffect(() => {
-        if (gbgServiceRef.current) initialiseGame()
+        if (!ctx) return
+        if (initialisedRef.current) return
+        initialisedRef.current = true
+        serviceRef.current = ctx.service
+        myAgentPubKeyRef.current = ctx.service.myAgentPubKey
+        const unsub = ctx.client.on('signal', signalHandler)
+        initialiseGame()
         return () => {
+            try {
+                if (typeof unsub === 'function') (unsub as any)()
+            } catch {
+                /* ignore */
+            }
             leaveGame()
+            initialisedRef.current = false
         }
-    }, [gbgServiceRef.current])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ctx])
 
     useEffect(() => {
         const loadingAnimationDuration = 2000
@@ -1858,7 +1609,6 @@ const GlassBeadGame = (): JSX.Element => {
         animateCircle('right-top', -circleOffset)
         animateCircle('right-bottom', -circleOffset)
 
-        // fade out loading animation
         setTimeout(() => {
             const loadingAnimation = d3.select('#loading-animation')
             if (loadingAnimation) loadingAnimation.style('opacity', 0)
@@ -1868,7 +1618,6 @@ const GlassBeadGame = (): JSX.Element => {
             }, 1000)
         }, loadingAnimationDuration)
 
-        // set up timer canvas
         const svg = d3
             .select('#timer-canvas')
             .append('svg')
@@ -1885,7 +1634,6 @@ const GlassBeadGame = (): JSX.Element => {
                 .attr('transform', `translate(${gameArcRadius},${gameArcRadius})`)
         }
 
-        // order is important here to ensure correct layering
         const timerBackground = createTimerGroup('timer-background')
         createTimerGroup('timer-arcs')
         const timerText = createTimerGroup('timer-text')
@@ -2006,7 +1754,7 @@ const GlassBeadGame = (): JSX.Element => {
                 <ImageUploadModal
                     type='gbg-topic'
                     shape='circle'
-                    id={gameData.id}
+                    id={postId as any}
                     title='Add a new topic image'
                     mbLimit={2}
                     onSaved={(imageURL) => signalNewTopicImage(imageURL)}
@@ -2091,22 +1839,17 @@ const GlassBeadGame = (): JSX.Element => {
                             />
                             <p>{`Turn ${turn} / ${gameData.numberOfTurns}`}</p>
                             {players.map((player, index) => (
-                                <Row centerY key={player.agentKey} className={styles.player}>
+                                <Row centerY key={keyOf(player)} className={styles.player}>
                                     <div className={styles.position}>{index + 1}</div>
-                                    <ImageTitle
-                                        type='user'
-                                        imagePath={player.image}
-                                        title={
-                                            player.agentKey === myAgentPubKeyRef.current
-                                                ? 'You'
-                                                : player.name
-                                        }
+                                    <PlayerRow
+                                        agentKey={player}
+                                        myAgentPubKey={myAgentPubKeyRef.current}
                                         fontSize={largeScreen ? 16 : 10}
                                         imageSize={largeScreen ? 35 : 20}
                                         style={{ marginRight: largeScreen ? 10 : 5 }}
                                     />
                                     <p
-                                        id={`player-${player.agentKey}`}
+                                        id={`player-${keyOf(player)}`}
                                         className={styles.playerState}
                                     />
                                 </Row>
@@ -2147,30 +1890,15 @@ const GlassBeadGame = (): JSX.Element => {
                                 </Modal>
                             )}
                             {!gameData.locked && !beads.length && (
-                                <>
-                                    {/* {userIsStreaming && ( */}
-                                    <Button
-                                        // text={`${beads.length ? 'Restart' : 'Start'} game`}
-                                        text='Start game'
-                                        color={beads.length ? 'red' : 'blue'}
-                                        size={largeScreen ? 'large' : 'small'}
-                                        style={{ marginBottom: 10 }}
-                                        onClick={() =>
-                                            allowedTo('start-game') &&
-                                            setGameSettingsModalOpen(true)
-                                        }
-                                    />
-                                    {/* )} */}
-                                    {/* {beads.length > 0 && (
-                                        <Button
-                                            text='Save game'
-                                            color='blue'
-                                            size={largeScreen ? 'large' : 'small'}
-                                            style={{ marginBottom: 10 }}
-                                            onClick={() => allowedTo('save-game') && saveGame()}
-                                        />
-                                    )} */}
-                                </>
+                                <Button
+                                    text='Start game'
+                                    color={beads.length ? 'red' : 'blue'}
+                                    size={largeScreen ? 'large' : 'small'}
+                                    style={{ marginBottom: 10 }}
+                                    onClick={() =>
+                                        allowedTo('start-game') && setGameSettingsModalOpen(true)
+                                    }
+                                />
                             )}
                             <Button
                                 text={`${
@@ -2187,11 +1915,11 @@ const GlassBeadGame = (): JSX.Element => {
                             />
                         </Column>
                     )}
-                    {gameSettingsModalOpen && (
+                    {gameSettingsModalOpen && myAgentPubKeyRef.current && (
                         <GameSettingsModal
                             close={() => setGameSettingsModalOpen(false)}
                             gameData={gameData}
-                            player={playerRef.current}
+                            myAgentPubKey={myAgentPubKeyRef.current}
                             players={players}
                             setPlayers={setPlayers}
                             signalStartGame={signalStartGame}
@@ -2252,22 +1980,20 @@ const GlassBeadGame = (): JSX.Element => {
                                 {!showVideos && (
                                     <Column style={{ marginBottom: 10 }}>
                                         <p style={{ marginBottom: 10 }}>{peopleStreamingText()}</p>
-                                        {userIsStreaming && (
-                                            <ImageTitle
-                                                type='user'
-                                                imagePath={playerRef.current.image}
-                                                title='You'
+                                        {userIsStreaming && myAgentPubKeyRef.current && (
+                                            <PlayerRow
+                                                agentKey={myAgentPubKeyRef.current}
+                                                myAgentPubKey={myAgentPubKeyRef.current}
                                                 fontSize={16}
                                                 imageSize={40}
                                                 style={{ marginBottom: 10 }}
                                             />
                                         )}
                                         {videosRef.current.map((v) => (
-                                            <ImageTitle
-                                                key={v.player.agentKey}
-                                                type='user'
-                                                imagePath={v.player.image}
-                                                title={v.player.name}
+                                            <PlayerRow
+                                                key={keyOf(v.agentKey)}
+                                                agentKey={v.agentKey}
+                                                myAgentPubKey={myAgentPubKeyRef.current}
                                                 fontSize={16}
                                                 imageSize={40}
                                                 style={{ marginBottom: 10 }}
@@ -2278,32 +2004,16 @@ const GlassBeadGame = (): JSX.Element => {
                             </Column>
                             <Column className={styles.peopleInRoom}>
                                 <p style={{ marginBottom: 10 }}>{peopleInRoomText()}</p>
-                                {peopleInRoom.map((player) => (
-                                    <ImageTitle
-                                        key={player.agentKey}
-                                        type='user'
-                                        imagePath={player.image}
-                                        title={
-                                            player.agentKey === myAgentPubKeyRef.current
-                                                ? 'You'
-                                                : player.name
-                                        }
+                                {peopleInRoom.map((agentKey) => (
+                                    <PlayerRow
+                                        key={keyOf(agentKey)}
+                                        agentKey={agentKey}
+                                        myAgentPubKey={myAgentPubKeyRef.current}
                                         fontSize={16}
                                         imageSize={40}
                                         style={{ marginBottom: 10 }}
                                     />
                                 ))}
-                                {/* {usersRef.current.map((user) => (
-                                    <ImageTitle
-                                        key={user.socketId}
-                                        type='user'
-                                        imagePath={user.userData.flagImagePath}
-                                        title={isYou(user.socketId) ? 'You' : user.userData.name}
-                                        fontSize={16}
-                                        imageSize={40}
-                                        style={{ marginBottom: 10 }}
-                                    />
-                                ))} */}
                             </Column>
                         </Column>
                     )}
@@ -2323,10 +2033,10 @@ const GlassBeadGame = (): JSX.Element => {
                             onClick={() => allowedTo('stream') && toggleStream()}
                         />
                     )}
-                    {userIsStreaming && (
+                    {userIsStreaming && myAgentPubKeyRef.current && (
                         <Video
                             id='your-video'
-                            user={playerRef.current}
+                            agentKey={myAgentPubKeyRef.current}
                             size={findVideoSize()}
                             audioEnabled={audioTrackEnabled}
                             videoEnabled={videoTrackEnabled}
@@ -2335,18 +2045,16 @@ const GlassBeadGame = (): JSX.Element => {
                             audioOnly={audioOnly}
                         />
                     )}
-                    {videosRef.current.map((v) => {
-                        return (
-                            <Video
-                                key={v.player.agentKey}
-                                id={v.player.agentKey}
-                                user={v.player}
-                                size={findVideoSize()}
-                                audioOnly={v.audioOnly}
-                                refreshStream={refreshStream}
-                            />
-                        )
-                    })}
+                    {videosRef.current.map((v) => (
+                        <Video
+                            key={keyOf(v.agentKey)}
+                            id={keyOf(v.agentKey)}
+                            agentKey={v.agentKey}
+                            size={findVideoSize()}
+                            audioOnly={v.audioOnly}
+                            refreshStream={refreshStream}
+                        />
+                    ))}
                 </Scrollbars>
             </Row>
             <Scrollbars
@@ -2354,26 +2062,29 @@ const GlassBeadGame = (): JSX.Element => {
                     (gameData.backgroundImage || gameData.backgroundVideo) && styles.transparent
                 } row`}
             >
-                {beads.map((bead, beadIndex) => (
-                    <Row
-                        centerY
-                        key={`${bead.roomId}${bead.index}`}
-                        style={{ paddingRight: beads.length === beadIndex + 1 ? 20 : 0 }}
-                    >
-                        <BeadCard
-                            postId={postData.id}
-                            location='gbg'
-                            bead={bead}
-                            index={beadIndex + 1}
-                            className={styles.bead}
-                        />
-                        {beads.length > beadIndex + 1 && (
-                            <Row centerY className={styles.beadDivider}>
-                                <DNAIconSVG />
-                            </Row>
-                        )}
-                    </Row>
-                ))}
+                <Row centerY style={{ width: 'max-content' }}>
+                    {beads.map((bead, beadIndex) => (
+                        <Row
+                            centerY
+                            key={`${postId}-${bead.index}`}
+                            style={{ paddingRight: beads.length === beadIndex + 1 ? 20 : 0 }}
+                        >
+                            <BeadCard
+                                postId={postId}
+                                location='gbg'
+                                agentKey={bead.agentKey}
+                                audio={bead.audio}
+                                index={beadIndex + 1}
+                                className={styles.bead}
+                            />
+                            {beads.length > beadIndex + 1 && (
+                                <Row centerY className={styles.beadDivider}>
+                                    <DNAIconSVG />
+                                </Row>
+                            )}
+                        </Row>
+                    ))}
+                </Row>
             </Scrollbars>
             <button
                 className={styles.helpButton}
@@ -2387,9 +2098,3 @@ const GlassBeadGame = (): JSX.Element => {
 }
 
 export default GlassBeadGame
-
-// peer.on('iceStateChange', (iceConnectionState, iceGatheringState) => {
-//     console.log('ice', iceConnectionState, iceGatheringState)
-// })
-
-// peer._debug = console.log

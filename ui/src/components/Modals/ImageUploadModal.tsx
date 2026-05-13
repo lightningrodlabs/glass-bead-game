@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react'
-import axios from 'axios'
-import Cookies from 'universal-cookie'
 import styles from '@styles/components/modals/ImageUploadModal.module.scss'
-import config from '@src/Config'
 import Button from '@components/Button'
 import Modal from '@components/Modal'
 import Row from '@components/Row'
@@ -19,13 +16,12 @@ const ImageUploadModal = (props: {
     onSaved: (imageURL: string) => void
     close: () => void
 }): JSX.Element => {
-    const { type, shape, id, title, subTitle, mbLimit, onSaved, close } = props
+    const { type, shape, id, title, subTitle, mbLimit = 2, onSaved, close } = props
     const [imageFile, setImageFile] = useState<File>()
     const [imageURL, setImageURL] = useState('')
     const [imagePreviewURL, setImagePreviewURL] = useState('')
     const [imageSizeError, setImageSizeError] = useState(false)
     const [loading, setLoading] = useState(false)
-    const cookies = new Cookies()
 
     function selectImageFile() {
         const input = document.getElementById('file-input') as HTMLInputElement
@@ -100,11 +96,6 @@ const ImageUploadModal = (props: {
             />
         </Modal>
     )
-}
-
-ImageUploadModal.defaultProps = {
-    subTitle: null,
-    mbLimit: 2,
 }
 
 export default ImageUploadModal

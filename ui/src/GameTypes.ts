@@ -119,6 +119,7 @@ export interface CreateGameOutput {
 export interface GameOutput {
     entryHash: EntryHash
     creator: AgentPubKey
+    created: Timestamp
     settings: GameSettingsData
 }
 

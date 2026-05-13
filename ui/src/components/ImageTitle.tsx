@@ -15,8 +15,18 @@ const ImageTitle = (props: {
     wrapText?: boolean
     onClick?: () => void
 }): JSX.Element => {
-    const { type, imagePath, imageSize, title, fontSize, style, shadow, link, wrapText, onClick } =
-        props
+    const {
+        type,
+        imagePath,
+        imageSize = 30,
+        title,
+        fontSize = 14,
+        style = null,
+        shadow = false,
+        link,
+        wrapText = false,
+        onClick,
+    } = props
     if (link) {
         return (
             <Link
@@ -55,16 +65,6 @@ const ImageTitle = (props: {
             </p>
         </div>
     )
-}
-
-ImageTitle.defaultProps = {
-    imageSize: 30,
-    fontSize: 14,
-    style: null,
-    shadow: false,
-    link: null,
-    wrapText: false,
-    onClick: null,
 }
 
 export default ImageTitle

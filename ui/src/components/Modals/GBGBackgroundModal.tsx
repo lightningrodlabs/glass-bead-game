@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react'
-import axios from 'axios'
-import Cookies from 'universal-cookie'
 import styles from '@styles/components/modals/GBGBackgroundModal.module.scss'
-import config from '@src/Config'
 import Button from '@components/Button'
 import Modal from '@components/Modal'
 import Row from '@components/Row'
@@ -24,7 +21,6 @@ const GBGBackgroundModal = (props: {
     const [showVideoPreview, setShowVideoPreview] = useState(false)
     const [fileSizeError, setFileSizeError] = useState(false)
     const [loading, setLoading] = useState(false)
-    const cookies = new Cookies()
     const mbLimit = 2
 
     function resetState() {

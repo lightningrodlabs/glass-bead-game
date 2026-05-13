@@ -9,7 +9,7 @@ const ProgressBarSteps = (props: {
     currentStep: number
     style?: any
 }): JSX.Element => {
-    const { steps, currentStep, style } = props
+    const { steps, currentStep, style = null } = props
 
     return (
         <Column centerX className={styles.wrapper} style={style}>
@@ -53,10 +53,6 @@ const ProgressBarSteps = (props: {
             </Row>
         </Column>
     )
-}
-
-ProgressBarSteps.defaultProps = {
-    style: null,
 }
 
 export default ProgressBarSteps

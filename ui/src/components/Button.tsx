@@ -13,7 +13,17 @@ const Button = (props: {
     submit?: boolean
     onClick?: () => void
 }): JSX.Element => {
-    const { text, icon, color, size, style, disabled, loading, submit, onClick } = props
+    const {
+        text,
+        icon,
+        color,
+        size = 'large',
+        style = null,
+        disabled = false,
+        loading = false,
+        submit = false,
+        onClick,
+    } = props
 
     return (
         <button
@@ -30,17 +40,6 @@ const Button = (props: {
             {loading && <LoadingWheel size={25} />}
         </button>
     )
-}
-
-Button.defaultProps = {
-    text: null,
-    icon: null,
-    size: 'large',
-    style: null,
-    disabled: false,
-    loading: false,
-    submit: false,
-    onClick: null,
 }
 
 export default Button

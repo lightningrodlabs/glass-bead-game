@@ -11,7 +11,16 @@ const Column = (props: {
     spaceBetween?: boolean
     scroll?: boolean
 }): JSX.Element => {
-    const { children, style, className, id, centerX, centerY, spaceBetween, scroll } = props
+    const {
+        children,
+        style = null,
+        className = false,
+        id,
+        centerX = false,
+        centerY = false,
+        spaceBetween = false,
+        scroll = false,
+    } = props
 
     const classes = [styles.wrapper]
     if (className) classes.unshift(className)
@@ -25,16 +34,6 @@ const Column = (props: {
             {children}
         </div>
     )
-}
-
-Column.defaultProps = {
-    style: null,
-    className: false,
-    id: null,
-    centerX: false,
-    centerY: false,
-    spaceBetween: false,
-    scroll: false,
 }
 
 export default Column

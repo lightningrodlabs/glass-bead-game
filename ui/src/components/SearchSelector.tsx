@@ -29,9 +29,9 @@ const SearchSelector = (props: {
         type,
         title,
         placeholder,
-        style,
-        disabled,
-        state,
+        style = null,
+        disabled = false,
+        state = 'default',
         errors,
         options,
         onSearchQuery,
@@ -86,15 +86,6 @@ const SearchSelector = (props: {
             )}
         </div>
     )
-}
-
-SearchSelector.defaultProps = {
-    title: null,
-    placeholder: null,
-    style: null,
-    disabled: false,
-    state: 'default',
-    errors: null,
 }
 
 export default SearchSelector

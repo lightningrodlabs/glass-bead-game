@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState } from 'react'
-import GlassBeadGameService from '@src/glassbeadgame.service'
+import React, { useContext, useState } from 'react'
 import { defaultErrorState, allValid } from '@src/Helpers'
 import GlassBeadGameTopics from '@src/GlassBeadGameTopics'
 import styles from '@styles/components/modals/CreateGameModal.module.scss'
@@ -10,19 +9,19 @@ import Button from '@components/Button'
 import Modal from '@components/Modal'
 import Input from '@components/Input'
 import ProgressBarSteps from '@components/ProgressBarSteps'
-// import LoadingWheel from '@components/LoadingWheel'
 import SuccessMessage from '@components/SuccessMessage'
-// import { Signal } from '@src/GameTypes'
 import Scrollbars from '../Scrollbars'
+import { AppContext } from '@src/contexts'
+import type { GameOutput } from '@src/GameTypes'
 
 const CreateGameModal = (props: {
-    gbgService: GlassBeadGameService
-    player: any
-    games: any[]
-    setGames: (games: any[]) => void
+    games: GameOutput[]
+    setGames: (games: GameOutput[]) => void
     close: () => void
 }): JSX.Element => {
-    const { gbgService, player, games, setGames, close } = props
+    const { games, setGames, close } = props
+    const ctx = useContext(AppContext)!
+    const { service } = ctx
     const steps = ['Topic', 'Description', 'Settings']
     const [currentStep, setCurrentStep] = useState(1)
     const [topicGroup, setTopicGroup] = useState('archetopics')
@@ -107,14 +106,19 @@ const CreateGameModal = (props: {
                 intervalDuration: intervalDuration.value,
                 outroDuration: outroDuration.value,
             }
-            gbgService
+            service
                 .createGame(gameData)
                 .then((res) => {
                     setLoading(false)
                     setSaved(true)
                     setGames([
                         ...games,
-                        { creator: player, settings: gameData, entryHash: res.entryHash },
+                        {
+                            creator: service.myAgentPubKey,
+                            created: Date.now() * 1000,
+                            settings: gameData,
+                            entryHash: res.entryHash,
+                        },
                     ])
                     // const signal: Signal = {
                     //     gameHash: '',
@@ -136,7 +140,7 @@ const CreateGameModal = (props: {
     }
 
     return (
-        <Modal centered close={close}>
+        <Modal centered closeOnClickOutside={false} close={close}>
             {saved ? (
                 <SuccessMessage text='Game saved!' />
             ) : (

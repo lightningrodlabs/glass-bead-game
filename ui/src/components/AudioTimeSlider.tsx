@@ -93,10 +93,4 @@ const AudioTimeSlider = (props: {
     )
 }
 
-AudioTimeSlider.defaultProps = {
-    onPlay: null,
-    onPause: null,
-    onEnded: null,
-}
-
 export default AudioTimeSlider

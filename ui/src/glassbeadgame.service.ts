@@ -3,7 +3,7 @@ import {
     AgentPubKey,
     ActionHash,
     EntryHash,
-    AppCallZomeRequest,
+    RoleNameCallZomeRequest,
 } from '@holochain/client'
 import {
     GameOutput,
@@ -79,7 +79,7 @@ export default class GlassBeadGameService {
     }
 
     private callZome(fnName: string, payload: any) {
-        const req: AppCallZomeRequest = {
+        const req: RoleNameCallZomeRequest = {
             role_name: this.roleName,
             zome_name: this.zomeName,
             fn_name: fnName,

@@ -1,22 +1,127 @@
+@import '@styles/Variables';
+
 .wrapper {
+    all: unset;
+    cursor: pointer;
+    box-sizing: border-box;
     width: 100%;
-    justify-content: flex-start;
+    max-width: 360px;
     background-color: white;
     border-radius: 10px;
-    padding: 40px;
-    margin-bottom: 20px;
+    padding: 12px;
+    position: relative;
+    transition: zoom 0.18s ease, box-shadow 0.18s ease;
+    display: block;
 
-    > img {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        object-fit: cover;
-        box-shadow: 0 0 10px rgba(black, 0.2);
-        margin-bottom: 20px;
+    &:hover {
+        zoom: 1.04;
+        box-shadow: 0 6px 18px rgba(black, 0.22);
     }
 
-    h1 {
-        margin: 0 0 5px 0;
-        font-size: 24px;
+    &:focus-visible {
+        outline: 2px solid $blue2;
+        outline-offset: 2px;
+    }
+
+    .inner {
+        width: 100%;
+        gap: 12px;
+    }
+
+    .thumb,
+    .thumbPlaceholder {
+        width: 64px;
+        height: 64px;
+        border-radius: 8px;
+        object-fit: cover;
+        flex-shrink: 0;
+        background-color: $grey2;
+    }
+
+    .body {
+        flex: 1;
+        min-width: 0;
+        gap: 4px;
+    }
+
+    .titleRow {
+        gap: 8px;
+        width: 100%;
+    }
+
+    .topic {
+        margin: 0;
+        font-size: 16px;
+        line-height: 1.25;
+        font-weight: 600;
+        color: $grey7;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 0;
+        max-width: 60%;
+    }
+
+    .descriptionTooltip {
+        flex: 1;
+        min-width: 0;
+        display: block;
+        --max-width: 320px;
+    }
+
+    .description {
+        display: block;
+        width: 100%;
+        font-size: 12px;
+        color: $grey6;
+        white-space: nowrap;
+        overflow: hidden;
+        mask-image: linear-gradient(to right, black 60%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to right, black 60%, transparent 100%);
+        cursor: help;
+    }
+
+    .lockBadge {
+        position: absolute;
+        bottom: 6px;
+        right: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 14px;
+        height: 14px;
+        color: $grey6;
+        opacity: 0.7;
+
+        > svg {
+            width: 12px;
+            height: 12px;
+        }
+    }
+
+    .meta {
+        font-size: 12px;
+        color: $grey7;
+    }
+
+    .metaLabel {
+        font-size: 12px;
+        color: $grey7;
+    }
+
+    .metaName {
+        font-size: 12px;
+        color: $grey7;
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .timeAgo {
+        margin: 0;
+        font-size: 11px;
+        color: $grey6;
     }
 }

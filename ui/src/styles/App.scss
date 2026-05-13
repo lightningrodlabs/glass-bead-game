@@ -6,6 +6,17 @@
     font-family: 'Open Sans', sans-serif;
 }
 
+// Shoelace tooltip overrides — ensure tooltips render above all tiles/cards
+// and preserve newlines from the source text.
+:root {
+    --sl-z-index-tooltip: 10000;
+}
+
+sl-tooltip::part(body) {
+    white-space: pre-wrap;
+    max-width: 320px;
+}
+
 body {
     background-color: #f7f7f9; //#eee;
     width: 100%;

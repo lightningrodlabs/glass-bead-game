@@ -1,147 +1,174 @@
-import React, { useEffect, useState } from 'react'
-import GlassBeadGameService from '@src/glassbeadgame.service'
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import type { EntryRecord } from '@holochain-open-dev/utils'
+import type { Profile } from '@holochain-open-dev/profiles'
 import styles from '@styles/pages/HomePage.module.scss'
 import Column from '@components/Column'
+import Row from '@src/components/Row'
 import Button from '@components/Button'
-import PlayerDetailsModal from '@components/Modals/PlayerDetailsModal'
+import EditProfileModal from '@components/Modals/EditProfileModal'
 import CreateGameModal from '@components/Modals/CreateGameModal'
 import GameCard from '@components/Cards/GameCard'
 import LoadingWheel from '@src/components/LoadingWheel'
-import FlagImage from '@src/components/FlagImage'
-import Row from '@src/components/Row'
+import DropDown from '@components/DropDown'
 import HelpModal from '@components/Modals/HelpModal'
 import { ReactComponent as CastaliaIcon } from '@svgs/castalia-logo.svg'
-import { ReactComponent as EditIcon } from '@svgs/edit-solid.svg'
-import { AdminWebsocket, AppAgentWebsocket } from '@holochain/client'
 import { ReactComponent as HelpIcon } from '@svgs/question-solid.svg'
-import { WeClient, isWeContext } from '@lightningrodlabs/we-applet';
+import { AppContext } from '@src/contexts'
+import type { GameOutput } from '@src/GameTypes'
+
+const SORT_OPTIONS = ['Newest first', 'Oldest first'] as const
+type SortOption = (typeof SORT_OPTIONS)[number]
 
 const Homepage = (): JSX.Element => {
-    const [gbgService, setGbgService] = useState<null | GlassBeadGameService>(null)
-    const [player, setPlayer] = useState<any>(null)
-    const [games, setGames] = useState<any[]>([])
-    const [playerDetailsModalOpen, setPlayerDetailsModalOpen] = useState(false)
+    const ctx = useContext(AppContext)
+    const [profile, setProfile] = useState<EntryRecord<Profile> | undefined>(undefined)
+    const [games, setGames] = useState<GameOutput[]>([])
+    const [editProfileModalOpen, setEditProfileModalOpen] = useState(false)
     const [createGameModalOpen, setCreateGameModalOpen] = useState(false)
     const [helpModalOpen, setHelpModalOpen] = useState(false)
     const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
+    const [sort, setSort] = useState<SortOption>('Newest first')
+    const lastFetchRef = useRef<number>(0)
+    const refreshingRef = useRef<boolean>(false)
 
-    async function initialiseGBGService() {
-        if (!isWeContext()) {
-            if (process.env.REACT_APP_ADMIN_PORT) {
-                console.log('authorizing!')
-                const adminWebsocket = await AdminWebsocket.connect(
-                    new URL(`ws://localhost:${process.env.REACT_APP_ADMIN_PORT}`)
-                )
-                const x = await adminWebsocket.listApps({})
-                console.log('apps', x)
-                const cellIds = await adminWebsocket.listCellIds()
-                console.log('CELL IDS', cellIds)
-                await adminWebsocket.authorizeSigningCredentials(cellIds[0])
-            }
-
-            const client = await AppAgentWebsocket.connect(
-                new URL(`ws://localhost:${process.env.REACT_APP_HC_PORT}`),
-                'glassbeadgame'
-            )
-            setGbgService(new GlassBeadGameService(client, 'glassbeadgame'))
-        } else {
-            const weClient = await WeClient.connect(); 
-            //@ts-ignore
-            const client = weClient.renderInfo.appletClient;
-            setGbgService(new GlassBeadGameService(client, 'glassbeadgame'))
-        }
+    const fetchGames = (minIntervalMs = 0): void => {
+        if (!ctx || refreshingRef.current) return
+        if (minIntervalMs > 0 && Date.now() - lastFetchRef.current < minIntervalMs) return
+        refreshingRef.current = true
+        setRefreshing(true)
+        ctx.service
+            .getGames()
+            .then((gamesList) => {
+                setGames(gamesList)
+                lastFetchRef.current = Date.now()
+            })
+            .catch((error) => console.log(error))
+            .finally(() => {
+                refreshingRef.current = false
+                setRefreshing(false)
+            })
     }
 
     useEffect(() => {
-        initialiseGBGService()
-    }, [])
+        if (!ctx) return
+        const { service, profilesStore } = ctx
+        Promise.all([
+            profilesStore.client.getAgentProfile(service.myAgentPubKey),
+            service.getGames(),
+        ])
+            .then(([myProfile, gamesList]) => {
+                setProfile(myProfile)
+                setGames(gamesList)
+                lastFetchRef.current = Date.now()
+                setLoading(false)
+            })
+            .catch((error) => console.log(error))
+    }, [ctx])
 
+    // Re-fetch when the page becomes visible again (e.g. switching back to the
+    // tool in Moss). Throttled to at most once every 15s so quick toggles don't spam.
     useEffect(() => {
-        if (gbgService) {
-            Promise.all([
-                gbgService.getPlayerDetails(gbgService.myAgentPubKey),
-                gbgService.getGames(),
-            ])
-                .then((data) => {
-                    setPlayer(data[0])
-                    setGames(data[1])
-                    setLoading(false)
-                })
-                .catch((error) => console.log(error))
+        const REVISIT_MIN_INTERVAL_MS = 30_000
+        const onVisible = () => {
+            if (document.visibilityState === 'visible') fetchGames(REVISIT_MIN_INTERVAL_MS)
         }
-    }, [gbgService])
+        const onFocus = () => fetchGames(REVISIT_MIN_INTERVAL_MS)
+        document.addEventListener('visibilitychange', onVisible)
+        window.addEventListener('focus', onFocus)
+        return () => {
+            document.removeEventListener('visibilitychange', onVisible)
+            window.removeEventListener('focus', onFocus)
+        }
+    }, [ctx])
+
+    const refreshGames = () => fetchGames(0)
+
+    const sortedGames = useMemo(() => {
+        const copy = [...games]
+        copy.sort((a, b) =>
+            sort === 'Newest first'
+                ? Number(b.created) - Number(a.created)
+                : Number(a.created) - Number(b.created)
+        )
+        return copy
+    }, [games, sort])
+
+    if (!ctx) return <LoadingWheel />
+
+    const canEditProfile = ctx.mode !== 'weave'
 
     return (
-        <Column centerX className={styles.wrapper}>
-            <Column centerX centerY className={styles.gbgIcon}>
-                <CastaliaIcon />
-            </Column>
+        <Column className={styles.wrapper}>
+            <Row centerY spaceBetween className={styles.header}>
+                <Row centerY>
+                    <Column centerX centerY className={styles.gbgIcon}>
+                        <CastaliaIcon />
+                    </Column>
+                    <button
+                        className={styles.helpButton}
+                        type='button'
+                        onClick={() => setHelpModalOpen(true)}
+                        aria-label='Help'
+                    >
+                        <HelpIcon />
+                    </button>
+                    <Button
+                        color='blue'
+                        text='Create game'
+                        onClick={() => setCreateGameModalOpen(true)}
+                        style={{ marginLeft: 10 }}
+                    />
+                    {canEditProfile && (
+                        <Button
+                            color='grey'
+                            text='Edit profile'
+                            onClick={() => setEditProfileModalOpen(true)}
+                            style={{ marginLeft: 10 }}
+                        />
+                    )}
+                </Row>
+                <Row centerY>
+                    <Button
+                        color='grey'
+                        text='Refresh'
+                        onClick={refreshGames}
+                        loading={refreshing}
+                        style={{ marginRight: 10 }}
+                    />
+                    <DropDown
+                        title='Sort'
+                        options={[...SORT_OPTIONS]}
+                        selectedOption={sort}
+                        setSelectedOption={(o: SortOption) => setSort(o)}
+                    />
+                </Row>
+            </Row>
+
             {loading ? (
                 <LoadingWheel />
             ) : (
-                <Column>
-                    {!player ? (
-                        <Button
-                            color='purple'
-                            text='Add player details'
-                            onClick={() => setPlayerDetailsModalOpen(true)}
-                        />
-                    ) : (
-                        <Column centerX>
-                            <Row centerY style={{ marginBottom: 30 }}>
-                                <FlagImage
-                                    type='user'
-                                    size={50}
-                                    imagePath={player.image}
-                                    style={{ marginRight: 15 }}
-                                />
-                                <p className={styles.playerName}>{player.name}</p>
-                                <button
-                                    type='button'
-                                    onClick={() => setPlayerDetailsModalOpen(true)}
-                                    className={styles.editPlayerDetailsButton}
-                                >
-                                    <EditIcon />
-                                </button>
-                            </Row>
-                            <Button
-                                color='blue'
-                                text='Create game'
-                                onClick={() => setCreateGameModalOpen(true)}
-                            />
-                            <Column centerX centerY className={styles.games}>
-                                {games.map((game) => (
-                                    <GameCard key={game.entryHash} game={game} />
-                                ))}
-                            </Column>
-                        </Column>
-                    )}
-                    {gbgService && playerDetailsModalOpen && (
-                        <PlayerDetailsModal
-                            gbgService={gbgService}
-                            player={player}
-                            setPlayer={setPlayer}
-                            close={() => setPlayerDetailsModalOpen(false)}
-                        />
-                    )}
-                    {gbgService && createGameModalOpen && (
-                        <CreateGameModal
-                            gbgService={gbgService}
-                            player={player}
-                            games={games}
-                            setGames={setGames}
-                            close={() => setCreateGameModalOpen(false)}
-                        />
-                    )}
-                </Column>
+                <div className={styles.games}>
+                    {sortedGames.map((game) => (
+                        <GameCard key={String(game.entryHash)} game={game} />
+                    ))}
+                </div>
             )}
-            <button
-                className={styles.helpButton}
-                type='button'
-                onClick={() => setHelpModalOpen(true)}
-            >
-                <HelpIcon />
-            </button>
+
+            {editProfileModalOpen && (
+                <EditProfileModal
+                    profile={profile}
+                    onSaved={(saved) => setProfile(saved)}
+                    close={() => setEditProfileModalOpen(false)}
+                />
+            )}
+            {createGameModalOpen && (
+                <CreateGameModal
+                    games={games}
+                    setGames={setGames}
+                    close={() => setCreateGameModalOpen(false)}
+                />
+            )}
             {helpModalOpen && <HelpModal close={() => setHelpModalOpen(false)} />}
         </Column>
     )
