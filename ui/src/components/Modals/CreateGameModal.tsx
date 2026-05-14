@@ -144,11 +144,11 @@ const CreateGameModal = (props: {
             {saved ? (
                 <SuccessMessage text='Game saved!' />
             ) : (
-                <Column centerX style={{ width: 600 }}>
-                    <h1>Create Game</h1>
+                <Column style={{ width: 500 }}>
+                    <h1 style={{ alignSelf: 'center' }}>Create Game</h1>
                     {currentStep === 1 && (
-                        <Column centerX>
-                            <p>Choose a topic:</p>
+                        <Column>
+                            <p style={{ alignSelf: 'center' }}>Choose a topic:</p>
                             <Row style={{ margin: '20px 0' }}>
                                 <Button
                                     text='Archetopics'
@@ -189,11 +189,12 @@ const CreateGameModal = (props: {
                                         setTopicError(false)
                                         setTopic(value)
                                     }}
+                                    style={{ width: '100%' }}
                                 />
                             ) : (
-                                <Column style={{ width: 500, height: 280 }}>
+                                <Column style={{ width: '100%', height: 280 }}>
                                     <Scrollbars>
-                                        <Row wrap centerX>
+                                        <Row wrap style={{ justifyContent: 'space-around' }}>
                                             {GlassBeadGameTopics[topicGroup].map((t) => (
                                                 <button
                                                     key={t.name}
@@ -225,8 +226,8 @@ const CreateGameModal = (props: {
                     )}
 
                     {currentStep === 2 && (
-                        <Column centerX>
-                            <p>Choose a description for the game:</p>
+                        <Column>
+                            <p style={{ alignSelf: 'center' }}>Choose a description for the game:</p>
                             <Input
                                 type='text-area'
                                 rows={5}
@@ -243,115 +244,72 @@ const CreateGameModal = (props: {
                                         },
                                     })
                                 }}
-                                style={{ width: 400, marginTop: 30 }}
+                                style={{ width: '100%', marginTop: 30 }}
                             />
                         </Column>
                     )}
 
                     {currentStep === 3 && (
-                        <Column centerX>
-                            <p style={{ marginBottom: 30 }}>Choose the games settings:</p>
-                            <Column centerX className={styles.setting}>
-                                <Row centerY>
-                                    <h3>Intro duration (seconds)</h3>
+                        <Column>
+                            <p style={{ marginBottom: 20, alignSelf: 'center' }}>Choose the game&apos;s settings:</p>
+                            {[
+                                {
+                                    name: 'introDuration',
+                                    label: 'Intro duration (seconds)',
+                                    field: introDuration,
+                                    description:
+                                        'A moment of introspection, silence or meditation before the game.',
+                                },
+                                {
+                                    name: 'numberOfTurns',
+                                    label: 'Number of turns',
+                                    field: numberOfTurns,
+                                    description:
+                                        'Total moves = turns × players.',
+                                },
+                                {
+                                    name: 'moveDuration',
+                                    label: 'Move duration (seconds)',
+                                    field: moveDuration,
+                                    description: 'The length of each move.',
+                                },
+                                {
+                                    name: 'intervalDuration',
+                                    label: 'Interval duration (seconds)',
+                                    field: intervalDuration,
+                                    description:
+                                        'Pause between moves for players to reflect or prepare notes.',
+                                },
+                                {
+                                    name: 'outroDuration',
+                                    label: 'Outro duration (seconds)',
+                                    field: outroDuration,
+                                    description:
+                                        'A moment of reflection, silence or meditation after the game.',
+                                },
+                            ].map(({ name, label, field, description }) => (
+                                <Row key={name} className={styles.setting}>
                                     <Input
                                         type='text'
-                                        style={{ width: 200 }}
+                                        style={{ width: 100, flexShrink: 0 }}
                                         disabled={loading || saved}
-                                        state={introDuration.state}
-                                        errors={introDuration.errors}
-                                        value={introDuration.value}
+                                        state={field.state}
+                                        errors={field.errors}
+                                        value={field.value}
                                         onChange={(v) =>
-                                            updateValue('introDuration', +v.replace(/\D/g, ''))
+                                            updateValue(name, +v.replace(/\D/g, ''))
                                         }
                                     />
+                                    <Column className={styles.settingText}>
+                                        <h3>{label}</h3>
+                                        <p>{description}</p>
+                                    </Column>
                                 </Row>
-                                <p>
-                                    Set time for a moment of introspection, silence or meditation
-                                    before the game.
-                                </p>
-                            </Column>
-                            <Column centerX className={styles.setting}>
-                                <Row centerY>
-                                    <h3>Number of turns</h3>
-                                    <Input
-                                        type='text'
-                                        style={{ width: 200 }}
-                                        disabled={loading || saved}
-                                        state={numberOfTurns.state}
-                                        errors={numberOfTurns.errors}
-                                        value={numberOfTurns.value}
-                                        onChange={(v) =>
-                                            updateValue('numberOfTurns', +v.replace(/\D/g, ''))
-                                        }
-                                    />
-                                </Row>
-                                <p>
-                                    Set the amount of turns for the players. The total number of
-                                    moves will be the number of turns times the amount of players.
-                                </p>
-                            </Column>
-                            <Column centerX className={styles.setting}>
-                                <Row centerY>
-                                    <h3>Move duration (seconds)</h3>
-                                    <Input
-                                        type='text'
-                                        style={{ width: 200 }}
-                                        disabled={loading || saved}
-                                        state={moveDuration.state}
-                                        errors={moveDuration.errors}
-                                        value={moveDuration.value}
-                                        onChange={(v) =>
-                                            updateValue('moveDuration', +v.replace(/\D/g, ''))
-                                        }
-                                    />
-                                </Row>
-                                <p>The length of each move in seconds.</p>
-                            </Column>
-                            <Column centerX className={styles.setting}>
-                                <Row centerY>
-                                    <h3>Interval duration (seconds)</h3>
-                                    <Input
-                                        type='text'
-                                        style={{ width: 200 }}
-                                        disabled={loading || saved}
-                                        state={intervalDuration.state}
-                                        errors={intervalDuration.errors}
-                                        value={intervalDuration.value}
-                                        onChange={(v) =>
-                                            updateValue('intervalDuration', +v.replace(/\D/g, ''))
-                                        }
-                                    />
-                                </Row>
-                                <p>
-                                    Set a pause in between each move for players to pause, reflect,
-                                    prepare notes, or meditate.
-                                </p>
-                            </Column>
-                            <Column centerX className={styles.setting}>
-                                <Row centerY>
-                                    <h3>Outro duration (seconds)</h3>
-                                    <Input
-                                        type='text'
-                                        style={{ width: 200 }}
-                                        disabled={loading || saved}
-                                        state={outroDuration.state}
-                                        errors={outroDuration.errors}
-                                        value={outroDuration.value}
-                                        onChange={(v) =>
-                                            updateValue('outroDuration', +v.replace(/\D/g, ''))
-                                        }
-                                    />
-                                </Row>
-                                <p>
-                                    Set time for a moment of reflection, silence or meditation after
-                                    the game.
-                                </p>
-                            </Column>
+                            ))}
                         </Column>
                     )}
 
-                    <Row style={{ margin: '40px 0' }}>
+                    <Row style={{ margin: '40px 0', alignSelf: 'center' }}>
                         {currentStep > 1 && (
                             <Button
                                 text='Back'
@@ -379,7 +337,9 @@ const CreateGameModal = (props: {
                             />
                         )}
                     </Row>
-                    <ProgressBarSteps steps={steps} currentStep={currentStep} />
+                    <div style={{ alignSelf: 'center', width: 400 }}>
+                        <ProgressBarSteps steps={steps} currentStep={currentStep} />
+                    </div>
                 </Column>
             )}
         </Modal>

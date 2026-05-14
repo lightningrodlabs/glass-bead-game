@@ -1,11 +1,21 @@
-@import '@styles/Variables';
+@use '@styles/Variables' as *;
 
 .wrapper {
-    width: 650px;
+    width: 100%;
+    max-width: 650px;
 
     p {
         margin-bottom: 10px;
         text-align: center;
+    }
+
+    a {
+        color: $blue2;
+        text-decoration: underline;
+
+        &:hover {
+            color: $blue3;
+        }
     }
 }
 

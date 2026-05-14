@@ -1,4 +1,4 @@
-@import '@styles/Variables';
+@use '@styles/Variables' as *;
 
 .closeButton {
     border: none;

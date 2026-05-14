@@ -1,4 +1,4 @@
-@import '@styles/Variables';
+@use '@styles/Variables' as *;
 
 .button {
     border-radius: 20px;

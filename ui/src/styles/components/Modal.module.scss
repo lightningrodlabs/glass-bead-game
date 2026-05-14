@@ -1,4 +1,4 @@
-@import '@styles/Variables';
+@use '@styles/Variables' as *;
 
 // background transition
 $backgroundColorStart: rgba(0, 0, 0, 0);
@@ -116,7 +116,7 @@ $modalTransitionSpeed: 0.3s;
     align-items: flex-start;
     max-height: calc(100vh - #{$navbarHeight});
     max-width: calc(100vw - #{$navbarHeight});
-    overflow-y: scroll;
+    overflow: auto;
 
     @include for-tablet-landscape-up {
         padding: 50px;

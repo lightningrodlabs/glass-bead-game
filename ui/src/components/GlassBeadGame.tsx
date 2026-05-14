@@ -268,7 +268,7 @@ const GameSettingsModal = (props: {
 
     function saveSettings(e) {
         e.preventDefault()
-        setPlayersError(players.length ? '' : 'At least one player must be streaming')
+        setPlayersError(players.length ? '' : 'At least one player must be live')
         if (allValid(formData, setFormData) && players.length) {
             signalStartGame({
                 ...gameData,
@@ -289,103 +289,57 @@ const GameSettingsModal = (props: {
             <form onSubmit={saveSettings}>
                 <div className={styles.settingSections}>
                     <Column style={{ width: 420, marginRight: 80, marginBottom: 20 }}>
-                        <Column className={styles.setting}>
-                            <Row centerY>
-                                <h3>Intro duration (seconds)</h3>
+                        {[
+                            {
+                                name: 'introDuration',
+                                label: 'Intro duration (seconds)',
+                                field: introDuration,
+                                description:
+                                    'A moment of introspection, silence or meditation before the game.',
+                            },
+                            {
+                                name: 'numberOfTurns',
+                                label: 'Number of turns',
+                                field: numberOfTurns,
+                                description: 'Total moves = turns × players.',
+                            },
+                            {
+                                name: 'moveDuration',
+                                label: 'Move duration (seconds)',
+                                field: moveDuration,
+                                description: 'The length of each move.',
+                            },
+                            {
+                                name: 'intervalDuration',
+                                label: 'Interval duration (seconds)',
+                                field: intervalDuration,
+                                description:
+                                    'Pause between moves for players to reflect or prepare notes.',
+                            },
+                            {
+                                name: 'outroDuration',
+                                label: 'Outro duration (seconds)',
+                                field: outroDuration,
+                                description:
+                                    'A moment of reflection, silence or meditation after the game.',
+                            },
+                        ].map(({ name, label, field, description }) => (
+                            <Row key={name} className={styles.setting}>
                                 <Input
                                     type='text'
-                                    style={{ width: 200 }}
+                                    style={{ width: 100, flexShrink: 0 }}
                                     disabled={loading || saved}
-                                    state={introDuration.state}
-                                    errors={introDuration.errors}
-                                    value={introDuration.value}
-                                    onChange={(v) =>
-                                        updateValue('introDuration', +v.replace(/\D/g, ''))
-                                    }
+                                    state={field.state}
+                                    errors={field.errors}
+                                    value={field.value}
+                                    onChange={(v) => updateValue(name, +v.replace(/\D/g, ''))}
                                 />
+                                <Column className={styles.settingText}>
+                                    <h3>{label}</h3>
+                                    <p>{description}</p>
+                                </Column>
                             </Row>
-                            <p>
-                                Set time for a moment of introspection, silence or meditation before
-                                the game.
-                            </p>
-                        </Column>
-                        <Column className={styles.setting}>
-                            <Row centerY>
-                                <h3>Number of turns</h3>
-                                <Input
-                                    type='text'
-                                    style={{ width: 200 }}
-                                    disabled={loading || saved}
-                                    state={numberOfTurns.state}
-                                    errors={numberOfTurns.errors}
-                                    value={numberOfTurns.value}
-                                    onChange={(v) =>
-                                        updateValue('numberOfTurns', +v.replace(/\D/g, ''))
-                                    }
-                                />
-                            </Row>
-                            <p>
-                                Set the amount of turns for the players. The total number of moves
-                                will be the number of turns times the amount of players.
-                            </p>
-                        </Column>
-                        <Column className={styles.setting}>
-                            <Row centerY>
-                                <h3>Move duration (seconds)</h3>
-                                <Input
-                                    type='text'
-                                    style={{ width: 200 }}
-                                    disabled={loading || saved}
-                                    state={moveDuration.state}
-                                    errors={moveDuration.errors}
-                                    value={moveDuration.value}
-                                    onChange={(v) =>
-                                        updateValue('moveDuration', +v.replace(/\D/g, ''))
-                                    }
-                                />
-                            </Row>
-                            <p>The length of each move in seconds.</p>
-                        </Column>
-                        <Column className={styles.setting}>
-                            <Row centerY>
-                                <h3>Interval duration (seconds)</h3>
-                                <Input
-                                    type='text'
-                                    style={{ width: 200 }}
-                                    disabled={loading || saved}
-                                    state={intervalDuration.state}
-                                    errors={intervalDuration.errors}
-                                    value={intervalDuration.value}
-                                    onChange={(v) =>
-                                        updateValue('intervalDuration', +v.replace(/\D/g, ''))
-                                    }
-                                />
-                            </Row>
-                            <p>
-                                Set a pause in between each move for players to pause, reflect,
-                                prepare notes, or meditate.
-                            </p>
-                        </Column>
-                        <Column className={styles.setting}>
-                            <Row centerY>
-                                <h3>Outro duration (seconds)</h3>
-                                <Input
-                                    type='text'
-                                    style={{ width: 200 }}
-                                    disabled={loading || saved}
-                                    state={outroDuration.state}
-                                    errors={outroDuration.errors}
-                                    value={outroDuration.value}
-                                    onChange={(v) =>
-                                        updateValue('outroDuration', +v.replace(/\D/g, ''))
-                                    }
-                                />
-                            </Row>
-                            <p>
-                                Set time for a moment of reflection, silence or meditation after the
-                                game.
-                            </p>
-                        </Column>
+                        ))}
                     </Column>
                     <Column style={{ marginBottom: 20, minWidth: 200 }}>
                         <h2 style={{ margin: 0, lineHeight: '20px' }}>Player order</h2>
@@ -418,7 +372,7 @@ const GameSettingsModal = (props: {
                                 />
                             </Row>
                         ))}
-                        {!players.length && <p className={styles.grey}>No users connected...</p>}
+                        {!players.length && <p className={styles.grey}>No users live...</p>}
                         {!!playersError.length && <p className={styles.red}>{playersError}</p>}
                     </Column>
                 </div>
@@ -877,10 +831,20 @@ const GlassBeadGame = (): JSX.Element => {
         setConnectionMode('holochain')
         setHolochainMuted(false)
         setLoadingStream(false)
+        // Bead recording (per-turn audio capture for createBead) uses a separate
+        // MediaStream via MediaRecorder. The WebRTC path acquires this too;
+        // mirror it here so startAudioRecording doesn't crash on null.
+        navigator.mediaDevices
+            .getUserMedia({ audio: true })
+            .then((s) => (audioRef.current = s))
+            .catch(() => {})
         // Announce ourselves so existing peers see us before any voice frame arrives.
         const me = myAgentPubKeyRef.current
         const others = peopleInRoomRef.current.filter((p) => !eqKey(p, me))
         audio.announce('join', others)
+        if (me) {
+            setPlayers((prev) => (prev.some((p) => eqKey(p, me)) ? prev : [...prev, me]))
+        }
         levelTickIntervalRef.current = setInterval(() => {
             setLevelTick((t) => (t + 1) & 0xffff)
         }, 80)
@@ -900,6 +864,11 @@ const GlassBeadGame = (): JSX.Element => {
             audio.announce('leave', others)
             holochainAudioRef.current = null
             audio.stop().catch((e) => console.log('holochain audio stop error: ', e))
+            if (me) setPlayers((prev) => prev.filter((p) => !eqKey(p, me)))
+        }
+        if (audioRef.current) {
+            audioRef.current.getTracks?.().forEach((t: MediaStreamTrack) => t.stop())
+            audioRef.current = null
         }
         setHolochainMuted(false)
     }
@@ -1102,10 +1071,13 @@ const GlassBeadGame = (): JSX.Element => {
 
     function signalStartGame(data) {
         if (!serviceRef.current || !myAgentPubKeyRef.current) return
+        const dedupedPlayers = dedupeKeys(data.players as AgentPubKey[])
         const wirePayload = {
             ...data,
-            players: (data.players as AgentPubKey[]).map((p) => keyOf(p)),
+            players: dedupedPlayers.map((p) => keyOf(p)),
         }
+        // Use the deduped list locally too, so initiator's UI matches the wire.
+        data = { ...data, players: dedupedPlayers }
         const signal: Signal = {
             gameHash: entryHash,
             message: {
@@ -1116,14 +1088,36 @@ const GlassBeadGame = (): JSX.Element => {
                 },
             },
         }
+        const me = myAgentPubKeyRef.current
+        const recipients = peopleInRoomRef.current.filter((p) => !eqKey(p, me))
         serviceRef.current
-            .notify(signal, peopleInRoom)
+            .notify(signal, recipients)
             .catch((error) => console.log(error))
+        // Drive the initiator's UI locally — send_remote_signal doesn't deliver to self
+        // and even if it did, relying on the round-trip lets the rings start late.
+        startGame(data)
+        setGameSettingsModalOpen(false)
+        setGameData(data)
+        setGameInProgress(true)
+        setBeads([])
+        d3.select('#play-button')
+            .classed('transitioning', true)
+            .transition()
+            .duration(1000)
+            .style('opacity', 0)
+            .remove()
+        d3.select('#pause-button')
+            .classed('transitioning', true)
+            .transition()
+            .duration(1000)
+            .style('opacity', 0)
+            .remove()
+        liveBeadIndexRef.current = 1
     }
 
     function startGame(data) {
         setGameData(data)
-        setPlayers(data.players)
+        setPlayers(dedupeKeys(data.players ?? []))
         setShowComments(false)
         updateShowVideos(false)
         d3.select('#timer-move-state').text('Intro')
@@ -1492,12 +1486,15 @@ const GlassBeadGame = (): JSX.Element => {
         switch (type) {
             case 'NewPlayer': {
                 const agentKey: AgentPubKey = content
+                // Always reply with our live-state so the newcomer learns about us,
+                // even if we already had them in our room list from a previous visit.
+                holochainAudioRef.current?.announce('join', [agentKey])
                 if (peopleInRoomRef.current.some((p) => eqKey(p, agentKey))) break
-                setPeopleInRoom((p) => [...p, agentKey])
+                setPeopleInRoom((p) =>
+                    p.some((x) => eqKey(x, agentKey)) ? p : [...p, agentKey]
+                )
                 peopleInRoomRef.current.push(agentKey)
                 nicknameFor(agentKey).then((name) => pushComment(`${name} entered the room`))
-                // If I'm already live, let the new arrival know.
-                holochainAudioRef.current?.announce('join', [agentKey])
                 break
             }
             case 'NewComment': {
@@ -1695,6 +1692,9 @@ const GlassBeadGame = (): JSX.Element => {
                     if (!livePeersRef.current.has(keyB64)) {
                         livePeersRef.current.add(keyB64)
                         bumpLivePeers()
+                        setPlayers((prev) =>
+                            prev.some((p) => eqKey(p, fromAgent)) ? prev : [...prev, fromAgent]
+                        )
                     }
                     holochainAudioRef.current?.receiveFrame(fromAgent, modulePayload)
                 } else if (msgType === HOLOCHAIN_AUDIO_ANNOUNCE_TYPE) {
@@ -1706,7 +1706,8 @@ const GlassBeadGame = (): JSX.Element => {
                     }
                     const keyB64 = encodeHashToBase64(fromAgent)
                     if (parsed.action === 'join') {
-                        if (!livePeersRef.current.has(keyB64)) {
+                        const wasKnown = livePeersRef.current.has(keyB64)
+                        if (!wasKnown) {
                             livePeersRef.current.add(keyB64)
                             bumpLivePeers()
                         }
@@ -1714,13 +1715,19 @@ const GlassBeadGame = (): JSX.Element => {
                             peerMutedRef.current.set(keyB64, parsed.muted)
                             bumpLivePeers()
                         }
-                        if (holochainAudioRef.current) {
+                        // Only reply once: when we first hear from this peer.
+                        // Replying every time creates an infinite ping-pong.
+                        if (!wasKnown && holochainAudioRef.current) {
                             holochainAudioRef.current.announce('join', [fromAgent])
                         }
+                        setPlayers((prev) =>
+                            prev.some((p) => eqKey(p, fromAgent)) ? prev : [...prev, fromAgent]
+                        )
                     } else if (parsed.action === 'leave') {
                         if (livePeersRef.current.delete(keyB64)) bumpLivePeers()
                         peerMutedRef.current.delete(keyB64)
                         holochainAudioRef.current?.forgetPeer(fromAgent)
+                        setPlayers((prev) => prev.filter((p) => !eqKey(p, fromAgent)))
                     }
                 } else if (msgType === HOLOCHAIN_AUDIO_MUTE_TYPE) {
                     let parsed: { muted?: boolean }

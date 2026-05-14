@@ -1,4 +1,4 @@
-@import '@styles/Variables';
+@use '@styles/Variables' as *;
 // todo: import all component and page styles into one file and import colors there
 
 .wrapper {

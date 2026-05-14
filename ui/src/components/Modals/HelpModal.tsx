@@ -6,11 +6,15 @@ import styles from '@styles/components/modals/HelpModal.module.scss'
 import { ReactComponent as LeftChevronIcon } from '@svgs/chevron-left-solid.svg'
 import { ReactComponent as RightChevronIcon } from '@svgs/chevron-right-solid.svg'
 
-const NavButton = (props: { targetPage: number; setPage: (page: number) => void }): JSX.Element => {
-    const { targetPage, setPage } = props
+const NavButton = (props: {
+    targetPage: number
+    direction: 'back' | 'next'
+    setPage: (page: number) => void
+}): JSX.Element => {
+    const { targetPage, direction, setPage } = props
     return (
         <button className={styles.navButton} type='button' onClick={() => setPage(targetPage)}>
-            {targetPage === 1 ? <LeftChevronIcon /> : <RightChevronIcon />}
+            {direction === 'back' ? <LeftChevronIcon /> : <RightChevronIcon />}
         </button>
     )
 }
@@ -24,7 +28,12 @@ const HelpModal = (props: { close: () => void }): JSX.Element => {
             <h1>About The Glass Bead Game</h1>
             <Row className={styles.wrapper}>
                 <Column centerY style={{ width: 30, marginRight: 20, flexShrink: 0 }}>
-                    {page === 2 && <NavButton targetPage={1} setPage={setPage} />}
+                    {page === 2 && (
+                        <NavButton targetPage={1} direction='back' setPage={setPage} />
+                    )}
+                    {page === 3 && (
+                        <NavButton targetPage={2} direction='back' setPage={setPage} />
+                    )}
                 </Column>
                 {page === 1 && (
                     <Column centerX style={{ width: '100%' }}>
@@ -59,8 +68,45 @@ const HelpModal = (props: { close: () => void }): JSX.Element => {
                         <p>Enjoy!</p>
                     </Column>
                 )}
+                {page === 3 && (
+                    <Column centerX style={{ width: '100%' }}>
+                        <p>
+                            This{' '}
+                            <a
+                                href='https://www.weco.io/s/gbg/posts'
+                                target='_blank'
+                                rel='noreferrer'
+                            >
+                                incarnation
+                            </a>{' '}
+                            of the Glass Bead Game was developed originally by James and
+                            Gnoman for{' '}
+                            <a
+                                href='https://www.weco.io/s/all/about'
+                                target='_blank'
+                                rel='noreferrer'
+                            >
+                                weco.io
+                            </a>{' '}
+                            and now as a collaboration with{' '}
+                            <a
+                                href='https://lightningrodlabs.org'
+                                target='_blank'
+                                rel='noreferrer'
+                            >
+                                Lightningrod Labs
+                            </a>{' '}
+                            to bring its carefull playfulness to your Moss group.
+                        </p>
+                    </Column>
+                )}
                 <Column centerY style={{ width: 30, marginLeft: 20, flexShrink: 0 }}>
-                    {page === 1 && <NavButton targetPage={2} setPage={setPage} />}
+                    {page === 1 && (
+                        <NavButton targetPage={2} direction='next' setPage={setPage} />
+                    )}
+                    {page === 2 && (
+                        <NavButton targetPage={3} direction='next' setPage={setPage} />
+                    )}
                 </Column>
             </Row>
         </Modal>

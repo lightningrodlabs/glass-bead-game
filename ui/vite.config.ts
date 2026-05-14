@@ -6,6 +6,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import path from 'node:path'
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
+import { pathToFileURL } from 'node:url'
 
 const scssAliases: Record<string, string> = {
   '@styles/': path.resolve(__dirname, 'src/styles/'),
@@ -58,14 +59,19 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        importer(url: string) {
-          for (const [prefix, target] of Object.entries(scssAliases)) {
-            if (url.startsWith(prefix)) {
-              return { file: path.join(target, url.slice(prefix.length)) }
-            }
-          }
-          return null
-        },
+        api: 'modern-compiler',
+        importers: [
+          {
+            findFileUrl(url: string) {
+              for (const [prefix, target] of Object.entries(scssAliases)) {
+                if (url.startsWith(prefix)) {
+                  return pathToFileURL(path.join(target, url.slice(prefix.length)))
+                }
+              }
+              return null
+            },
+          },
+        ],
       },
     },
   },

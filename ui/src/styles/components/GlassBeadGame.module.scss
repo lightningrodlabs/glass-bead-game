@@ -1,4 +1,4 @@
-@import '@styles/Variables';
+@use '@styles/Variables' as *;
 
 $transitionSpeed: 1s;
 
@@ -736,21 +736,26 @@ $transitionSpeed: 1s;
 }
 
 .setting {
-    margin-bottom: 30px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+.settingText {
+    margin-left: 24px;
+    align-items: flex-start;
 
     h3 {
-        font-size: 15px;
-        font-weight: 800;
-        margin: 0 10px 0 0;
+        font-size: 14px;
+        font-weight: 700;
+        margin: 0 0 2px 0;
     }
 
     p {
-        font-size: 14px;
-        margin-bottom: 10px;
-    }
-
-    > div {
-        margin-bottom: 5px
+        font-size: 13px;
+        margin: 0;
+        text-align: left;
+        color: $grey6;
     }
 }
 
