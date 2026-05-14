@@ -5,6 +5,7 @@ import Column from '@components/Column'
 import styles from '@styles/components/modals/HelpModal.module.scss'
 import { ReactComponent as LeftChevronIcon } from '@svgs/chevron-left-solid.svg'
 import { ReactComponent as RightChevronIcon } from '@svgs/chevron-right-solid.svg'
+import { version as appVersion } from '../../../package.json'
 
 const NavButton = (props: {
     targetPage: number
@@ -98,6 +99,7 @@ const HelpModal = (props: { close: () => void }): JSX.Element => {
                             </a>{' '}
                             to bring its carefull playfulness to your Moss group.
                         </p>
+                        <p className={styles.version}>Version {appVersion}</p>
                     </Column>
                 )}
                 <Column centerY style={{ width: 30, marginLeft: 20, flexShrink: 0 }}>
