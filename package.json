@@ -20,7 +20,8 @@
     "build:happ": "npm run build:zomes && hc app pack workdir --recursive",
     "build:zomes": "CARGO_TARGET_DIR=target RUSTFLAGS='--cfg getrandom_backend=\"custom\"' cargo build --release --target wasm32-unknown-unknown --workspace --exclude glassbeadgame-tauri",
     "local-services": "kitsune2-bootstrap-srv --listen 127.0.0.1:$BOOTSTRAP_PORT",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "hash": "weave hash-webhapp FIXME ./workdir/glassbeadgame.webhapp"
   },
   "devDependencies": {
     "@theweave/cli": "0.15.16",
