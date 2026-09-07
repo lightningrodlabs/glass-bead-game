@@ -98,3 +98,26 @@ Add a new `versions[]` entry for the `glass-bead-game` tool id in the 0.16 curat
 new `version`, the release's `glassbeadgame.webhapp` `url`, and these hashes. Because
 `happSha256` is unchanged, Moss treats it as an in-place upgrade on the same
 network. To get the hashes for an artifact locally: `npm run weave-hash`.
+
+## Trust model of the `0.4.x` line
+
+**This DNA performs no validation.** `dnas/glassbeadgame/zomes/integrity/glassbeadgame/src/lib.rs`
+implements `validate` as a blanket `Ok(ValidateCallbackResult::Valid)` — the `op` argument is
+never inspected. Every entry and every link is accepted from every agent.
+
+Concretely, on this line:
+
+- any group member may create, update or delete any game, comment, bead or settings entry,
+  including ones authored by someone else;
+- no validator compares an agent key, so there is no notion of "only the author may…";
+- the two integrity zomes contribute no rules at all — `profiles` is a 1-line re-export stub.
+
+**The Moss group is the trust boundary.** Membership in the group is what gates writes, not the
+DNA. That is adequate for the small, invited groups Glass Bead Game is played in, and it is
+byte-identical to how the 0.3.x line behaved — this is not a regression introduced by the
+Holochain 0.7 upgrade.
+
+**Adding real validation requires a new DNA line.** Validation code is hashed into the DNA, so
+rules cannot be added to `0.4.x` after this happ is frozen; they would ship as `0.5.x` on a new
+network. If Glass Bead Game is ever aimed at large or open groups, that is the point at which the
+author checks should be written.
