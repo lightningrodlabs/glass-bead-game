@@ -1,6 +1,7 @@
 {
   "name": "ui",
-  "version": "0.3.0",
+  "version": "0.4.0",
+  "dnaVersion": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,12 +11,13 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@holochain-open-dev/elements": "^0.601.0",
-    "@holochain-open-dev/profiles": "^0.601.3",
-    "@holochain-open-dev/stores": "^0.601.0",
-    "@holochain/client": "^0.20.4-rc.0",
+    "@holochain-open-dev/elements": "^0.700.0",
+    "@holochain-open-dev/profiles": "^0.701.0",
+    "@holochain-open-dev/stores": "^0.700.0",
+    "@holochain-open-dev/utils": "^0.700.0",
+    "@holochain/client": "^0.21.0",
     "@msgpack/msgpack": "^2.7.2",
-    "@theweave/api": "^0.6.6",
+    "@theweave/api": "0.7.0-dev.3",
     "d3": "^5.15.1",
     "d3-force": "^2.1.0",
     "d3-hexbin": "^0.2.2",
@@ -46,7 +48,7 @@
     "@types/simple-peer": "^9.11.8",
     "@vitejs/plugin-react": "^4.3.1",
     "bestzip": "^2.2.0",
-    "typescript": "^5.5.3",
+    "typescript": "^5.9.3",
     "vite": "^5.4.0",
     "vite-plugin-node-polyfills": "^0.26.0",
     "vite-plugin-svgr": "^5.2.0",

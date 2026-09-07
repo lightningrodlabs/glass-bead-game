@@ -10,7 +10,6 @@ import type { AppClient } from '@holochain/client'
 
 export const appletServices: AppletServices = {
     creatables: {},
-    blockTypes: {},
     getAssetInfo: async (
         _appletClient: AppClient,
         _wal: WAL,
