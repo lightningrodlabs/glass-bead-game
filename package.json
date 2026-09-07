@@ -18,12 +18,16 @@
     "weave": "env -u ELECTRON_RUN_AS_NODE TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\",\"target\":\"es2020\",\"esModuleInterop\":true}' weave",
     "launch:moss": "npm run build:happ && concurrently \"npm start -w ui\" \"sleep 1 && npm run weave -- --agent-idx 1 --dev-config we_dev/config.ts\" \"sleep 10 && npm run weave -- --agent-idx 2 --dev-config we_dev/config.ts\"",
     "test": "npm run build:zomes && hc app pack workdir --recursive && npm t -w tests",
-    "package": "npm run build:happ && npm run package -w ui && hc web-app pack workdir --recursive",
+    "package": "rm -rf ui/dist ui/dist.zip && npm run build:happ && npm run package -w ui && hc web-app pack workdir --recursive && npm run weave-hash",
     "build:happ": "npm run build:zomes && hc app pack workdir --recursive",
     "build:zomes": "CARGO_TARGET_DIR=target RUSTFLAGS='--cfg getrandom_backend=\"custom\"' cargo build --release --target wasm32-unknown-unknown",
     "local-services": "kitsune2-bootstrap-srv --listen 127.0.0.1:$BOOTSTRAP_PORT",
     "tauri": "tauri",
-    "hash": "weave hash-webhapp FIXME ./workdir/glassbeadgame.webhapp"
+    "weave-hash": "node scripts/weave-hash.mjs",
+    "optimize:zomes": "node scripts/wasm-opt-zomes.mjs",
+    "build:happ:release": "npm run build:zomes && npm run optimize:zomes && hc app pack workdir --recursive",
+    "release:happ": "bash scripts/release-happ.sh",
+    "release:webhapp": "APP_VER=$(node -p \"require('./ui/package.json').version\") && git tag v$APP_VER && git push origin v$APP_VER"
   },
   "devDependencies": {
     "@theweave/cli": "0.16.0-dev.5",
@@ -33,6 +37,7 @@
     "concurrently-repeat": "^0.0.1",
     "internal-ip-cli": "^2.0.0",
     "new-port-cli": "^1.0.0",
+    "js-yaml": "^4.1.0",
     "rimraf": "^3.0.2"
   },
   "overrides": {
