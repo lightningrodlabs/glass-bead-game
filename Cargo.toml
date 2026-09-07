@@ -10,10 +10,12 @@ exclude = ["src-tauri"]
 resolver = "2"
 
 [workspace.dependencies]
-hdi = "0.7.0"
-hdk = "0.6.0"
+# Exact pins: these crates are hashed into the integrity wasm, so a rebuild against a
+# different hdi/hdk would change the DNA hash. Never relax to a caret on a frozen line.
+hdi = "=0.8.0"
+hdk = "=0.7.0"
 serde = "1"
-holochain_serialized_bytes = "0.0.56"
+holochain_serialized_bytes = "=0.0.57"
 
 [workspace.dependencies.glassbeadgame]
 path = "dnas/glassbeadgame/zomes/coordinator/glassbeadgame"
