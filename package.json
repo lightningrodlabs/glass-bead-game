@@ -30,8 +30,8 @@
     "release:webhapp": "APP_VER=$(node -p \"require('./ui/package.json').version\") && git tag v$APP_VER && git push origin v$APP_VER"
   },
   "devDependencies": {
-    "@theweave/cli": "0.16.0-dev.5",
-    "@holochain/hc-spin": "^0.700.0",
+    "@theweave/cli": "^0.16.0-rc.2",
+    "@holochain/hc-spin": "^0.700.1-rc.0",
     "@tauri-apps/cli": "^2.0.0-beta.22",
     "concurrently": "^8.2.2",
     "concurrently-repeat": "^0.0.1",
@@ -41,7 +41,7 @@
     "rimraf": "^3.0.2"
   },
   "overrides": {
-    "@holochain/client": "^0.21.0"
+    "@holochain/client": "^0.21.1"
   },
   "engines": {
     "npm": ">=7.0.0"
