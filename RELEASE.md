@@ -18,6 +18,12 @@ Glass Bead Game has **no export/import feature**, so there is no way to carry a
 game's beads or comments across. Anyone still wanting the 0.6 content has to keep
 a 0.6 Moss installed alongside. Say this plainly in the curation changelog.
 
+DNA version 0.5.0 (Holochain 0.7.1, profiles 0.702.0) is again a new network.
+Holochain 0.7.1 changed the capability-grant format, and 0.7.0 and 0.7.1
+conductors cannot gossip. This line cannot see games from the 0.4.x line
+(`happ-v0.4.0`), so a group has to upgrade together. It needs Moss 0.16.0-rc.1
+or later. There is still no export/import, so 0.4.x games do not carry over.
+
 ## Why the happ is frozen (never rebuilt)
 
 The zome wasm embeds the builder's absolute paths (`~/.cargo/...` and source
@@ -94,12 +100,13 @@ The workflow run summary (and the release body) contains:
 }
 ```
 
-Add a new `versions[]` entry for the `glass-bead-game` tool id in the 0.16 curation list with the
+Add a new `versions[]` entry for the `glass-bead-game` tool id in the 0.16 curation list
+(`versionBranch: "0.5.x"`; 0.4.x was the Holochain 0.7.0 network) with the
 new `version`, the release's `glassbeadgame.webhapp` `url`, and these hashes. Because
 `happSha256` is unchanged, Moss treats it as an in-place upgrade on the same
 network. To get the hashes for an artifact locally: `npm run weave-hash`.
 
-## Trust model of the `0.4.x` line
+## Trust model of the `0.4.x` and `0.5.x` lines
 
 **This DNA performs no validation.** `dnas/glassbeadgame/zomes/integrity/glassbeadgame/src/lib.rs`
 implements `validate` as a blanket `Ok(ValidateCallbackResult::Valid)` — the `op` argument is
@@ -118,6 +125,6 @@ byte-identical to how the 0.3.x line behaved — this is not a regression introd
 Holochain 0.7 upgrade.
 
 **Adding real validation requires a new DNA line.** Validation code is hashed into the DNA, so
-rules cannot be added to `0.4.x` after this happ is frozen; they would ship as `0.5.x` on a new
-network. If Glass Bead Game is ever aimed at large or open groups, that is the point at which the
+rules cannot be added to `0.5.x` after this happ is frozen; they would ship as a later DNA
+version on a new network. If Glass Bead Game is ever aimed at large or open groups, that is the point at which the
 author checks should be written.
